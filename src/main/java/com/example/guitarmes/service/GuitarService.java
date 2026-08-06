@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.common.ProcessConstants;
 import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
@@ -69,7 +70,7 @@ public class GuitarService {
 				nextProcess = null;
 			}
 			
-			boolean needAssembly = nextProcess != null && "ネック取付".equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
+			boolean needAssembly = nextProcess != null && ProcessConstants.NECK_ASSEMBLY.equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
 			
 			responses.add(
 					new GuitarProgressResponse(
@@ -92,7 +93,7 @@ public class GuitarService {
 	public long getCompletedGuitarCount() {
 		long count = 0;
 		for (Guitar guitar : guitarRepository.findAll()) {
-			if("完成".equals(guitar.getCurrentProcess())) {
+			if(ProcessConstants.COMPLETED.equals(guitar.getCurrentProcess())) {
 				count++;
 			}
 		}
@@ -124,4 +125,5 @@ public class GuitarService {
 		
 		return responses;
 	}
+
 }

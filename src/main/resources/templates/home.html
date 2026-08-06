@@ -3,10 +3,10 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Guitar MES</title>
+	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<h1>Guitar MES</h1>
-<h2>ダッシュボード</h2>
+<div th:replace="~{fragments/header :: header('ダッシュボード')}"></div>
 
 <table border="1">
     <tr>
@@ -43,62 +43,40 @@
 		<th>シリアル番号</th>
 		<th>モデル</th>
 		<th>現在工程</th>
+		<th>進捗率</th>
+		<th>状態</th>
 		<th>詳細</th>
-		<th>工程開始</th>
 	</tr>
 	
-	<tr th:each="guitar : ${guitars}">
+	<tr th:each="guitar : ${guitars}"
+	    th:class="${guitar.currentProcess ==
+	               T(com.example.guitarmes.common.ProcessConstants).COMPLETED}
+	               ? 'completed' : ''">
 		<td th:text="${guitar.id}"></td>
 		<td th:text="${guitar.serialNo}"></td>
 		<td th:text="${guitar.modelName}"></td>
 		<td th:text="${guitar.currentProcess}"></td>
+		<td th:text="${guitar.progressRate + '%'}"></td>
+		<td>
+			<span th:if="${guitar.hasRunningProcess}">
+				実施中
+			</span>
+			
+			<span th:if="${!guitar.hasRunningProcess}">
+				待機中
+			</span>
+		</td>
 		<td>
 			<a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
 				詳細
 			</a>
 		</td>
-		<td>
-			<a th:href="@{/processes/start/view(guitarId=${guitar.id})}">
-				工程開始
-			</a>			
-		</td>
 	</tr>
 </table>
 
 <hr>
-<h2>メニュー</h2>
-<ul>
-	<li>
-		<a th:href="@{/guitars/view}">
-			ギター管理
-		</a>
-	</li>
-	<li>
-		<a th:href="@{/necks/view}">
-			ネック管理
-		</a>
-	</li>
-	<li>
-		<a th:href="@{/bodies/view}">
-			ボディ管理
-		</a>
-	</li>
-	<li>
-		<a th:href="@{/assemblies/view}">
-			組立実績
-		</a>
-	</li>
-	<li>
-		<a th:href="@{/processes/start/view}">
-			工程管理
-		</a>
-	</li>
-	<li>
-		<a th:href="@{/processes/end/view}">
-			工程終了
-		</a>
-	</li>
-</ul>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 
 </body>
 </html>
