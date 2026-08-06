@@ -1,0 +1,86 @@
+package com.example.guitarmes.entity;
+
+import java.util.List;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "t_neck")
+public class Neck {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String serialNo;
+	private String modelName;
+	private String currentProcess;
+	private String status;
+	@OneToMany(mappedBy = "neck")
+	private List<Assembly> assemblies;
+	
+	public Neck() {
+		
+	}
+	
+	public Neck(String serialNo, String modelName, String currentProcess, String status) {
+		this.serialNo = serialNo;
+		this.modelName = modelName;
+		this.currentProcess = currentProcess;
+		this.status = status;
+	}
+	
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getSerialNo() {
+		return serialNo;
+	}
+
+	public void setSerialNo(String serialNo) {
+		this.serialNo = serialNo;
+	}
+
+	public String getModelName() {
+		return modelName;
+	}
+
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+
+	public String getCurrentProcess() {
+		return currentProcess;
+	}
+
+	public void setCurrentProcess(String currentProcess) {
+		this.currentProcess = currentProcess;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public List<Assembly> getAssemblies() {
+		return assemblies;
+	}
+
+	public void setAssemblies(List<Assembly> assemblies) {
+		this.assemblies = assemblies;
+	}
+	
+	
+}

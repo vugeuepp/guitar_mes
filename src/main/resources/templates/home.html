@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Guitar MES</title>
+</head>
+<body>
+<h1>Guitar MES</h1>
+<h2>ダッシュボード</h2>
+
+<table border="1">
+    <tr>
+        <th>総ギター数</th>
+        <th>仕掛中</th>
+        <th>完成</th>
+    </tr>
+
+    <tr>
+        <td th:text="${totalGuitarCount}"></td>
+        <td th:text="${inProgressGuitarCount}"></td>
+        <td th:text="${completedGuitarCount}"></td>
+    </tr>
+</table>
+
+<br>
+<h2>現在のギター一覧</h2>
+<table border="1">
+	<tr>
+		<th>ID</th>
+		<th>シリアル番号</th>
+		<th>モデル</th>
+		<th>現在工程</th>
+		<th>詳細</th>
+		<th>工程開始</th>
+	</tr>
+	
+	<tr th:each="guitar : ${guitars}">
+		<td th:text="${guitar.id}"></td>
+		<td th:text="${guitar.serialNo}"></td>
+		<td th:text="${guitar.modelName}"></td>
+		<td th:text="${guitar.currentProcess}"></td>
+		<td>
+			<a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
+				詳細
+			</a>
+		</td>
+		<td>
+			<a th:href="@{/processes/start/view(guitarId=${guitar.id})}">
+				工程開始
+			</a>			
+		</td>
+	</tr>
+</table>
+
+<hr>
+<h2>メニュー</h2>
+<ul>
+	<li>
+		<a th:href="@{/guitars/view}">
+			ギター管理
+		</a>
+	</li>
+	<li>
+		<a th:href="@{/necks/view}">
+			ネック管理
+		</a>
+	</li>
+	<li>
+		<a th:href="@{/bodies/view}">
+			ボディ管理
+		</a>
+	</li>
+	<li>
+		<a th:href="@{/assemblies/view}">
+			組立実績
+		</a>
+	</li>
+	<li>
+		<a th:href="@{/processes/start/view}">
+			工程管理
+		</a>
+	</li>
+	<li>
+		<a th:href="@{/processes/end/view}">
+			工程終了
+		</a>
+	</li>
+</ul>
+
+</body>
+</html>

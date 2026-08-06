@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>ギター詳細</title>
+</head>
+<body>
+	<h1>ギター詳細</h1>
+	<table border="1">
+		<tr>
+			<th>シリアル番号</th>
+			<th>モデル</th>
+			<th>現在工程</th>
+		</tr>
+		<tr>
+			<td th:text="${guitar.serialNo}"></td>
+			<td th:text="${guitar.modelName}"></td>
+			<td th:text="${guitar.currentProcess}"></td>
+		</tr>
+	</table>
+	
+	<br>
+	
+	<h2>工程状況</h2>
+	<table border="1">
+	    <tr>
+	        <th>工程名</th>
+	        <th>状態</th>
+	        <th>作業者</th>
+	        <th>開始時刻</th>
+	        <th>終了時刻</th>
+	        <th>作業時間(分)</th>
+	        <th>操作</th>
+	    </tr>
+
+	    <tr th:each="processStatus : ${processStatuses}">
+	        <td th:text="${processStatus.processName}"></td>
+	        <td th:text="${processStatus.status}"></td>
+	        <td th:text="${processStatus.workerName}"></td>
+
+			<td th:text="${processStatus.startTimeText}"></td>
+
+			<td th:text="${processStatus.endTimeText}"></td>
+
+			<td th:text="${processStatus.workMinutesText}"></td>
+			<td>
+			    <!-- 実施中工程なら終了ボタン -->
+			    <form th:if="${processStatus.status == '実施中'}"
+			          th:action="@{/processes/end}"
+			          method="post">
+
+			        <input type="hidden"
+			               name="historyId"
+			               th:value="${processStatus.historyId}">
+
+			        <button type="submit">
+			            工程終了
+			        </button>
+			    </form>
+
+			    <!-- 次工程が通常工程なら工程開始ボタン -->
+			    <form th:if="${processStatus.status == '未実施'
+			                  and nextProcess != null
+			                  and processStatus.processName == nextProcess.processName
+			                  and !needAssembly
+			                  and !hasRunningProcess}"
+			          th:action="@{/processes/start/view}"
+			          method="get">
+
+			        <input type="hidden"
+			               name="guitarId"
+			               th:value="${guitar.id}">
+
+			        <button type="submit">
+			            工程開始
+			        </button>
+			    </form>
+
+			    <!-- 次工程がネック取付ならネック取付登録ボタン -->
+			    <form th:if="${processStatus.status == '未実施'
+			                  and nextProcess != null
+			                  and processStatus.processName == nextProcess.processName
+			                  and needAssembly
+			                  and !hasRunningProcess}"
+			          th:action="@{/assemblies/new}"
+			          method="get">
+
+			        <input type="hidden"
+			               name="guitarId"
+			               th:value="${guitar.id}">
+
+			        <button type="submit">
+			            ネック取付登録
+			        </button>
+			    </form>
+
+			    <!-- 操作なし -->
+			    <span th:if="${processStatus.status == '完了'
+			                  or (processStatus.status == '未実施'
+			                      and nextProcess == null)
+			                  or (processStatus.status == '未実施'
+			                      and nextProcess != null
+			                      and processStatus.processName != nextProcess.processName)}">
+			        -
+			    </span>
+			</td>
+	    </tr>
+	</table>
+	
+	<h2>使用部品</h2>
+	<div th:if="${assembly != null}">
+	    <p>ネック取付登録済み</p>
+	    <table border="1">
+	        <tr>
+	            <th>ネック</th>
+	            <th>ボディ</th>
+	            <th>作業者</th>
+	            <th>取付日時</th>
+	        </tr>
+	        <tr>
+	            <td th:text="${assembly.neckSerial}"></td>
+	            <td th:text="${assembly.bodySerial}"></td>
+	            <td th:text="${assembly.workerName}"></td>
+	            <td th:text="${assembly.assemblyDate}"></td>
+	        </tr>
+	    </table>
+	</div>
+	<div th:if="${assembly == null}">
+	    <p>まだネック取付登録されていません。</p>
+	</div>
+	
+	<h2>工程管理</h2>
+	    <a th:href="@{/guitars/{id}/history(id=${guitar.id})}">
+	        工程履歴を見る
+	    </a>
+	</p>
+
+	<br>
+	<a th:href="@{/guitars/view}">
+	    ギター一覧へ戻る
+	</a>
+	<br>
+	<a th:href="@{/assemblies/view}">
+	    組立実績一覧へ
+	</a>
+	<br>
+	<a th:href="@{/}">
+	    Home
+	</a>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>ボディ登録</title>
+</head>
+<body>
+	<h1>ボディ登録</h1>
+	
+	<form th:action="@{/bodies/create}" method="post">
+		<div>
+			<label>シリアル番号</label>
+			<input type="text" name="serialNo">			
+		</div>
+		<div>
+			<label>モデル名</label>
+			<input type="text" name="modelName">			
+		</div>
+		<div>
+			<label>カラー</label>
+			<input type="text" name="color">			
+		</div>
+		<div>
+			<label>現在工程</label>
+			<input type="text" name="currentProcess" value="未着手">			
+		</div>
+		<div>
+			<label>ステータス</label>
+			<input type="text" name="status" value="WAITING">			
+		</div>
+		<button type="submit">
+			登録
+		</button>
+	</form>
+	<br>
+	
+	<a th:href="@{/bodies/view}">
+		一覧へ戻る
+	</a>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Assembly詳細</title>
+</head>
+<body>
+	<h1>Assembly詳細</h1>
+	<p>
+		組立ID：
+		<span th:text="${assembly.assemblyId}"></span>
+	</p>
+	<p>
+		ギター：
+		<span th:text="${assembly.guitarSerial}"></span>
+	</p>
+	<p>
+		ネック：
+		<span th:text="${assembly.neckSerial}"></span>
+	</p>
+	<p>
+		ボディ：
+		<span th:text="${assembly.bodySerial}"></span>
+	</p>
+	<p>
+		作業者：
+		<span th:text="${assembly.workerName}"></span>
+	</p>
+	<p>
+		組立日時：
+		<span th:text="${assembly.assemblyDate}"></span>
+	</p>
+	<a th:href="@{/assemblies/view}">
+		一覧へ戻る
+	</a>
+</body>
+</html>

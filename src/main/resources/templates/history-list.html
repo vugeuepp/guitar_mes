@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>工程履歴</title>
+</head>
+<body>
+<h1>工程履歴</h1>
+<table border="1">
+	<tr>
+		<th>工程</th>
+		<th>作業者</th>
+		<th>開始時間</th>
+		<th>終了時間</th>
+		<th>作業時間(分)</th>
+	</tr>
+	
+	<tr th:each="history : ${histories}">
+		<td th:text="${history.processName}"></td>
+		<td th:text="${history.workerName}"></td>
+		<td th:text="${history.startTime}"></td>
+		<td th:text="${history.endTime}"></td>
+		<td th:text="${history.workMinutes}"></td>
+	</tr>
+</table>
+
+<a th:href="@{/assemblies/view}">
+	一覧へ戻る
+</a>
+<br>
+<a th:href="@{/}">
+	Home
+</a>
+</body>
+</html>

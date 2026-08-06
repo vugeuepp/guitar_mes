@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ギター一覧</title>
+</head>
+
+<body>
+<h1>ギター一覧</h1>
+<p>
+    <a th:href="@{/guitars/new}">
+        新規ギター登録
+    </a>
+</p>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>シリアル番号</th>
+        <th>モデル</th>
+        <th>現在工程</th>
+        <th>進捗率</th>
+        <th>詳細</th>
+        <th>操作</th>
+    </tr>
+    <tr th:each="guitar : ${guitars}">
+        <td th:text="${guitar.id}"></td>
+        <td th:text="${guitar.serialNo}"></td>
+        <td th:text="${guitar.modelName}"></td>
+        <td th:text="${guitar.currentProcess}"></td>
+        <td th:text="${guitar.progressRate + '%'}"></td>
+        <td>
+            <a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
+                詳細
+            </a>
+        </td>
+        <td>
+            <!-- ネック取付が必要な場合 -->
+            <a th:if="${guitar.needAssembly}"
+               th:href="@{/assemblies/new(guitarId=${guitar.id})}">
+                ネック取付登録
+            </a>
+
+            <!-- 実施中工程がある場合 -->
+            <a th:if="${!guitar.needAssembly and guitar.hasRunningProcess}"
+               th:href="@{/processes/end/view(guitarId=${guitar.id})}">
+                工程終了
+            </a>
+
+            <!-- 通常工程を開始できる場合 -->
+            <a th:if="${!guitar.needAssembly and !guitar.hasRunningProcess and guitar.hasNextProcess}"
+               th:href="@{/processes/start/view(guitarId=${guitar.id})}">
+                工程開始
+            </a>
+
+            <!-- 開始可能工程がない場合 -->
+            <span th:if="${!guitar.needAssembly and !guitar.hasRunningProcess and !guitar.hasNextProcess}">
+                完成または開始可能工程なし
+            </span>
+        </td>
+    </tr>
+</table>
+<br>
+<a th:href="@{/assemblies/view}">
+    組立実績一覧へ
+</a>
+<br>
+<a th:href="@{/}">
+    Home
+</a>
+</body>
+</html>

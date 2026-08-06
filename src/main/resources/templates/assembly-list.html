@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>組込実績一覧</title>
+</head>
+<body>
+<h1>組込実績一覧</h1>
+<p>
+    <a th:href="@{/assemblies/new}">
+        ネック取付登録
+    </a>
+</p>
+<table border="1">
+	<tr>
+		<th>ID</th>
+		<th>Guitar</th>
+		<th>Neck</th>
+		<th>Body</th>
+		<th>Worker</th>
+	</tr>
+	
+	<tr th:each="assembly : ${assemblies}">
+		<td>
+			<a th:href="@{/assemblies/{id}/view(id=${assembly.assemblyId})}"
+			   th:text="${assembly.assemblyId}">
+			</a>
+		</td>
+		<td th:text="${assembly.guitarSerial}"></td>
+		<td th:text="${assembly.neckSerial}"></td>
+		<td th:text="${assembly.bodySerial}"></td>
+		<td th:text="${assembly.workerName}"></td>
+	</tr>
+</table>
+<a th:href="@{/}">
+	Home
+</a>
+</body>
+</html>

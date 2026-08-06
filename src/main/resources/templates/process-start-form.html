@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>工程開始</title>
+</head>
+<body>
+	<h1>工程開始</h1>
+	
+	<form th:action="@{/processes/start}" method="post">
+		<div>
+		    <label>ギター</label>
+
+		    <div th:if="${selectedGuitar != null}">
+		        <span th:text="${selectedGuitar.serialNo + ' (' + selectedGuitar.modelName + ')'}"></span>
+
+		        <input type="hidden"
+		               name="guitarId"
+		               th:value="${selectedGuitar.id}">
+		    </div>
+
+		    <div th:if="${selectedGuitar == null}">
+		        <select name="guitarId">
+		            <option
+		                th:each="guitar : ${guitars}"
+		                th:value="${guitar.id}"
+		                th:text="${guitar.serialNo + ' (' + guitar.modelName + ')'}">
+		            </option>
+		        </select>
+		    </div>
+		</div>
+		
+		<div>
+			<label>工程</label>
+			<div th:if="${nextProcess != null}">
+				<span th:text="${nextProcess.processName}"></span>
+				<input type="hidden" name="processId" th:value="${nextProcess.id}">
+			</div>
+			
+			<div th:if="${nextProcess == null}">
+				<select name="processId">
+					<option
+						th:each="process : ${processes}"
+						th:value="${process.id}"
+						th:text="${process.processName}">
+					</option>
+				</select>
+			</div>
+		</div>
+		
+		<div>
+			<label>作業者</label>
+			<input type="text" name="workerName">			
+		</div>
+		<button type="submit">
+			開始
+		</button>
+	</form>
+	<br>
+	
+	<a th:href="@{/guitars/view}">
+		ギター一覧へ戻る
+	</a>
+	<br>
+	<a th:href="@{/}">
+		Home
+	</a>
+</body>
+</html>
