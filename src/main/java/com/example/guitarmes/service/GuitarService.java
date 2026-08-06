@@ -1,12 +1,15 @@
 package com.example.guitarmes.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.guitarmes.dto.GuitarProgressResponse;
+import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.exception.BusinessException;
@@ -98,5 +101,27 @@ public class GuitarService {
 	
 	public long getInProgressGuitarCount() {
 		return getTotalGuitarCount() - getCompletedGuitarCount();
+	}
+	
+	public List<ProcessCountResponse> getProcessCounts() {
+		Map<String, Long> countMap = new LinkedHashMap<>();
+		
+		for (Guitar guitar : guitarRepository.findAll()) {
+			String currentProcess = guitar.getCurrentProcess();
+			
+			if (currentProcess == null) {
+				currentProcess = "未設定";
+			}
+			
+			countMap.put(currentProcess, countMap.getOrDefault(currentProcess, 0L) + 1);
+		}
+		
+		List<ProcessCountResponse> responses = new ArrayList<>();
+		
+		for (Map.Entry<String, Long> entry : countMap. entrySet()) {
+			responses.add(new ProcessCountResponse(entry.getKey(), entry.getValue()));
+		}
+		
+		return responses;
 	}
 }

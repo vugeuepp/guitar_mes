@@ -30,6 +30,7 @@ public class HomeController {
 	    model.addAttribute("totalGuitarCount", guitarService.getTotalGuitarCount());
 	    model.addAttribute("completedGuitarCount", guitarService.getCompletedGuitarCount());
 	    model.addAttribute("inProgressGuitarCount", guitarService.getInProgressGuitarCount());
+	    model.addAttribute("processCounts", guitarService.getProcessCounts());
 	    model.addAttribute("guitars",guitarService.getGuitarProgressList(processService, assemblyService));
 	    return "home";
 	}

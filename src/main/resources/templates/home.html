@@ -23,6 +23,19 @@
 </table>
 
 <br>
+<h2>工程別状況</h2>
+<table border="1">
+	<tr>
+		<th>工程</th>
+		<th>本数</th>
+	</tr>
+	
+	<tr th:each="processCount : ${processCounts}">
+		<td th:text="${processCount.processName}"></td>
+		<td th:text="${processCount.count}"></td>
+	</tr>
+</table>
+<br>
 <h2>現在のギター一覧</h2>
 <table border="1">
 	<tr>
