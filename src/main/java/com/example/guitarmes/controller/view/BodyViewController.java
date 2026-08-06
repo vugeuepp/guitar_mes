@@ -31,10 +31,8 @@ public class BodyViewController {
 	public String createBody(
 			@RequestParam String serialNo,
 			@RequestParam String modelName,
-			@RequestParam String color,
-			@RequestParam String currentProcess,
-			@RequestParam String status) {
-		bodyService.createBody(serialNo, modelName, color, currentProcess, status);
+			@RequestParam String color) {
+		bodyService.createBody(serialNo, modelName, color);
 		return "redirect:/bodies/view";
 	}
 	

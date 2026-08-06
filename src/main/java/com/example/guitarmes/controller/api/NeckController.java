@@ -36,8 +36,6 @@ public class NeckController {
 	public Neck createNeck(@RequestBody NeckCreateRequest request) {
 		return neckService.createNeck(
 				request.getSerialNo(), 
-				request.getModelName(), 
-				request.getCurrentProcess(), 
-				request.getStatus());
+				request.getModelName());
 	}
 }

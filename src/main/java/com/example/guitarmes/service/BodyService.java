@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.guitarmes.common.ProcessConstants;
+import com.example.guitarmes.common.StatusConstants;
 import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.BodyRepository;
@@ -29,10 +31,8 @@ public class BodyService {
 	public Body createBody(
 			String serialNo,
 			String modelName,
-			String color,
-			String currentProcess,
-			String status) {
-		Body body = new Body(serialNo, modelName, color, currentProcess, status);
+			String color) {
+		Body body = new Body(serialNo, modelName, color, ProcessConstants.NOT_STARTED, StatusConstants.WAITING);
 		return bodyRepository.save(body);
 	}
 	
@@ -43,5 +43,9 @@ public class BodyService {
 	private Body findBodyOrThrow(Long id) {
 	    return bodyRepository.findById(id).orElseThrow(
 	    		() -> new NotFoundException("指定されたボディが存在しません。"));
+	}
+	
+	public long getAvailableBodyCount() {
+		return getAvailableBodies().size();
 	}
 }

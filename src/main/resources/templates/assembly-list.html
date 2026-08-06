@@ -6,7 +6,9 @@
 	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<h1>組込実績一覧</h1>
+<div th:replace=
+ "~{fragments/header :: header('組立実績一覧')}">
+</div>
 <p>
     <a th:href="@{/assemblies/new}">
         ネック取付登録
@@ -33,8 +35,7 @@
 		<td th:text="${assembly.workerName}"></td>
 	</tr>
 </table>
-<a th:href="@{/}">
-	Home
-</a>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 </body>
 </html>

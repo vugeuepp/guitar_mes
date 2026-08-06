@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.common.DateTimeFormatterUtil;
 import com.example.guitarmes.dto.AssemblyResponse;
 import com.example.guitarmes.entity.Assembly;
 import com.example.guitarmes.entity.Body;
@@ -68,7 +69,7 @@ public class AssemblyService {
 		response.setNeckSerial(assembly.getNeck().getSerialNo());
 		response.setBodySerial(assembly.getBody().getSerialNo());
 		response.setWorkerName(assembly.getWorkerName());
-		response.setAssemblyDate(assembly.getAssemblyDate());
+		response.setAssemblyDateText(DateTimeFormatterUtil.format(assembly.getAssemblyDate()));
 		
 		return response;
 	}

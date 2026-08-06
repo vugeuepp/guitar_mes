@@ -3,9 +3,12 @@
 <head>
 	<meta charset="UTF-8">
 	<title>工程履歴</title>
+	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<h1>工程履歴</h1>
+<div th:replace=
+ "~{fragments/header :: header('工程履歴')}">
+</div>
 <table border="1">
 	<tr>
 		<th>工程</th>
@@ -18,18 +21,13 @@
 	<tr th:each="history : ${histories}">
 		<td th:text="${history.processName}"></td>
 		<td th:text="${history.workerName}"></td>
-		<td th:text="${history.startTime}"></td>
-		<td th:text="${history.endTime}"></td>
-		<td th:text="${history.workMinutes}"></td>
+		<td th:text="${history.startTimeText}"></td>
+		<td th:text="${history.endTimeText}"></td>
+		<td th:text="${history.workMinutesText}"></td>
 	</tr>
 </table>
 
-<a th:href="@{/assemblies/view}">
-	一覧へ戻る
-</a>
-<br>
-<a th:href="@{/}">
-	Home
-</a>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 </body>
 </html>

@@ -5,7 +5,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.example.guitarmes.service.AssemblyService;
+import com.example.guitarmes.service.BodyService;
 import com.example.guitarmes.service.GuitarService;
+import com.example.guitarmes.service.NeckService;
 import com.example.guitarmes.service.ProcessService;
 
 @Controller
@@ -14,17 +16,18 @@ public class HomeController {
 	private final GuitarService guitarService;
 	private final ProcessService processService;
 	private final AssemblyService assemblyService;
+	private final NeckService neckService;
+	private final BodyService bodyService;
 	
-	public HomeController(
-	        GuitarService guitarService,
-	        ProcessService processService,
-	        AssemblyService assemblyService) {
-
-	    this.guitarService = guitarService;
-	    this.processService = processService;
-	    this.assemblyService = assemblyService;
+	public HomeController(GuitarService guitarService, ProcessService processService, AssemblyService assemblyService,
+			NeckService neckService, BodyService bodyService) {
+		this.guitarService = guitarService;
+		this.processService = processService;
+		this.assemblyService = assemblyService;
+		this.neckService = neckService;
+		this.bodyService = bodyService;
 	}
-	
+
 	@GetMapping("/")
 	public String home(Model model) {
 	    model.addAttribute("totalGuitarCount", guitarService.getTotalGuitarCount());
@@ -32,6 +35,11 @@ public class HomeController {
 	    model.addAttribute("inProgressGuitarCount", guitarService.getInProgressGuitarCount());
 	    model.addAttribute("processCounts", guitarService.getProcessCounts());
 	    model.addAttribute("guitars",guitarService.getGuitarProgressList(processService, assemblyService));
+	    model.addAttribute("runningProcessCount", processService.getRunningProcesses().size());
+	    model.addAttribute("completionRate", guitarService.getCompletionRate());
+	    model.addAttribute("availableNeckCount", neckService.getAvailableNeckCount());
+	    model.addAttribute("availableBodyCount", bodyService.getAvailableBodyCount());
+	    model.addAttribute("averageProcessTimes", processService.getAverageProcessTimes());
 	    return "home";
 	}
 }

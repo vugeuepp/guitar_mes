@@ -3,6 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Assembly詳細</title>
+	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 	<h1>Assembly詳細</h1>
@@ -28,7 +29,7 @@
 	</p>
 	<p>
 		組立日時：
-		<span th:text="${assembly.assemblyDate}"></span>
+		<span th:text="${assembly.assemblyDateText}"></span>
 	</p>
 	<a th:href="@{/assemblies/view}">
 		一覧へ戻る

@@ -14,5 +14,7 @@ public class ProcessConstants {
     public static final String FINAL_INSPECTION = "最終検品";
     
     public static final String COMPLETED = "完成";
+    
+    public static final String NOT_STARTED = "未着手";
 
 }
