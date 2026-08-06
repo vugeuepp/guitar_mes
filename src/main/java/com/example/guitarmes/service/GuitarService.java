@@ -1,12 +1,16 @@
 package com.example.guitarmes.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.common.ProcessConstants;
 import com.example.guitarmes.dto.GuitarProgressResponse;
+import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.exception.BusinessException;
@@ -66,7 +70,7 @@ public class GuitarService {
 				nextProcess = null;
 			}
 			
-			boolean needAssembly = nextProcess != null && "ネック取付".equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
+			boolean needAssembly = nextProcess != null && ProcessConstants.NECK_ASSEMBLY.equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
 			
 			responses.add(
 					new GuitarProgressResponse(
@@ -89,7 +93,7 @@ public class GuitarService {
 	public long getCompletedGuitarCount() {
 		long count = 0;
 		for (Guitar guitar : guitarRepository.findAll()) {
-			if("完成".equals(guitar.getCurrentProcess())) {
+			if(ProcessConstants.COMPLETED.equals(guitar.getCurrentProcess())) {
 				count++;
 			}
 		}
@@ -99,4 +103,27 @@ public class GuitarService {
 	public long getInProgressGuitarCount() {
 		return getTotalGuitarCount() - getCompletedGuitarCount();
 	}
+	
+	public List<ProcessCountResponse> getProcessCounts() {
+		Map<String, Long> countMap = new LinkedHashMap<>();
+		
+		for (Guitar guitar : guitarRepository.findAll()) {
+			String currentProcess = guitar.getCurrentProcess();
+			
+			if (currentProcess == null) {
+				currentProcess = "未設定";
+			}
+			
+			countMap.put(currentProcess, countMap.getOrDefault(currentProcess, 0L) + 1);
+		}
+		
+		List<ProcessCountResponse> responses = new ArrayList<>();
+		
+		for (Map.Entry<String, Long> entry : countMap. entrySet()) {
+			responses.add(new ProcessCountResponse(entry.getKey(), entry.getValue()));
+		}
+		
+		return responses;
+	}
+
 }

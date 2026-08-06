@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:fragment="menu">
+
+    <hr>
+
+    <h2>メニュー</h2>
+
+    <ul>
+        <li>
+            <a th:href="@{/}">
+                Home
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/guitars/view}">
+                ギター管理
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/necks/view}">
+                ネック管理
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/bodies/view}">
+                ボディ管理
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/assemblies/view}">
+                組立実績
+            </a>
+        </li>
+    </ul>
+
+</th:block>
+
+</html>

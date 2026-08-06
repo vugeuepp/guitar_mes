@@ -3,9 +3,11 @@
 <head>
 	<meta charset="UTF-8">
 	<title>ギター詳細</title>
+	<link rel="stylesheet" th:href="@{/css/style.css}"
 </head>
 <body>
-	<h1>ギター詳細</h1>
+	<div th:replace="~{fragments/header :: header('ギター詳細')}">
+	</div>
 	<table border="1">
 		<tr>
 			<th>シリアル番号</th>
@@ -136,16 +138,7 @@
 	</p>
 
 	<br>
-	<a th:href="@{/guitars/view}">
-	    ギター一覧へ戻る
-	</a>
-	<br>
-	<a th:href="@{/assemblies/view}">
-	    組立実績一覧へ
-	</a>
-	<br>
-	<a th:href="@{/}">
-	    Home
-	</a>
+	<div th:replace="~{fragments/menu :: menu}">
+	</div>
 </body>
 </html>
