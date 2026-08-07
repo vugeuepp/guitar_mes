@@ -13,16 +13,47 @@
         <th>総ギター数</th>
         <th>仕掛中</th>
         <th>完成</th>
+        <th>実施中工程</th>
+        <th>完成率</th>
     </tr>
 
     <tr>
         <td th:text="${totalGuitarCount}"></td>
         <td th:text="${inProgressGuitarCount}"></td>
         <td th:text="${completedGuitarCount}"></td>
+        <td th:text="${runningProcessCount}"></td>
+        <td th:text="${completionRate + '%'}"></td>
     </tr>
 </table>
 
 <br>
+<h2>部品在庫状況</h2>
+<table>
+	<tr>
+		<th>使用可能ネック</th>
+		<th>使用可能ボディ</th>
+	</tr>
+	
+	<tr>
+		<td th:text="${availableNeckCount}"></td>
+		<td th:text="${availableBodyCount}"></td>
+	</tr>
+</table>
+<h2>工程別平均作業時間</h2>
+
+<table class="dashboard-table">
+    <tr>
+        <th>工程</th>
+        <th>平均時間</th>
+    </tr>
+
+    <tr th:each="avg : ${averageProcessTimes}">
+        <td th:text="${avg.processName}"></td>
+        <td th:text="${avg.averageMinutes + '分'}"></td>
+    </tr>
+</table>
+<br>
+
 <h2>工程別状況</h2>
 <table border="1">
 	<tr>
@@ -36,6 +67,7 @@
 	</tr>
 </table>
 <br>
+
 <h2>現在のギター一覧</h2>
 <table border="1">
 	<tr>

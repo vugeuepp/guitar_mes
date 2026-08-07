@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>ギター詳細</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}"
+	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 	<div th:replace="~{fragments/header :: header('ギター詳細')}">
@@ -123,7 +123,7 @@
 	            <td th:text="${assembly.neckSerial}"></td>
 	            <td th:text="${assembly.bodySerial}"></td>
 	            <td th:text="${assembly.workerName}"></td>
-	            <td th:text="${assembly.assemblyDate}"></td>
+	            <td th:text="${assembly.assemblyDateText}"></td>
 	        </tr>
 	    </table>
 	</div>

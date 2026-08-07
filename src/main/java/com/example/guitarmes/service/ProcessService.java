@@ -3,11 +3,16 @@ package com.example.guitarmes.service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.common.DateTimeFormatterUtil;
+import com.example.guitarmes.common.ProcessStatusConstants;
+import com.example.guitarmes.dto.ProcessAverageTimeResponse;
 import com.example.guitarmes.dto.ProcessHistoryResponse;
 import com.example.guitarmes.dto.ProcessStatusResponse;
 import com.example.guitarmes.entity.Guitar;
@@ -97,11 +102,11 @@ public class ProcessService {
 		
 		response.setProcessName(process.getProcessName());
 		response.setWorkerName(history.getWorkerName());
-		response.setStartTime(history.getStartTime());
-		response.setEndTime(history.getEndTime());
+		response.setStartTimeText(DateTimeFormatterUtil.format(history.getStartTime()));
+		response.setEndTimeText(DateTimeFormatterUtil.format(history.getEndTime()));
 		if (history.getStartTime() != null && history.getEndTime() != null) {
 			long minutes = Duration.between(history.getStartTime(), history.getEndTime()).toMinutes();
-			response.setWorkMinutes(minutes);
+			response.setWorkMinutesText(minutes + "分");
 		}
 		
 		return response;
@@ -127,14 +132,14 @@ public class ProcessService {
 		    Long historyId = null;
 		    
 		    if (targetHistory == null) {
-		        status = "未実施";
+		        status = ProcessStatusConstants.NOT_STARTED;
 		    } else if (targetHistory.getEndTime() == null) {
-		        status = "実施中";
+		        status = ProcessStatusConstants.IN_PROGRESS;
 		        workerName = targetHistory.getWorkerName();
 		        startTime = targetHistory.getStartTime();
 		        historyId = targetHistory.getId();
 		    } else {
-		        status = "完了";
+		        status = ProcessStatusConstants.COMPLETED;
 		        workerName = targetHistory.getWorkerName();
 		        startTime = targetHistory.getStartTime();
 		        endTime = targetHistory.getEndTime();
@@ -204,9 +209,9 @@ public class ProcessService {
 		double completedCount = 0;
 		
 		for (ProcessStatusResponse status : statuses) {
-			if ("完了".equals(status.getStatus())) {
+			if (ProcessStatusConstants.COMPLETED.equals(status.getStatus())) {
 				completedCount += 1;
-			} else if ("実施中".equals(status.getStatus())) {
+			} else if (ProcessStatusConstants.IN_PROGRESS.equals(status.getStatus())) {
 				completedCount += 0.5;
 			}
 		}
@@ -236,5 +241,37 @@ public class ProcessService {
 		} catch (BusinessException e) {
 			return false;
 		}
+	}
+	
+	public List<ProcessAverageTimeResponse> getAverageProcessTimes() {
+		Map<Long, Long> totalMinutesMap = new HashMap<>();
+		
+		Map<Long, Long> countMap = new HashMap<>();
+		
+		for (ProcessHistory history : historyRepository.findAll()) {
+			// 完了済みのみ対象
+			if (history.getEndTime() == null) {
+			    continue;
+			}
+			long minutes = Duration.between(history.getStartTime(), history.getEndTime()).toMinutes();
+			
+			Long processId = history.getProcessId();
+			
+			totalMinutesMap.put(processId, totalMinutesMap.getOrDefault(processId, 0L) + minutes);
+			
+			countMap.put(processId, countMap.getOrDefault(processId, 0L) + 1);
+		}
+		
+		List<ProcessAverageTimeResponse> responses = new ArrayList<>();
+		
+		for (Long processId : totalMinutesMap.keySet()) {
+			ManufacturingProcess process = processRepository.findById(processId).orElseThrow(
+					() -> new NotFoundException("指定された工程が存在しません。"));
+			
+			long averageMinutes = totalMinutesMap.get(processId) / countMap.get(processId);
+			
+			responses.add(new ProcessAverageTimeResponse(process.getProcessName(), averageMinutes));
+		}
+		return responses;
 	}
 }

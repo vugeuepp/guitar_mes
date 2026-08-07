@@ -9,6 +9,7 @@ public class AssemblyResponse {
 	private String bodySerial;
 	private String workerName;
 	private LocalDateTime assemblyDate;
+	private String assemblyDateText;
 	
 	public Long getAssemblyId() {
 		return assemblyId;
@@ -46,4 +47,11 @@ public class AssemblyResponse {
 	public void setAssemblyDate(LocalDateTime assemblyDate) {
 		this.assemblyDate = assemblyDate;
 	}
+	public String getAssemblyDateText() {
+		return assemblyDateText;
+	}
+	public void setAssemblyDateText(String assemblyDateText) {
+		this.assemblyDateText = assemblyDateText;
+	}
+	
 }

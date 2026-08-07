@@ -30,10 +30,8 @@ public class NeckViewController {
 	@PostMapping("/necks/create")
 	public String createNeck(
 			@RequestParam String serialNo,
-			@RequestParam String modelName,
-			@RequestParam String currentProcess,
-			@RequestParam String status) {
-		neckService.createNeck(serialNo, modelName, currentProcess, status);
+			@RequestParam String modelName) {
+		neckService.createNeck(serialNo, modelName);
 		return "redirect:/necks/view";
 	}
 	

@@ -42,9 +42,8 @@ public class GuitarViewController {
 	@PostMapping("/guitars/create")
 	public String createGuitar(
 			@RequestParam String serialNo,
-			@RequestParam String modelName,
-			@RequestParam String currentProcess) {
-		guitarService.createGuitar(serialNo, modelName, currentProcess);
+			@RequestParam String modelName) {
+		guitarService.createGuitar(serialNo, modelName);
 		return "redirect:/guitars/view";
 	}
 	

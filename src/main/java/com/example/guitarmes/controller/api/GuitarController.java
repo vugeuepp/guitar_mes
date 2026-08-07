@@ -37,7 +37,7 @@ public class GuitarController {
 	
 	@PostMapping
 	public Guitar createGuitar(@RequestBody GuitarCreateRequest request) {
-		return guitarService.createGuitar(request.getSerialNo(), request.getModelName(), request.getCurrentProcess());
+		return guitarService.createGuitar(request.getSerialNo(), request.getModelName());
 	}
 	
 	@PutMapping("/{id}")

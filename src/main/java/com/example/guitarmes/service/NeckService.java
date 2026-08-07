@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.guitarmes.common.ProcessConstants;
+import com.example.guitarmes.common.StatusConstants;
 import com.example.guitarmes.entity.Neck;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.NeckRepository;
@@ -28,14 +30,12 @@ public class NeckService {
 	
 	public Neck createNeck(
 			String serialNo,
-			String modelName,
-			String currentProcess,
-			String status) {
+			String modelName) {
 		Neck neck = new Neck (
 				serialNo,
 				modelName,
-				currentProcess,
-				status);
+				ProcessConstants.NOT_STARTED,
+				StatusConstants.WAITING);
 		return neckRepository.save(neck);
 	}
 	
@@ -46,5 +46,9 @@ public class NeckService {
 	private Neck findNeckOrThrow(Long id) {
 	    return neckRepository.findById(id).orElseThrow(
 	    		() -> new NotFoundException("指定されたネックが存在しません。"));
+	}
+	
+	public long getAvailableNeckCount() {
+		return getAvailableNecks().size();
 	}
 }

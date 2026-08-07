@@ -6,7 +6,9 @@
 	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<h1>ネック一覧</h1>
+<div th:replace=
+ "~{fragments/header :: header('ネック一覧')}">
+</div>
 <p>
 	<a th:href="@{/necks/new}">
 		新規ネック登録
@@ -32,16 +34,7 @@
 
 <br>
 
-<a th:href="@{/guitars/view}">
-	ギター一覧へ
-</a>
-<br>
-<a th:href="@{/assemblies/view}">
-	Assembly一覧へ
-</a>
-<br>
-<a th:href="@{/}">
-	Home
-</a>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 </body>
 </html>

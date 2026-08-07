@@ -7,7 +7,9 @@
 </head>
 
 <body>
-<h1>ギター一覧</h1>
+<div th:replace=
+ "~{fragments/header :: header('ギター一覧')}">
+</div>
 <p>
     <a th:href="@{/guitars/new}">
         新規ギター登録
@@ -62,12 +64,7 @@
     </tr>
 </table>
 <br>
-<a th:href="@{/assemblies/view}">
-    組立実績一覧へ
-</a>
-<br>
-<a th:href="@{/}">
-    Home
-</a>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 </body>
 </html>

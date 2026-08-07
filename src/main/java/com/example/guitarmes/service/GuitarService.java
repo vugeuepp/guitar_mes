@@ -31,8 +31,8 @@ public class GuitarService {
 		return guitarRepository.findAll();
 	}
 	
-	public Guitar createGuitar(String serialNo, String modelName, String currentProcess) {
-		Guitar guitar = new Guitar(serialNo, modelName, currentProcess);
+	public Guitar createGuitar(String serialNo, String modelName) {
+		Guitar guitar = new Guitar(serialNo, modelName, ProcessConstants.NOT_STARTED);
 		return guitarRepository.save(guitar);
 	}
 
@@ -124,6 +124,14 @@ public class GuitarService {
 		}
 		
 		return responses;
+	}
+	
+	public int getCompletionRate() {
+		long total = getTotalGuitarCount();
+		if (total == 0) {
+			return 0;
+		}
+		return (int)((getCompletedGuitarCount() * 100) / total);
 	}
 
 }

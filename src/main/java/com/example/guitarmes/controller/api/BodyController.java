@@ -37,9 +37,7 @@ public class BodyController {
 		return bodyService.createBody(
 				request.getSerialNo(), 
 				request.getModelName(), 
-				request.getColor(), 
-				request.getCurrentProcess(), 
-				request.getStatus() 
+				request.getColor()
 				);
 	}
 }

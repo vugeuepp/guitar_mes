@@ -6,7 +6,9 @@
 	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<h1>ボディ一覧</h1>
+<div th:replace=
+ "~{fragments/header :: header('ボディ一覧')}">
+</div>
 <p>
 	<a th:href="@{/bodies/new}">
 		新規ボディ登録
@@ -26,29 +28,15 @@
 		<td th:text="${body.id}"></td>
 		<td th:text="${body.serialNo}"></td>
 		<td th:text="${body.modelName}"></td>
-		<td th:text="${body.color}"></td>
 		<td th:text="${body.currentProcess}"></td>
+		<td th:text="${body.color}"></td>
 		<td th:text="${body.status}"></td>
 	</tr>
 </table>
 
 <br>
 
-<a th:href="@{/guitars/view}">
-	ギター一覧へ
-</a>
-<br>
-
-<a th:href="@{/necks/view}">
-	ネック一覧へ
-</a>
-<br>
-<a th:href="@{/assemblies/view}">
-	Assembly一覧へ
-</a>
-<br>
-<a th:href="@{/}">
-	Home
-</a>
+<div th:replace="~{fragments/menu :: menu}">
+</div>
 </body>
 </html>
