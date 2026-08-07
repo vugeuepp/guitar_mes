@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>製品詳細</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div th:replace=
+ "~{fragments/header :: header('製品詳細')}">
+</div>
+
+<table border="1">
+
+<tr>
+    <th>モデル番号</th>
+    <td th:text="${product.modelNo}"></td>
+</tr>
+
+<tr>
+    <th>製品名</th>
+    <td th:text="${product.productName}"></td>
+</tr>
+
+<tr>
+    <th>カラー</th>
+    <td th:text="${product.color}"></td>
+</tr>
+
+<tr>
+    <th>ボディ材</th>
+    <td th:text="${product.bodyMaterial}"></td>
+</tr>
+
+<tr>
+    <th>ネック材</th>
+    <td th:text="${product.neckMaterial}"></td>
+</tr>
+
+<tr>
+    <th>指板材</th>
+    <td th:text="${product.fingerboardMaterial}"></td>
+</tr>
+
+<tr>
+    <th>PU構成</th>
+    <td th:text="${product.pickupLayout}"></td>
+</tr>
+
+<tr>
+    <th>フレット数</th>
+    <td th:text="${product.fretCount}"></td>
+</tr>
+
+<tr>
+    <th>スケール</th>
+    <td th:text="${product.scale}"></td>
+</tr>
+
+</table>
+
+<div th:replace=
+ "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>
