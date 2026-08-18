@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.dto.AssemblyResponse;
 import com.example.guitarmes.entity.ManufacturingProcess;
+import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.service.AssemblyService;
 import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProcessService;
+import com.example.guitarmes.service.ProductService;
 
 
 @Controller
@@ -20,12 +22,14 @@ public class GuitarViewController {
 	private final GuitarService guitarService;
 	private final ProcessService processService;
 	private final AssemblyService assemblyService;
+	private final ProductService productService;
 
 	public GuitarViewController(GuitarService guitarService, ProcessService processService,
-			AssemblyService assemblyService) {
+			AssemblyService assemblyService, ProductService productService) {
 		this.guitarService = guitarService;
 		this.processService = processService;
 		this.assemblyService = assemblyService;
+		this.productService = productService;
 	}
 
 	@GetMapping("/guitars/view")
@@ -35,15 +39,17 @@ public class GuitarViewController {
 	}
 	
 	@GetMapping("/guitars/new")
-	public String newGuitarForm() {
+	public String newGuitarForm(Model model) {
+		model.addAttribute("products", productService.getProducts());
 		return "guitar-form";
 	}
 	
 	@PostMapping("/guitars/create")
 	public String createGuitar(
 			@RequestParam String serialNo,
-			@RequestParam String modelName) {
-		guitarService.createGuitar(serialNo, modelName);
+			@RequestParam Long productId) {
+		Product product = productService.getProductById(productId);
+		System.out.println("選択製品 = " + product.getProductName());
 		return "redirect:/guitars/view";
 	}
 	

@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -19,6 +21,10 @@ public class Guitar {
 	private String modelName;
 	
 	private String currentProcess;
+	
+	@ManyToOne
+	@JoinColumn(name = "product_id")
+	private Product product;
 	
 	public Guitar() {
 		
@@ -61,6 +67,12 @@ public class Guitar {
 	public void setCurrentProcess(String currentProcess) {
 		this.currentProcess = currentProcess;
 	}
-	
-	
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
 }

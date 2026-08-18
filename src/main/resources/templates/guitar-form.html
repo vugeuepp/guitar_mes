@@ -6,19 +6,26 @@
 </head>
 <body>
 	<h1>ギター登録</h1>
-	
-	<form th:action="@{/guitars/create}" method="post">
-		<div>
-			<label>シリアル番号</label>
-			<input type="text" name="serialNo">			
-		</div>
-		<div>
-			<label>モデル名</label>
-			<input type="text" name="modelName">			
-		</div>
-		<button type="submit">
-			登録
-		</button>
+	<form th:action="@{/guitars/create}"
+	      method="post">
+
+	    <input type="text"
+	           name="serialNo">
+
+	    <select name="productId">
+
+	        <option
+	            th:each="product : ${products}"
+	            th:value="${product.id}"
+	            th:text="${product.productName}">
+	        </option>
+
+	    </select>
+
+	    <button type="submit">
+	        登録
+	    </button>
+
 	</form>
 	<br>
 	

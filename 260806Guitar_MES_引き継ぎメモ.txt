@@ -1,0 +1,200 @@
+# Guitar MES 引き継ぎメモ
+
+Spring Boot + Thymeleaf + PostgreSQL でギター製造MESを作っています。
+
+## 技術構成
+
+- Java
+- Spring Boot
+- Spring Data JPA
+- Thymeleaf
+- PostgreSQL
+- Eclipse
+- GitHub
+
+GitHub:
+https://github.com/vugeuepp/guitar-mes
+
+## パッケージ構成
+
+controller
+├ api
+└ view
+
+service
+repository
+entity
+dto
+common
+exception
+
+APIと画面Controllerは分離済み。
+
+## 実装済み機能
+
+### ギター管理
+- 一覧
+- 登録
+- 詳細
+
+### ネック管理
+- 一覧
+- 登録
+
+### ボディ管理
+- 一覧
+- 登録
+
+### 組立管理
+- 組立実績一覧
+- ネック取付登録
+- 組立詳細
+
+### 工程管理
+- 工程開始
+- 工程終了
+- 工程履歴
+
+### Home
+- ギター一覧表示
+- 総ギター数
+- 仕掛中数
+- 完成数
+
+## 業務フロー
+
+ネック
+↓
+擦り合わせ
+↓
+フレット関連
+↓
+ネック塗装検品
+
+ボディ
+↓
+加工
+↓
+塗装
+↓
+乾燥
+↓
+塗装検品
+
+ネック取付
+= Assembly登録
+
+後工程
+↓
+パーツ付け
+↓
+調音
+↓
+最終検品
+↓
+完成
+
+## 設計方針
+
+Assemblyは単なるテーブルではなく「ネック取付完了」として扱う。
+
+Assembly登録時に
+- Assembly登録
+- Neck.status = ASSEMBLED
+- Body.status = ASSEMBLED
+- ProcessHistoryへネック取付完了登録
+
+を実施。
+
+## 工程状況
+
+ギター詳細画面に
+- 工程名
+- 状態
+- 作業者
+- 開始時刻
+- 終了時刻
+- 作業時間
+
+を表示。
+
+状態は
+- 未実施
+- 実施中
+- 完了
+
+で判定。
+
+## 現在の画面構成
+
+### ギター詳細
+- 基本情報
+- 工程状況
+- 使用部品
+- 工程管理
+
+操作
+- ネック取付登録
+- 工程開始
+- 工程終了
+- 工程履歴確認
+
+## 進捗率
+
+実装済み。
+
+計算ルール
+- 完了 = 1
+- 実施中 = 0.5
+- 未実施 = 0
+
+## 共通化済み
+
+- DateTimeFormatterUtil
+- StatusConstants
+
+時刻表示
+- yyyy/MM/dd HH:mm
+
+## 今後やりたいこと
+
+### ① Homeダッシュボード強化
+
+工程別件数
+- 塗装検品
+- ネック取付
+- パーツ付け
+- 調音
+- 最終検品
+- 完成
+
+### ② Homeのギター一覧改善
+- 進捗率
+- 操作ボタン
+
+### ③ 完成状態の改善
+現在は currentProcess = 完成 で判定。
+将来的に status カラム追加を検討。
+
+### ④ 共通メニュー化
+header.html
+menu.html
+などへの切り出しを検討。
+
+### ⑤ Entity設計改善
+
+ProcessHistory
+- guitarId
+- processId
+
+↓ 将来的に
+
+@ManyToOneajjikjkjkjkjkjjoikjoiuerwjljflkasdjf;lkjsd01126345667
+private Guitar guitar;
+
+@ManyToOne
+private ManufacturingProcess process;
+
+へ変更検討。
+
+ここまでの流れを前提に続きをお願いします。
