@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.guitarmes.dto.GuitarCreateRequest;
 import com.example.guitarmes.dto.GuitarUpdateRequest;
 import com.example.guitarmes.entity.Guitar;
+import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.service.GuitarService;
+import com.example.guitarmes.service.ProductService;
 
 @RestController
 @RequestMapping("/api/guitars")
@@ -21,10 +23,13 @@ public class GuitarController {
 	
 	private final GuitarService guitarService;
 	
-	public GuitarController(GuitarService guitarService) {
-		this.guitarService = guitarService;
-	}
+	private final ProductService productService;
 	
+	public GuitarController(GuitarService guitarService, ProductService productService) {
+		this.guitarService = guitarService;
+		this.productService = productService;
+	}
+
 	@GetMapping
 	public List<Guitar> getGuitars() {
 		return guitarService.getGuitars();
@@ -37,7 +42,8 @@ public class GuitarController {
 	
 	@PostMapping
 	public Guitar createGuitar(@RequestBody GuitarCreateRequest request) {
-		return guitarService.createGuitar(request.getSerialNo(), request.getModelName());
+		Product product = productService.getProductById(request.getProductId());
+		return guitarService.createGuitar(request.getSerialNo(), product);
 	}
 	
 	@PutMapping("/{id}")

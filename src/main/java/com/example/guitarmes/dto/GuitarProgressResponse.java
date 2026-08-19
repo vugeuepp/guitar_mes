@@ -3,18 +3,18 @@ package com.example.guitarmes.dto;
 public class GuitarProgressResponse {
 	private Long id;
 	private String serialNo;
-	private String modelName;
+	private String productName;
 	private String currentProcess;
 	private int progressRate;
 	private boolean hasRunningProcess;
 	private boolean hasNextProcess;
 	private boolean needAssembly;
 
-	public GuitarProgressResponse(Long id, String serialNo, String modelName, String currentProcess, int progressRate,
+	public GuitarProgressResponse(Long id, String serialNo, String productName, String currentProcess, int progressRate,
 			boolean hasRunningProcess, boolean hasNextProcess, boolean needAssembly) {
 		this.id = id;
 		this.serialNo = serialNo;
-		this.modelName = modelName;
+		this.productName = productName;
 		this.currentProcess = currentProcess;
 		this.progressRate = progressRate;
 		this.hasRunningProcess = hasRunningProcess;
@@ -36,14 +36,6 @@ public class GuitarProgressResponse {
 
 	public void setSerialNo(String serialNo) {
 		this.serialNo = serialNo;
-	}
-
-	public String getModelName() {
-		return modelName;
-	}
-
-	public void setModelName(String modelName) {
-		this.modelName = modelName;
 	}
 
 	public String getCurrentProcess() {
@@ -73,5 +65,14 @@ public class GuitarProgressResponse {
 	public boolean isNeedAssembly() {
 		return needAssembly;
 	}
+
+	public String getProductName() {
+		return productName;
+	}
+
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+	
 	
 }

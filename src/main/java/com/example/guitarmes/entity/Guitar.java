@@ -17,8 +17,6 @@ public class Guitar {
 	private Long id;
 	
 	private String serialNo;
-
-	private String modelName;
 	
 	private String currentProcess;
 	
@@ -30,9 +28,8 @@ public class Guitar {
 		
 	}
 	
-	public Guitar(String serialNo, String modelName, String currentProcess) {
+	public Guitar(String serialNo, String currentProcess) {
 		this.serialNo = serialNo;
-		this.modelName = modelName;
 		this.currentProcess = currentProcess;
 	}
 	
@@ -50,14 +47,6 @@ public class Guitar {
 
 	public void setSerialNo(String serialNo) {
 		this.serialNo = serialNo;
-	}
-	
-	public String getModelName() {
-		return modelName;
-	}
-
-	public void setModelName(String modelName) {
-		this.modelName = modelName;
 	}
 
 	public String getCurrentProcess() {

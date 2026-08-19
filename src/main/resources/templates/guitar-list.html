@@ -29,7 +29,7 @@
     <tr th:each="guitar : ${guitars}">
         <td th:text="${guitar.id}"></td>
         <td th:text="${guitar.serialNo}"></td>
-        <td th:text="${guitar.modelName}"></td>
+		<td th:text="${guitar.productName}"></td>
         <td th:text="${guitar.currentProcess}"></td>
         <td th:text="${guitar.progressRate + '%'}"></td>
         <td>

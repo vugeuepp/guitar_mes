@@ -13,6 +13,7 @@ import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
+import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.GuitarRepository;
@@ -31,8 +32,11 @@ public class GuitarService {
 		return guitarRepository.findAll();
 	}
 	
-	public Guitar createGuitar(String serialNo, String modelName) {
-		Guitar guitar = new Guitar(serialNo, modelName, ProcessConstants.NOT_STARTED);
+	public Guitar createGuitar(String serialNo, Product product) {
+		Guitar guitar = new Guitar();
+		guitar.setSerialNo(serialNo);
+		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
+		guitar.setProduct(product);
 		return guitarRepository.save(guitar);
 	}
 
@@ -72,11 +76,13 @@ public class GuitarService {
 			
 			boolean needAssembly = nextProcess != null && ProcessConstants.NECK_ASSEMBLY.equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
 			
+			String productName = guitar.getProduct().getProductName();
+			
 			responses.add(
 					new GuitarProgressResponse(
 						guitar.getId(),
 						guitar.getSerialNo(), 
-						guitar.getModelName(),
+						productName,
 						guitar.getCurrentProcess(),
 						progressRate,
 						hasRunningProcess,

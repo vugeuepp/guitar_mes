@@ -49,7 +49,7 @@ public class GuitarViewController {
 			@RequestParam String serialNo,
 			@RequestParam Long productId) {
 		Product product = productService.getProductById(productId);
-		System.out.println("選択製品 = " + product.getProductName());
+		guitarService.createGuitar(serialNo, product);
 		return "redirect:/guitars/view";
 	}
 	
