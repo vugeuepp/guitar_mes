@@ -7,20 +7,23 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProductService;
 
 @Controller
 public class ProductViewController {
 	private final ProductService productService;
+	private final GuitarService guitarService;
 	
-	public ProductViewController(ProductService productService) {
+	public ProductViewController(ProductService productService, GuitarService guitarService) {
 		this.productService = productService;
+		this.guitarService = guitarService;
 	}
-	
+
 	@GetMapping("/products/view")
-	public String productList(Model model) {
-		model.addAttribute("products", productService.getProducts());
-		
+	public String productList(@RequestParam(required = false) String keyword, Model model) {
+		model.addAttribute("products", productService.searchProducts(keyword));
+		model.addAttribute("keyword", keyword);
 		return "product-list";
 	}
 	
@@ -61,9 +64,8 @@ public class ProductViewController {
 	        @PathVariable Long id,
 	        Model model) {
 
-	    model.addAttribute(
-	            "product",
-	            productService.getProductById(id));
+	    model.addAttribute("product", productService.getProductById(id));
+	    model.addAttribute("guitars", guitarService.getGuitarsByProductId(id));
 
 	    return "product-detail";
 	}

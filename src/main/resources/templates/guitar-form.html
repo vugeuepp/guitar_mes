@@ -9,15 +9,17 @@
 	<form th:action="@{/guitars/create}"
 	      method="post">
 
-	    <input type="text"
-	           name="serialNo">
+	    <label>製品選択</label>
 
 	    <select name="productId">
 
 	        <option
 	            th:each="product : ${products}"
 	            th:value="${product.id}"
-	            th:text="${product.productName}">
+	            th:text="${product.productName
+	                     + ' [' +
+	                     product.color +
+	                     ']'}">
 	        </option>
 
 	    </select>

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.guitarmes.common.ProcessTargetConstants;
 import com.example.guitarmes.entity.ProcessHistory;
 import com.example.guitarmes.repository.ManufacturingProcessRepository;
 import com.example.guitarmes.service.GuitarService;
@@ -30,15 +31,21 @@ public class ProcessViewController {
 	}
 	
 	@GetMapping("/processes/start/view")
-	public String processStartForm(@RequestParam(required = false)Long guitarId, Model model) {
-		if(guitarId != null) {
-			model.addAttribute("selectedGuitar", guitarService.getGuitarById(guitarId));
-			model.addAttribute("nextProcess", processService.getNextAvailableProcess(guitarId));
-		} else {
-			model.addAttribute("guitars", guitarService.getGuitars());
-			model.addAttribute("processes", processRepository.findAllByOrderByProcessOrderAsc());
-		}
-		return "process-start-form";
+	public String processStartForm(
+	        @RequestParam(required = false) Long guitarId, Model model) {
+
+	    if (guitarId != null) {
+	        model.addAttribute("selectedGuitar", guitarService.getGuitarById(guitarId));
+
+	        model.addAttribute("nextProcess", processService.getNextAvailableProcess(guitarId));
+
+	    } else {
+	        model.addAttribute("guitars", guitarService.getGuitars());
+
+	        model.addAttribute("processes", processRepository.findByTargetTypeOrderByProcessOrderAsc(ProcessTargetConstants.GUITAR));
+	    }
+
+	    return "process-start-form";
 	}
 	
 	@PostMapping("/processes/start")
@@ -51,14 +58,26 @@ public class ProcessViewController {
 	}
 	
 	@GetMapping("/processes/end/view")
-	public String processEndForm(@RequestParam(required = false) Long guitarId, Model model) {
-		if (guitarId != null) {
-			ProcessHistory runningHistory = processService.getRunningProcessByGuitarId(guitarId);
-			model.addAttribute("runningHistory", runningHistory);
-		} else {			
-			model.addAttribute("histories", processService.getRunningProcesses());
-		}
-		return "process-end-form";
+	public String processEndForm(
+	        @RequestParam(required = false) Long guitarId,
+	        Model model) {
+
+	    boolean guitarSpecified = guitarId != null;
+
+	    model.addAttribute("guitarSpecified", guitarSpecified);
+
+	    if (guitarSpecified) {
+
+	        ProcessHistory runningHistory = processService.getRunningProcessByGuitarId(guitarId);
+
+	        model.addAttribute("runningHistory", runningHistory);
+
+	    } else {
+	    	
+	        model.addAttribute("histories", processService.getRunningProcesses());
+	    }
+
+	    return "process-end-form";
 	}
 	
 	@PostMapping("/processes/end")

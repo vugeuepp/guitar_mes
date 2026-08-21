@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ネック工程履歴</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネック工程履歴')}">
+</div>
+
+<div>
+    <p>
+        シリアル番号：
+        <strong th:text="${neck.serialNo}">
+        </strong>
+    </p>
+
+    <p>
+        モデル：
+        <span th:text="${neck.modelName}">
+        </span>
+    </p>
+
+    <p>
+        現在工程：
+        <span th:text="${neck.currentProcess}">
+        </span>
+    </p>
+
+    <p>
+        ステータス：
+
+        <span th:switch="${neck.status}">
+
+            <span th:case="'WAITING'"
+                  class="status-badge status-waiting">
+                工程待ち
+            </span>
+
+            <span th:case="'WORKING'"
+                  class="status-badge status-working">
+                作業中
+            </span>
+
+            <span th:case="'AVAILABLE'"
+                  class="status-badge status-available">
+                組立待ち
+            </span>
+
+            <span th:case="'RETURNED'"
+                  class="status-badge status-returned">
+                塗装前工程へ差し戻し
+            </span>
+
+            <span th:case="'ASSEMBLED'"
+                  class="status-badge status-assembled">
+                組立済み
+            </span>
+
+            <span th:case="'REJECTED'"
+                  class="status-badge status-rejected">
+                製造終了
+            </span>
+
+            <span th:case="*"
+                  class="status-badge"
+                  th:text="${neck.status}">
+            </span>
+
+        </span>
+    </p>
+</div>
+
+<div th:if="${#lists.isEmpty(histories)}">
+
+    <p>
+        工程履歴はありません。
+    </p>
+
+</div>
+
+<table th:if="${not #lists.isEmpty(histories)}"
+       border="1">
+
+    <tr>
+        <th>履歴ID</th>
+        <th>工程</th>
+        <th>結果</th>
+        <th>作業者</th>
+        <th>開始日時</th>
+        <th>終了日時</th>
+        <th>作業時間</th>
+        <th>備考</th>
+    </tr>
+
+    <tr th:each="history : ${histories}">
+
+        <td th:text="${history.historyId}">
+        </td>
+
+        <td th:text="${history.processName}">
+        </td>
+
+        <td>
+            <span th:switch="${history.result}">
+
+                <span th:case="'COMPLETED'"
+                      class="status-badge status-assembled">
+                    完了
+                </span>
+
+                <span th:case="'NG'"
+                      class="status-badge status-rejected">
+                    NG
+                </span>
+
+                <span th:case="null"
+                      class="status-badge status-working">
+                    実施中
+                </span>
+
+                <span th:case="*"
+                      th:text="${history.result}">
+                </span>
+
+            </span>
+        </td>
+
+        <td th:text="${history.workerName}">
+        </td>
+
+        <td th:text="${history.startTimeText}">
+        </td>
+
+        <td th:text="${#strings.isEmpty(history.endTimeText)
+                ? '-'
+                : history.endTimeText}">
+        </td>
+
+        <td th:text="${history.workMinutesText}">
+        </td>
+
+        <td th:text="${#strings.isEmpty(history.note)
+                ? '-'
+                : history.note}">
+        </td>
+
+    </tr>
+
+</table>
+
+<br>
+
+<a th:href="@{/necks/view}">
+    ネック一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

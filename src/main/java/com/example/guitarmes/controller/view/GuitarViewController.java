@@ -45,11 +45,9 @@ public class GuitarViewController {
 	}
 	
 	@PostMapping("/guitars/create")
-	public String createGuitar(
-			@RequestParam String serialNo,
-			@RequestParam Long productId) {
+	public String createGuitar(@RequestParam Long productId) {
 		Product product = productService.getProductById(productId);
-		guitarService.createGuitar(serialNo, product);
+		guitarService.createGuitar(product);
 		return "redirect:/guitars/view";
 	}
 	

@@ -1,5 +1,6 @@
 package com.example.guitarmes.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,9 +33,26 @@ public class GuitarService {
 		return guitarRepository.findAll();
 	}
 	
-	public Guitar createGuitar(String serialNo, Product product) {
+	private String generateSerialNo() {
+		String year = String.valueOf(LocalDate.now().getYear()).substring(2);
+		String prefix = "DY" + year;
+		
+		Guitar lastGuitar = guitarRepository.findTopBySerialNoStartingWithOrderBySerialNoDesc(prefix).orElse(null);
+		
+		int nextNumber = 1;
+		
+		if(lastGuitar != null) {
+			String lastSerial = lastGuitar.getSerialNo();
+			
+			nextNumber = Integer.parseInt(lastSerial.substring(4)) + 1; 
+		}
+		
+		return prefix + String.format("%04d", nextNumber);
+	}
+	
+	public Guitar createGuitar(Product product) {
 		Guitar guitar = new Guitar();
-		guitar.setSerialNo(serialNo);
+		guitar.setSerialNo(generateSerialNo());
 		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
 		guitar.setProduct(product);
 		return guitarRepository.save(guitar);
@@ -138,6 +156,10 @@ public class GuitarService {
 			return 0;
 		}
 		return (int)((getCompletedGuitarCount() * 100) / total);
+	}
+	
+	public List<Guitar> getGuitarsByProductId(Long productId) {
+		return guitarRepository.findByProductId(productId);
 	}
 
 }

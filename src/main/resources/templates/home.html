@@ -68,12 +68,84 @@
 </table>
 <br>
 
+<section class="component-dashboard">
+
+    <h2>
+        ボディ工程状況
+    </h2>
+
+    <div class="status-card-container">
+
+        <div th:each="status : ${bodyStatusCounts}"
+             class="status-count-card"
+             th:classappend="${status.cssClass}">
+
+            <div class="status-count-name"
+                 th:text="${status.displayName}">
+            </div>
+
+            <div class="status-count-value"
+                 th:text="${status.count}">
+            </div>
+
+            <div class="status-count-unit">
+                本
+            </div>
+
+        </div>
+
+    </div>
+
+    <p>
+        <a th:href="@{/bodies/view}">
+            ボディ一覧を確認
+        </a>
+    </p>
+
+</section>
+
+<section class="component-dashboard">
+
+    <h2>
+        ネック工程状況
+    </h2>
+
+    <div class="status-card-container">
+
+        <div th:each="status : ${neckStatusCounts}"
+             class="status-count-card"
+             th:classappend="${status.cssClass}">
+
+            <div class="status-count-name"
+                 th:text="${status.displayName}">
+            </div>
+
+            <div class="status-count-value"
+                 th:text="${status.count}">
+            </div>
+
+            <div class="status-count-unit">
+                本
+            </div>
+
+        </div>
+
+    </div>
+
+    <p>
+        <a th:href="@{/necks/view}">
+            ネック一覧を確認
+        </a>
+    </p>
+
+</section>
+
 <h2>現在のギター一覧</h2>
 <table border="1">
 	<tr>
 		<th>ID</th>
 		<th>シリアル番号</th>
-		<th>モデル</th>
+		<th>製品名</th>
 		<th>現在工程</th>
 		<th>進捗率</th>
 		<th>状態</th>
@@ -86,7 +158,7 @@
 	               ? 'completed' : ''">
 		<td th:text="${guitar.id}"></td>
 		<td th:text="${guitar.serialNo}"></td>
-		<td th:text="${guitar.modelName}"></td>
+		<td th:text="${guitar.productName}"></td>
 		<td th:text="${guitar.currentProcess}"></td>
 		<td th:text="${guitar.progressRate + '%'}"></td>
 		<td>

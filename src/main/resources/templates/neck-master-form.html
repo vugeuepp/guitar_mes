@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ネックマスタ登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネックマスタ登録')}">
+</div>
+
+<form th:action="@{/neck-masters/create}"
+      method="post">
+
+    <div>
+        <label>モデルコード</label>
+        <input type="text"
+               name="modelCode">
+    </div>
+
+    <div>
+        <label>モデル名</label>
+        <input type="text"
+               name="modelName">
+    </div>
+
+    <div>
+        <label>ネックタイプ</label>
+        <input type="text"
+               name="neckType">
+    </div>
+
+    <div>
+        <label>ネック材</label>
+        <input type="text"
+               name="neckMaterial">
+    </div>
+
+    <div>
+        <label>指板材</label>
+        <input type="text"
+               name="fingerboardMaterial">
+    </div>
+
+    <div>
+        <label>フレット数</label>
+        <input type="number"
+               name="fretCount">
+    </div>
+
+    <div>
+        <label>スケール</label>
+        <input type="text"
+               name="scale">
+    </div>
+
+    <button type="submit">
+        登録
+    </button>
+
+</form>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ボディマスタ登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディマスタ登録')}">
+</div>
+
+<form th:action="@{/body-masters/create}"
+      method="post">
+
+    <div>
+        <label>モデルコード</label>
+        <input type="text"
+               name="modelCode">
+    </div>
+
+    <div>
+        <label>モデル名</label>
+        <input type="text"
+               name="modelName">
+    </div>
+
+    <div>
+        <label>ボディタイプ</label>
+        <input type="text"
+               name="bodyType">
+    </div>
+
+    <div>
+        <label>材質</label>
+        <input type="text"
+               name="material">
+    </div>
+
+    <div>
+        <label>カラー</label>
+        <input type="text"
+               name="color">
+    </div>
+
+    <button type="submit">
+        登録
+    </button>
+
+</form>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

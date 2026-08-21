@@ -24,6 +24,22 @@
     </a>
 </p>
 
+<form th:action="@{/products/view}"
+      method="get">
+
+    <input type="text"
+           name="keyword"
+           th:value="${keyword}"
+           placeholder="製品名検索">
+
+    <button type="submit">
+        検索
+    </button>
+
+</form>
+
+<br>
+
 <table border="1">
 
     <tr>

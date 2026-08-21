@@ -1,34 +1,277 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-	<meta charset="UTF-8">
-	<title>ボディ登録</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <title>ボディ登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
+
 <body>
-	<h1>ボディ登録</h1>
-	
-	<form th:action="@{/bodies/create}" method="post">
-		<div>
-			<label>シリアル番号</label>
-			<input type="text" name="serialNo">			
-		</div>
-		<div>
-			<label>モデル名</label>
-			<input type="text" name="modelName">			
-		</div>
-		<div>
-			<label>カラー</label>
-			<input type="text" name="color">			
-		</div>
-		<button type="submit">
-			登録
-		</button>
-	</form>
-	<br>
-	
-	<a th:href="@{/bodies/view}">
-		一覧へ戻る
-	</a>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディ登録')}">
+</div>
+
+<div th:if="${#lists.isEmpty(bodyMasters)}">
+
+    <p>
+        登録可能なボディマスタがありません。
+    </p>
+
+    <p>
+        <a th:href="@{/body-masters/new}">
+            ボディマスタを登録する
+        </a>
+    </p>
+
+</div>
+
+<form th:if="${!#lists.isEmpty(bodyMasters)}"
+      th:action="@{/bodies/create}"
+      method="post"
+      id="bodyForm">
+
+    <div>
+        <p>
+            シリアル番号は登録時に自動採番されます。
+        </p>
+    </div>
+
+    <div>
+        <label for="seriesSelect">
+            シリーズ
+        </label>
+
+        <select id="seriesSelect"
+                required>
+
+            <option value="">
+                選択してください
+            </option>
+
+            <option value="Traditional">
+                Traditional
+            </option>
+
+            <option value="Hybrid II">
+                Hybrid II
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="modelSelect">
+            モデル
+        </label>
+
+        <select id="modelSelect"
+                required
+                disabled>
+
+            <option value="">
+                先にシリーズを選択してください
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="colorSelect">
+            カラー
+        </label>
+
+        <select id="colorSelect"
+                required
+                disabled>
+
+            <option value="">
+                先にモデルを選択してください
+            </option>
+
+        </select>
+    </div>
+
+    <input type="hidden"
+           id="bodyMasterId"
+           name="bodyMasterId">
+
+    <div>
+        <button type="submit"
+                id="registerButton"
+                disabled>
+            登録
+        </button>
+    </div>
+
+</form>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+<script th:inline="javascript">
+    const bodyMasters = /*[[${bodyMasters}]]*/ [];
+
+    const seriesSelect =
+        document.getElementById("seriesSelect");
+
+    const modelSelect =
+        document.getElementById("modelSelect");
+
+    const colorSelect =
+        document.getElementById("colorSelect");
+
+    const bodyMasterIdInput =
+        document.getElementById("bodyMasterId");
+
+    const registerButton =
+        document.getElementById("registerButton");
+
+    function resetModelSelect() {
+        modelSelect.innerHTML =
+            '<option value="">先にシリーズを選択してください</option>';
+
+        modelSelect.disabled = true;
+    }
+
+    function resetColorSelect() {
+        colorSelect.innerHTML =
+            '<option value="">先にモデルを選択してください</option>';
+
+        colorSelect.disabled = true;
+    }
+
+    function resetSelectedBodyMaster() {
+        bodyMasterIdInput.value = "";
+        registerButton.disabled = true;
+    }
+
+    function getBaseModelName(modelName) {
+        return modelName.replace(/ Body$/, "");
+    }
+
+    seriesSelect.addEventListener(
+        "change",
+        function () {
+            resetModelSelect();
+            resetColorSelect();
+            resetSelectedBodyMaster();
+
+            const selectedSeries =
+                seriesSelect.value;
+
+            if (selectedSeries === "") {
+                return;
+            }
+
+            const matchingMasters =
+                bodyMasters.filter(
+                    bodyMaster =>
+                        bodyMaster.modelName.includes(
+                            selectedSeries
+                        )
+                );
+
+            const modelNames = [
+                ...new Set(
+                    matchingMasters.map(
+                        bodyMaster =>
+                            getBaseModelName(
+                                bodyMaster.modelName
+                            )
+                    )
+                )
+            ];
+
+            modelSelect.innerHTML =
+                '<option value="">選択してください</option>';
+
+            modelNames.forEach(modelName => {
+                const option =
+                    document.createElement("option");
+
+                option.value = modelName;
+                option.textContent = modelName;
+
+                modelSelect.appendChild(option);
+            });
+
+            modelSelect.disabled = false;
+        }
+    );
+
+    modelSelect.addEventListener(
+        "change",
+        function () {
+            resetColorSelect();
+            resetSelectedBodyMaster();
+
+            const selectedModel =
+                modelSelect.value;
+
+            if (selectedModel === "") {
+                return;
+            }
+
+            const matchingMasters =
+                bodyMasters.filter(
+                    bodyMaster =>
+                        getBaseModelName(
+                            bodyMaster.modelName
+                        ) === selectedModel
+                );
+
+            colorSelect.innerHTML =
+                '<option value="">選択してください</option>';
+
+            matchingMasters.forEach(bodyMaster => {
+                const option =
+                    document.createElement("option");
+
+                option.value = bodyMaster.id;
+                option.textContent =
+                    bodyMaster.color;
+
+                colorSelect.appendChild(option);
+            });
+
+            colorSelect.disabled = false;
+        }
+    );
+
+    colorSelect.addEventListener(
+        "change",
+        function () {
+            const selectedBodyMasterId =
+                colorSelect.value;
+
+            bodyMasterIdInput.value =
+                selectedBodyMasterId;
+
+            registerButton.disabled =
+                selectedBodyMasterId === "";
+        }
+    );
+
+    document
+        .getElementById("bodyForm")
+        .addEventListener(
+            "submit",
+            function (event) {
+                if (bodyMasterIdInput.value === "") {
+                    event.preventDefault();
+
+                    alert(
+                        "シリーズ、モデル、カラーを選択してください。"
+                    );
+                }
+            }
+        );
+</script>
+
 </body>
 </html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ネック工程開始</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネック工程開始')}">
+</div>
+
+<form th:action="@{/neck-processes/start}"
+      method="post">
+
+    <div>
+        <p>
+            対象ネック：
+            <span th:text="${selectedNeck.serialNo
+                    + ' / '
+                    + selectedNeck.modelName}">
+            </span>
+        </p>
+
+        <input type="hidden"
+               name="neckId"
+               th:value="${selectedNeck.id}">
+    </div>
+
+    <div>
+        <p>
+            開始工程：
+            <strong th:text="${currentProcess.processName}">
+            </strong>
+        </p>
+
+        <input type="hidden"
+               name="processId"
+               th:value="${currentProcess.id}">
+    </div>
+
+    <div>
+        <label for="workerName">
+            作業者
+        </label>
+
+        <input type="text"
+               id="workerName"
+               name="workerName"
+               required>
+    </div>
+
+    <button type="submit">
+        工程開始
+    </button>
+
+</form>
+
+<br>
+
+<a th:href="@{/necks/view}">
+    ネック一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

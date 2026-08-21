@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.guitarmes.common.DateTimeFormatterUtil;
 import com.example.guitarmes.common.ProcessStatusConstants;
+import com.example.guitarmes.common.ProcessTargetConstants;
 import com.example.guitarmes.dto.ProcessAverageTimeResponse;
 import com.example.guitarmes.dto.ProcessHistoryResponse;
 import com.example.guitarmes.dto.ProcessStatusResponse;
@@ -70,7 +71,7 @@ public class ProcessService {
 	    ManufacturingProcess endedProcess = processRepository.findById(history.getProcessId())
 	                    .orElseThrow(() -> new NotFoundException("指定された工程が存在しません。"));
 
-	    List<ManufacturingProcess> processes = processRepository.findAllByOrderByProcessOrderAsc();
+	    List<ManufacturingProcess> processes = processRepository.findByTargetTypeOrderByProcessOrderAsc(ProcessTargetConstants.GUITAR);
 
 	    int maxOrder = 0;
 	    for (ManufacturingProcess process : processes) {
@@ -118,7 +119,7 @@ public class ProcessService {
 	
 	public List<ProcessStatusResponse> getProcessStatuses(Long guitarId) {
 		
-		List<ManufacturingProcess> processes = processRepository.findAllByOrderByProcessOrderAsc();
+		List<ManufacturingProcess> processes = processRepository.findByTargetTypeOrderByProcessOrderAsc(ProcessTargetConstants.GUITAR);
 		List<ProcessHistory> histories = historyRepository.findByGuitarId(guitarId);
 		List<ProcessStatusResponse> responses = new ArrayList<>();
 		
@@ -169,7 +170,7 @@ public class ProcessService {
 	}
 	
 	public ManufacturingProcess getNextAvailableProcess(Long guitarId) {
-	    List<ManufacturingProcess> processes = processRepository.findAllByOrderByProcessOrderAsc();
+	    List<ManufacturingProcess> processes = processRepository.findByTargetTypeOrderByProcessOrderAsc(ProcessTargetConstants.GUITAR);
 	    List<ProcessHistory> histories = historyRepository.findByGuitarId(guitarId);
 
 	    for (ProcessHistory history : histories) {

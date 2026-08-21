@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ネックマスタ詳細</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネックマスタ詳細')}">
+</div>
+
+<table border="1">
+
+    <tr>
+        <th>モデルコード</th>
+        <td th:text="${neckMaster.modelCode}"></td>
+    </tr>
+
+    <tr>
+        <th>モデル名</th>
+        <td th:text="${neckMaster.modelName}"></td>
+    </tr>
+
+    <tr>
+        <th>ネックタイプ</th>
+        <td th:text="${neckMaster.neckType}"></td>
+    </tr>
+
+    <tr>
+        <th>ネック材</th>
+        <td th:text="${neckMaster.neckMaterial}"></td>
+    </tr>
+
+    <tr>
+        <th>指板材</th>
+        <td th:text="${neckMaster.fingerboardMaterial}"></td>
+    </tr>
+
+    <tr>
+        <th>フレット数</th>
+        <td th:text="${neckMaster.fretCount}"></td>
+    </tr>
+
+    <tr>
+        <th>スケール</th>
+        <td th:text="${neckMaster.scale}"></td>
+    </tr>
+
+</table>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

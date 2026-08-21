@@ -51,4 +51,11 @@ public class ProductService {
 
         return productRepository.save(product);
     }
+    
+    public List<Product> searchProducts(String keyword) {
+    	if(keyword == null || keyword.isBlank()) {
+    		return productRepository.findAll();
+    	}
+    	return productRepository.findByProductNameContaining(keyword);
+    }
 }
