@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ボディマスタ詳細</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディマスタ詳細')}">
+</div>
+
+<table border="1">
+
+    <tr>
+        <th>モデルコード</th>
+        <td th:text="${bodyMaster.modelCode}"></td>
+    </tr>
+
+    <tr>
+        <th>モデル名</th>
+        <td th:text="${bodyMaster.modelName}"></td>
+    </tr>
+
+    <tr>
+        <th>ボディタイプ</th>
+        <td th:text="${bodyMaster.bodyType}"></td>
+    </tr>
+
+    <tr>
+        <th>材質</th>
+        <td th:text="${bodyMaster.material}"></td>
+    </tr>
+
+    <tr>
+        <th>カラー</th>
+        <td th:text="${bodyMaster.color}"></td>
+    </tr>
+
+</table>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,18 +17,19 @@ public class Guitar {
 	private Long id;
 	
 	private String serialNo;
-
-	private String modelName;
 	
 	private String currentProcess;
+	
+	@ManyToOne
+	@JoinColumn(name = "product_id")
+	private Product product;
 	
 	public Guitar() {
 		
 	}
 	
-	public Guitar(String serialNo, String modelName, String currentProcess) {
+	public Guitar(String serialNo, String currentProcess) {
 		this.serialNo = serialNo;
-		this.modelName = modelName;
 		this.currentProcess = currentProcess;
 	}
 	
@@ -45,14 +48,6 @@ public class Guitar {
 	public void setSerialNo(String serialNo) {
 		this.serialNo = serialNo;
 	}
-	
-	public String getModelName() {
-		return modelName;
-	}
-
-	public void setModelName(String modelName) {
-		this.modelName = modelName;
-	}
 
 	public String getCurrentProcess() {
 		return currentProcess;
@@ -61,6 +56,12 @@ public class Guitar {
 	public void setCurrentProcess(String currentProcess) {
 		this.currentProcess = currentProcess;
 	}
-	
-	
+
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
 }

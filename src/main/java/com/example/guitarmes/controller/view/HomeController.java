@@ -40,6 +40,8 @@ public class HomeController {
 	    model.addAttribute("availableNeckCount", neckService.getAvailableNeckCount());
 	    model.addAttribute("availableBodyCount", bodyService.getAvailableBodyCount());
 	    model.addAttribute("averageProcessTimes", processService.getAverageProcessTimes());
+	    model.addAttribute("bodyStatusCounts", bodyService.getStatusCounts());
+	    model.addAttribute("neckStatusCounts", neckService.getStatusCounts());
 	    return "home";
 	}
 }

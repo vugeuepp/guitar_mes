@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -15,12 +17,25 @@ public class Neck {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	
 	private String serialNo;
+	
 	private String modelName;
+	
 	private String currentProcess;
+	
 	private String status;
+	
+	@ManyToOne
+	@JoinColumn(name = "product_id")
+	private Product product;
+	
 	@OneToMany(mappedBy = "neck")
 	private List<Assembly> assemblies;
+	
+	@ManyToOne
+	@JoinColumn(name = "neck_master_id")
+	private NeckMaster neckMaster;
 	
 	public Neck() {
 		
@@ -74,6 +89,14 @@ public class Neck {
 		this.status = status;
 	}
 
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
+
 	public List<Assembly> getAssemblies() {
 		return assemblies;
 	}
@@ -81,6 +104,12 @@ public class Neck {
 	public void setAssemblies(List<Assembly> assemblies) {
 		this.assemblies = assemblies;
 	}
-	
-	
+
+	public NeckMaster getNeckMaster() {
+		return neckMaster;
+	}
+
+	public void setNeckMaster(NeckMaster neckMaster) {
+		this.neckMaster = neckMaster;
+	}
 }

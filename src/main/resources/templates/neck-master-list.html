@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ネックマスタ一覧</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネックマスタ一覧')}">
+</div>
+
+<p>
+    <a th:href="@{/neck-masters/new}">
+        ネックマスタ登録
+    </a>
+</p>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>モデルコード</th>
+        <th>モデル名</th>
+        <th>ネックタイプ</th>
+        <th>ネック材</th>
+        <th>指板材</th>
+        <th>フレット数</th>
+        <th>スケール</th>
+    </tr>
+
+    <tr th:each="neckMaster : ${neckMasters}">
+        <td>
+            <a th:href=
+               "@{/neck-masters/{id}/view(id=${neckMaster.id})}"
+               th:text="${neckMaster.id}">
+            </a>
+        </td>
+
+        <td th:text="${neckMaster.modelCode}"></td>
+        <td th:text="${neckMaster.modelName}"></td>
+        <td th:text="${neckMaster.neckType}"></td>
+        <td th:text="${neckMaster.neckMaterial}"></td>
+        <td th:text="${neckMaster.fingerboardMaterial}"></td>
+        <td th:text="${neckMaster.fretCount}"></td>
+        <td th:text="${neckMaster.scale}"></td>
+    </tr>
+</table>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

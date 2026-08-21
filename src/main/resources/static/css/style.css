@@ -25,3 +25,231 @@ h1 {
 .completed {
 	background-color: #ddffdd;
 }
+
+.error-message {
+    margin: 16px 0;
+    padding: 12px 16px;
+    color: #b00020;
+    background-color: #fdecec;
+    border: 1px solid #e6a5ad;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.success-message {
+    margin: 16px 0;
+    padding: 12px 16px;
+    color: #146c2e;
+    background-color: #edf8f0;
+    border: 1px solid #a9d5b5;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.process-button {
+    display: inline-block;
+    min-width: 100px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+.analysis-section {
+    margin: 24px 0;
+}
+
+.analysis-section h2 {
+    padding-bottom: 6px;
+    border-bottom: 2px solid #446a8a;
+}
+
+.analysis-section table {
+    min-width: 520px;
+    border-collapse: collapse;
+}
+
+.analysis-section th {
+    padding: 9px 13px;
+    color: #ffffff;
+    background-color: #446a8a;
+}
+
+.analysis-section td {
+    padding: 9px 13px;
+}
+
+.process-start-button {
+    background-color: #1976d2;
+}
+
+.process-start-button:hover {
+    background-color: #125ca1;
+}
+
+.process-end-button {
+    background-color: #d97706;
+}
+
+.process-end-button:hover {
+    background-color: #a85b04;
+}
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.status-waiting {
+    color: #174ea6;
+    background-color: #e8f0fe;
+}
+
+.status-working {
+    color: #8a4b00;
+    background-color: #fff3cd;
+}
+
+.status-available {
+    color: #146c2e;
+    background-color: #e6f4ea;
+}
+
+.status-returned {
+    color: #7a3e00;
+    background-color: #fce8d5;
+}
+
+.status-assembled {
+    color: #4a4a4a;
+    background-color: #e9ecef;
+}
+
+.status-rejected {
+    color: #b00020;
+    background-color: #fdecec;
+}
+
+.status-inspection {
+    color: #5b3f99;
+    background-color: #f0eafa;
+}
+
+.status-rework {
+    color: #8a4b00;
+    background-color: #fff0db;
+}
+
+.history-button {
+    min-width: 90px;
+    padding: 7px 12px;
+    color: #ffffff;
+    background-color: #5b3f99;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.history-button:hover {
+    background-color: #432d73;
+}
+
+.component-dashboard {
+    margin: 28px 0;
+    padding: 20px;
+    background-color: #f8fafc;
+    border: 1px solid #dbe3ea;
+    border-radius: 8px;
+}
+
+.component-dashboard h2 {
+    margin-top: 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #446a8a;
+}
+
+.status-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.status-count-card {
+    min-width: 130px;
+    padding: 14px 18px;
+    text-align: center;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.status-count-name {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.status-count-value {
+    display: inline-block;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.status-count-unit {
+    display: inline-block;
+    margin-left: 3px;
+    font-size: 0.9rem;
+}
+
+.status-count-card.status-waiting {
+    color: #174ea6;
+    background-color: #e8f0fe;
+    border-color: #aecbfa;
+}
+
+.status-count-card.status-working {
+    color: #8a4b00;
+    background-color: #fff3cd;
+    border-color: #f1d18a;
+}
+
+.status-count-card.status-inspection {
+    color: #5b3f99;
+    background-color: #f0eafa;
+    border-color: #cbbbe8;
+}
+
+.status-count-card.status-rework {
+    color: #8a4b00;
+    background-color: #fff0db;
+    border-color: #efc788;
+}
+
+.status-count-card.status-available {
+    color: #146c2e;
+    background-color: #e6f4ea;
+    border-color: #a9d5b5;
+}
+
+.status-count-card.status-returned {
+    color: #7a3e00;
+    background-color: #fce8d5;
+    border-color: #e5b783;
+}
+
+.status-count-card.status-assembled {
+    color: #4a4a4a;
+    background-color: #e9ecef;
+    border-color: #c6cbd0;
+}
+
+.status-count-card.status-rejected {
+    color: #b00020;
+    background-color: #fdecec;
+    border-color: #e6a5ad;
+}

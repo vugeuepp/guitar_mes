@@ -1,5 +1,6 @@
 package com.example.guitarmes.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
+import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.GuitarRepository;
@@ -31,8 +33,28 @@ public class GuitarService {
 		return guitarRepository.findAll();
 	}
 	
-	public Guitar createGuitar(String serialNo, String modelName) {
-		Guitar guitar = new Guitar(serialNo, modelName, ProcessConstants.NOT_STARTED);
+	private String generateSerialNo() {
+		String year = String.valueOf(LocalDate.now().getYear()).substring(2);
+		String prefix = "DY" + year;
+		
+		Guitar lastGuitar = guitarRepository.findTopBySerialNoStartingWithOrderBySerialNoDesc(prefix).orElse(null);
+		
+		int nextNumber = 1;
+		
+		if(lastGuitar != null) {
+			String lastSerial = lastGuitar.getSerialNo();
+			
+			nextNumber = Integer.parseInt(lastSerial.substring(4)) + 1; 
+		}
+		
+		return prefix + String.format("%04d", nextNumber);
+	}
+	
+	public Guitar createGuitar(Product product) {
+		Guitar guitar = new Guitar();
+		guitar.setSerialNo(generateSerialNo());
+		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
+		guitar.setProduct(product);
 		return guitarRepository.save(guitar);
 	}
 
@@ -72,11 +94,13 @@ public class GuitarService {
 			
 			boolean needAssembly = nextProcess != null && ProcessConstants.NECK_ASSEMBLY.equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
 			
+			String productName = guitar.getProduct().getProductName();
+			
 			responses.add(
 					new GuitarProgressResponse(
 						guitar.getId(),
 						guitar.getSerialNo(), 
-						guitar.getModelName(),
+						productName,
 						guitar.getCurrentProcess(),
 						progressRate,
 						hasRunningProcess,
@@ -132,6 +156,10 @@ public class GuitarService {
 			return 0;
 		}
 		return (int)((getCompletedGuitarCount() * 100) / total);
+	}
+	
+	public List<Guitar> getGuitarsByProductId(Long productId) {
+		return guitarRepository.findByProductId(productId);
 	}
 
 }

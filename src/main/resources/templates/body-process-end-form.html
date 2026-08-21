@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ボディ工程終了</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディ工程終了')}">
+</div>
+
+<div>
+    <p>
+        対象ボディ：
+        <span th:text="${body.serialNo}">
+        </span>
+    </p>
+
+    <p>
+        現在工程：
+        <span th:text="${body.currentProcess}">
+        </span>
+    </p>
+</div>
+
+<div th:if="${runningHistory != null}">
+
+    <table border="1">
+
+        <tr>
+            <th>履歴ID</th>
+            <th>工程ID</th>
+            <th>作業者</th>
+            <th>開始時刻</th>
+        </tr>
+
+        <tr>
+            <td th:text="${runningHistory.id}">
+            </td>
+
+            <td th:text="${runningHistory.processId}">
+            </td>
+
+            <td th:text="${runningHistory.workerName}">
+            </td>
+
+            <td th:text="${runningHistory.startTime}">
+            </td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <form th:action="@{/body-processes/end}"
+          method="post">
+
+        <input type="hidden"
+               name="historyId"
+               th:value="${runningHistory.id}">
+
+        <input type="hidden"
+               name="bodyId"
+               th:value="${body.id}">
+
+        <!-- 塗装後検品の場合 -->
+        <div th:if="${body.currentProcess == '塗装後検品'}">
+
+            <label for="inspectionResult">
+                検品結果
+            </label>
+
+            <select id="inspectionResult"
+                    name="result"
+                    required>
+
+                <option value="">
+                    選択してください
+                </option>
+
+                <option value="PASSED">
+                    合格
+                </option>
+
+                <option value="REWORK">
+                    手直し
+                </option>
+
+                <option value="REJECTED">
+                    不合格
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- バフがけの場合 -->
+        <div th:if="${body.currentProcess == 'バフがけ'}">
+
+            <p>
+                工程結果：完了
+            </p>
+
+            <input type="hidden"
+                   name="result"
+                   value="COMPLETED">
+
+        </div>
+
+        <!-- パーツ付けの場合 -->
+        <div th:if="${body.currentProcess == 'パーツ付け'}">
+
+            <p>
+                工程結果：完了
+            </p>
+
+            <input type="hidden"
+                   name="result"
+                   value="COMPLETED">
+
+        </div>
+
+        <div>
+            <label for="note">
+                備考
+            </label>
+
+            <textarea id="note"
+                      name="note"
+                      rows="4"
+                      cols="40"></textarea>
+        </div>
+
+        <button type="submit">
+            工程終了
+        </button>
+
+    </form>
+
+</div>
+
+<div th:if="${runningHistory == null}">
+
+    <p>
+        現在実施中の工程はありません。
+    </p>
+
+</div>
+
+<br>
+
+<a th:href="@{/bodies/view}">
+    ボディ一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

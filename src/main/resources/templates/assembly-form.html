@@ -1,69 +1,142 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-	<meta charset="UTF-8">
-	<title>ネック取付登録</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <title>ネック取付登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
+
 <body>
-	<h1>ネック取付登録</h1>
-	
-	<form action="/assemblies/create" method="post">
-		<div>
-		    <label>ギター</label>
 
-		    <div th:if="${selectedGuitar != null}">
-		        <span th:text="${selectedGuitar.serialNo + ' (' + selectedGuitar.modelName + ')'}"></span>
-		        <input type="hidden"
-		               name="guitarId"
-		               th:value="${selectedGuitar.id}">
-		    </div>
+<div th:replace=
+     "~{fragments/header :: header('ネック取付登録')}">
+</div>
 
-		    <div th:if="${selectedGuitar == null}">
-		        <select name="guitarId">
-		            <option
-		                th:each="guitar : ${guitars}"
-		                th:value="${guitar.id}"
-		                th:text="${guitar.serialNo + ' (' + guitar.modelName + ')'}">
-		            </option>
-		        </select>
-		    </div>
-		</div>
-		<div>
-			<label>ネック</label>
-			<select name="neckId">
-				<option
-					th:each="neck : ${necks}"
-					th:value="${neck.id}"
-					th:text="${neck.serialNo + ' (' + neck.modelName + ') '}">
-				</option>				
-			</select>
-		</div>
-		<div>
-			<label>ボディ</label>
-			<select name="bodyId">
-				<option
-					th:each="body : ${bodies}"
-					th:value="${body.id}"
-					th:text="${body.serialNo + ' (' + body.modelName + ') '}">
-				</option>				
-			</select>
-		</div>
-		<div>
-			<label>作業者</label>
-			<input type="text" name="workerName">
-		</div>
-		<button type="submit">
-			登録
-		</button>
-	</form>
-	<br>
-	<a th:href="@{/assemblies/view}">
-	組立実績一覧へ戻る
-	</a>
-	<br>
-	<a th:href="@{/}">
-	Home
-	</a>
+<form th:action="@{/assemblies/create}"
+      method="post">
+
+    <div>
+        <label>
+            ギター
+        </label>
+
+        <!-- ギター指定あり -->
+        <div th:if="${selectedGuitar != null}">
+
+            <span th:text="${selectedGuitar.serialNo
+                    + ' ('
+                    + selectedGuitar.product.productName
+                    + ')'}">
+            </span>
+
+            <input type="hidden"
+                   name="guitarId"
+                   th:value="${selectedGuitar.id}">
+
+        </div>
+
+        <!-- ギター指定なし -->
+        <div th:if="${selectedGuitar == null}">
+
+            <select name="guitarId"
+                    required>
+
+                <option value="">
+                    選択してください
+                </option>
+
+                <option th:each="guitar : ${guitars}"
+                        th:value="${guitar.id}"
+                        th:text="${guitar.serialNo
+                            + ' ('
+                            + guitar.product.productName
+                            + ')'}">
+                </option>
+
+            </select>
+
+        </div>
+    </div>
+
+    <div>
+        <label for="neckId">
+            ネック
+        </label>
+
+        <select id="neckId"
+                name="neckId"
+                required>
+
+            <option value="">
+                選択してください
+            </option>
+
+            <option th:each="neck : ${necks}"
+                    th:value="${neck.id}"
+                    th:text="${neck.serialNo
+                        + ' ('
+                        + neck.modelName
+                        + ')'}">
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="bodyId">
+            ボディ
+        </label>
+
+        <select id="bodyId"
+                name="bodyId"
+                required>
+
+            <option value="">
+                選択してください
+            </option>
+
+            <option th:each="body : ${bodies}"
+                    th:value="${body.id}"
+                    th:text="${body.serialNo
+                        + ' ('
+                        + body.modelName
+                        + ' / '
+                        + body.color
+                        + ')'}">
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="workerName">
+            作業者
+        </label>
+
+        <input type="text"
+               id="workerName"
+               name="workerName"
+               required>
+    </div>
+
+    <button type="submit">
+        登録
+    </button>
+
+</form>
+
+<br>
+
+<a th:href="@{/assemblies/view}">
+    組立実績一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
 </body>
 </html>

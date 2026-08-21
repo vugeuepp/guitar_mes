@@ -6,34 +6,50 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.guitarmes.service.NeckMasterService;
 import com.example.guitarmes.service.NeckService;
 
 @Controller
 public class NeckViewController {
-	private final NeckService neckService;
 
-	public NeckViewController(NeckService neckService) {
-		this.neckService = neckService;
-	}
-	
-	@GetMapping("/necks/view")
-	public String neckList(Model model) {
-		model.addAttribute("necks", neckService.getNecks());
-		return "neck-list";
-	}
-	
-	@GetMapping("/necks/new")
-	public String newNeckForm() {
-		return "neck-form";
-	}
-	
-	@PostMapping("/necks/create")
-	public String createNeck(
-			@RequestParam String serialNo,
-			@RequestParam String modelName) {
-		neckService.createNeck(serialNo, modelName);
-		return "redirect:/necks/view";
-	}
-	
+    private final NeckService neckService;
+    private final NeckMasterService neckMasterService;
+
+    public NeckViewController(
+            NeckService neckService,
+            NeckMasterService neckMasterService) {
+
+        this.neckService = neckService;
+        this.neckMasterService = neckMasterService;
+    }
+
+    @GetMapping("/necks/view")
+    public String neckList(Model model) {
+
+        model.addAttribute(
+                "necks",
+                neckService.getNecks());
+
+        return "neck-list";
+    }
+
+    @GetMapping("/necks/new")
+    public String newNeckForm(Model model) {
+
+        model.addAttribute(
+                "neckMasters",
+                neckMasterService.getNeckMasters());
+
+        return "neck-form";
+    }
+
+    @PostMapping("/necks/create")
+    public String createNeck(
+            @RequestParam Long neckMasterId) {
+
+        neckService.createNeck(
+                neckMasterId);
+
+        return "redirect:/necks/view";
+    }
 }
-

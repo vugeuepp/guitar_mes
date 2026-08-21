@@ -2,7 +2,7 @@ package com.example.guitarmes.dto;
 
 public class GuitarCreateRequest {
 	private String serialNo;
-	private String modelName;
+	private Long productId;
 	private String currentProcess;
 	
 	public String getSerialNo() {
@@ -11,11 +11,11 @@ public class GuitarCreateRequest {
 	public void setSerialNo(String serialNo) {
 		this.serialNo = serialNo;
 	}
-	public String getModelName() {
-		return modelName;
+	public Long getProductId() {
+		return productId;
 	}
-	public void setModelName(String modelName) {
-		this.modelName = modelName;
+	public void setProductId(Long productId) {
+		this.productId = productId;
 	}
 	public String getCurrentProcess() {
 		return currentProcess;

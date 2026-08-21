@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>製品一覧</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div th:replace=
+ "~{fragments/header :: header('製品一覧')}">
+</div>
+
+<p>
+    <a th:href="@{/products/new}">
+        製品登録
+    </a>
+</p>
+
+<form th:action="@{/products/view}"
+      method="get">
+
+    <input type="text"
+           name="keyword"
+           th:value="${keyword}"
+           placeholder="製品名検索">
+
+    <button type="submit">
+        検索
+    </button>
+
+</form>
+
+<br>
+
+<table border="1">
+
+    <tr>
+        <th>ID</th>
+        <th>モデル番号</th>
+        <th>製品名</th>
+        <th>カラー</th>
+        <th>ボディ材</th>
+        <th>ネック材</th>
+    </tr>
+
+    <tr th:each="product : ${products}">
+
+		<td>
+		    <a th:href=
+		       "@{/products/{id}/view(id=${product.id})}"
+		       th:text="${product.id}">
+		    </a>
+		</td>
+
+        <td th:text="${product.modelNo}"></td>
+
+        <td th:text="${product.productName}"></td>
+
+        <td th:text="${product.color}"></td>
+
+        <td th:text="${product.bodyMaterial}"></td>
+
+        <td th:text="${product.neckMaterial}"></td>
+
+    </tr>
+
+</table>
+
+<div th:replace=
+ "~{fragments/menu :: menu}">
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>製品一覧</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<div th:replace=
+ "~{fragments/header :: header('製品登録')}">
+</div>
+
+<form th:action="@{/products/create}"
+      method="post">
+
+    <div>
+        <label>モデル番号</label>
+        <input type="text" name="modelNo">
+    </div>
+
+    <div>
+        <label>製品名</label>
+        <input type="text" name="productName">
+    </div>
+
+    <div>
+        <label>カラー</label>
+        <input type="text" name="color">
+    </div>
+
+    <div>
+        <label>ボディ材</label>
+        <input type="text" name="bodyMaterial">
+    </div>
+
+    <div>
+        <label>ネック材</label>
+        <input type="text" name="neckMaterial">
+    </div>
+
+    <div>
+        <label>指板材</label>
+        <input type="text" name="fingerboardMaterial">
+    </div>
+
+    <div>
+        <label>PU構成</label>
+        <input type="text" name="pickupLayout">
+    </div>
+
+    <div>
+        <label>フレット数</label>
+        <input type="number" name="fretCount">
+    </div>
+
+    <div>
+        <label>スケール</label>
+        <input type="text" name="scale">
+    </div>
+
+    <button type="submit">
+        登録
+    </button>
+
+</form>
+
+<div th:replace=
+ "~{fragments/menu :: menu}">
+</div>
+
+</body>
+
+</html>

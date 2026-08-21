@@ -8,17 +8,100 @@
 <body>
 	<div th:replace="~{fragments/header :: header('ギター詳細')}">
 	</div>
+
+	<h2>基本情報</h2>
+
 	<table border="1">
-		<tr>
-			<th>シリアル番号</th>
-			<th>モデル</th>
-			<th>現在工程</th>
-		</tr>
-		<tr>
-			<td th:text="${guitar.serialNo}"></td>
-			<td th:text="${guitar.modelName}"></td>
-			<td th:text="${guitar.currentProcess}"></td>
-		</tr>
+
+	    <tr>
+	        <th>シリアル番号</th>
+	        <td th:text="${guitar.serialNo}"></td>
+	    </tr>
+
+	    <tr>
+	        <th>製品名</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.productName
+	            : guitar.modelName
+	        }">
+	        </td>
+	    </tr>
+
+	    <tr>
+	        <th>現在工程</th>
+	        <td th:text="${guitar.currentProcess}"></td>
+	    </tr>
+
+	</table>
+
+	<h2>製品情報</h2>
+
+	<table border="1">
+
+	    <tr>
+	        <th>カラー</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.color
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>ボディ材</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.bodyMaterial
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>ネック材</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.neckMaterial
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>指板材</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.fingerboardMaterial
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>PU構成</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.pickupLayout
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>フレット数</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.fretCount
+	            : '-'
+	        }"></td>
+	    </tr>
+
+	    <tr>
+	        <th>スケール</th>
+	        <td th:text="${
+	            guitar.product != null
+	            ? guitar.product.scale
+	            : '-'
+	        }"></td>
+	    </tr>
+
 	</table>
 	
 	<br>

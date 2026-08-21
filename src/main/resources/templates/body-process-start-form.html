@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ボディ工程開始</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディ工程開始')}">
+</div>
+
+<form th:action="@{/body-processes/start}"
+      method="post">
+
+    <div>
+        <p>
+            対象ボディ：
+            <span th:text="${selectedBody.serialNo
+                    + ' / '
+                    + selectedBody.modelName
+                    + ' / '
+                    + selectedBody.color}">
+            </span>
+        </p>
+
+        <input type="hidden"
+               name="bodyId"
+               th:value="${selectedBody.id}">
+    </div>
+
+    <div>
+        <p>
+            開始工程：
+            <strong th:text="${currentProcess.processName}">
+            </strong>
+        </p>
+
+        <input type="hidden"
+               name="processId"
+               th:value="${currentProcess.id}">
+    </div>
+
+    <div>
+        <label for="workerName">
+            作業者
+        </label>
+
+        <input type="text"
+               id="workerName"
+               name="workerName"
+               required>
+    </div>
+
+    <button type="submit">
+        工程開始
+    </button>
+
+</form>
+
+<br>
+
+<a th:href="@{/bodies/view}">
+    ボディ一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

@@ -1,30 +1,261 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-	<meta charset="UTF-8">
-	<title>ネック登録</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <title>ネック登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
+
 <body>
-	<h1>ネック登録</h1>
-	
-	<form th:action="@{/necks/create}" method="post">
-		<div>
-			<label>シリアル番号</label>
-			<input type="text" name="serialNo">			
-		</div>
-		<div>
-			<label>モデル名</label>
-			<input type="text" name="modelName">			
-		</div>
-		<button type="submit">
-			登録
-		</button>
-	</form>
-	<br>
-	
-	<a th:href="@{/necks/view}">
-		一覧へ戻る
-	</a>
+
+<div th:replace=
+     "~{fragments/header :: header('ネック登録')}">
+</div>
+
+<div th:if="${#lists.isEmpty(neckMasters)}">
+
+    <p>
+        登録可能なネックマスタがありません。
+    </p>
+
+    <p>
+        <a th:href="@{/neck-masters/new}">
+            ネックマスタを登録する
+        </a>
+    </p>
+
+</div>
+
+<form th:if="${!#lists.isEmpty(neckMasters)}"
+      th:action="@{/necks/create}"
+      method="post"
+      id="neckForm">
+
+    <div>
+        <p>
+            シリアル番号は登録時に自動採番されます。
+        </p>
+    </div>
+
+    <div>
+        <label for="seriesSelect">
+            シリーズ
+        </label>
+
+        <select id="seriesSelect"
+                required>
+
+            <option value="">
+                選択してください
+            </option>
+
+            <option value="Traditional">
+                Traditional
+            </option>
+
+            <option value="Hybrid II">
+                Hybrid II
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="modelSelect">
+            モデル
+        </label>
+
+        <select id="modelSelect"
+                required
+                disabled>
+
+            <option value="">
+                先にシリーズを選択してください
+            </option>
+
+        </select>
+    </div>
+
+    <div>
+        <label for="fingerboardSelect">
+            指板材
+        </label>
+
+        <select id="fingerboardSelect"
+                required
+                disabled>
+
+            <option value="">
+                先にモデルを選択してください
+            </option>
+
+        </select>
+    </div>
+
+    <input type="hidden"
+           id="neckMasterId"
+           name="neckMasterId">
+
+    <div>
+        <button type="submit"
+                id="registerButton"
+                disabled>
+            登録
+        </button>
+    </div>
+
+</form>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+<script th:inline="javascript">
+    const neckMasters = /*[[${neckMasters}]]*/ [];
+
+    const seriesSelect =
+        document.getElementById("seriesSelect");
+
+    const modelSelect =
+        document.getElementById("modelSelect");
+
+    const fingerboardSelect =
+        document.getElementById("fingerboardSelect");
+
+    const neckMasterIdInput =
+        document.getElementById("neckMasterId");
+
+    const registerButton =
+        document.getElementById("registerButton");
+
+    function resetModelSelect() {
+        modelSelect.innerHTML =
+            '<option value="">先にシリーズを選択してください</option>';
+
+        modelSelect.disabled = true;
+    }
+
+    function resetFingerboardSelect() {
+        fingerboardSelect.innerHTML =
+            '<option value="">先にモデルを選択してください</option>';
+
+        fingerboardSelect.disabled = true;
+    }
+
+    function resetSelectedNeckMaster() {
+        neckMasterIdInput.value = "";
+        registerButton.disabled = true;
+    }
+
+    function getBaseModelName(modelName) {
+        return modelName
+            .replace(" Neck / Maple Fingerboard", "")
+            .replace(" Neck / Rosewood Fingerboard", "");
+    }
+
+    seriesSelect.addEventListener("change", function () {
+        resetModelSelect();
+        resetFingerboardSelect();
+        resetSelectedNeckMaster();
+
+        const selectedSeries = seriesSelect.value;
+
+        if (selectedSeries === "") {
+            return;
+        }
+
+        const matchingMasters = neckMasters.filter(
+            neckMaster =>
+                neckMaster.modelName.includes(selectedSeries)
+        );
+
+        const modelNames = [
+            ...new Set(
+                matchingMasters.map(
+                    neckMaster =>
+                        getBaseModelName(neckMaster.modelName)
+                )
+            )
+        ];
+
+        modelSelect.innerHTML =
+            '<option value="">選択してください</option>';
+
+        modelNames.forEach(modelName => {
+            const option =
+                document.createElement("option");
+
+            option.value = modelName;
+            option.textContent = modelName;
+
+            modelSelect.appendChild(option);
+        });
+
+        modelSelect.disabled = false;
+    });
+
+    modelSelect.addEventListener("change", function () {
+        resetFingerboardSelect();
+        resetSelectedNeckMaster();
+
+        const selectedModel = modelSelect.value;
+
+        if (selectedModel === "") {
+            return;
+        }
+
+        const matchingMasters = neckMasters.filter(
+            neckMaster =>
+                getBaseModelName(neckMaster.modelName)
+                    === selectedModel
+        );
+
+        fingerboardSelect.innerHTML =
+            '<option value="">選択してください</option>';
+
+        matchingMasters.forEach(neckMaster => {
+            const option =
+                document.createElement("option");
+
+            option.value = neckMaster.id;
+            option.textContent =
+                neckMaster.fingerboardMaterial;
+
+            fingerboardSelect.appendChild(option);
+        });
+
+        fingerboardSelect.disabled = false;
+    });
+
+    fingerboardSelect.addEventListener(
+        "change",
+        function () {
+            const selectedNeckMasterId =
+                fingerboardSelect.value;
+
+            neckMasterIdInput.value =
+                selectedNeckMasterId;
+
+            registerButton.disabled =
+                selectedNeckMasterId === "";
+        }
+    );
+
+    document
+        .getElementById("neckForm")
+        .addEventListener("submit", function (event) {
+            if (neckMasterIdInput.value === "") {
+                event.preventDefault();
+
+                alert(
+                    "シリーズ、モデル、指板材を選択してください。"
+                );
+            }
+        });
+</script>
+
 </body>
 </html>

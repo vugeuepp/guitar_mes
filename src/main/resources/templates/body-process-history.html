@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ボディ工程履歴</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ボディ工程履歴')}">
+</div>
+
+<div>
+    <p>
+        シリアル番号：
+        <strong th:text="${body.serialNo}">
+        </strong>
+    </p>
+
+    <p>
+        モデル：
+        <span th:text="${body.modelName}">
+        </span>
+    </p>
+
+    <p>
+        カラー：
+        <span th:text="${body.color}">
+        </span>
+    </p>
+
+    <p>
+        現在工程：
+        <span th:text="${body.currentProcess}">
+        </span>
+    </p>
+</div>
+
+<div th:if="${#lists.isEmpty(histories)}">
+
+    <p>
+        工程履歴はありません。
+    </p>
+
+</div>
+
+<table th:if="${!#lists.isEmpty(histories)}"
+       border="1">
+
+    <tr>
+        <th>履歴ID</th>
+        <th>工程</th>
+        <th>結果</th>
+        <th>作業者</th>
+        <th>開始日時</th>
+        <th>終了日時</th>
+        <th>作業時間</th>
+        <th>備考</th>
+    </tr>
+
+    <tr th:each="history : ${histories}">
+
+        <td th:text="${history.historyId}">
+        </td>
+
+        <td th:text="${history.processName}">
+        </td>
+
+        <td>
+            <span th:switch="${history.result}">
+
+                <span th:case="'PASSED'"
+                      class="status-badge status-available">
+                    合格
+                </span>
+
+                <span th:case="'REWORK'"
+                      class="status-badge status-rework">
+                    手直し
+                </span>
+
+                <span th:case="'REJECTED'"
+                      class="status-badge status-rejected">
+                    不合格
+                </span>
+
+                <span th:case="'COMPLETED'"
+                      class="status-badge status-assembled">
+                    完了
+                </span>
+
+                <span th:case="null">
+                    実施中
+                </span>
+
+                <span th:case="*"
+                      th:text="${history.result}">
+                </span>
+
+            </span>
+        </td>
+
+        <td th:text="${history.workerName}">
+        </td>
+
+        <td th:text="${history.startTimeText}">
+        </td>
+
+        <td th:text="${history.endTimeText}">
+        </td>
+
+        <td th:text="${history.workMinutesText}">
+        </td>
+
+        <td th:text="${#strings.isEmpty(history.note)
+                ? '-'
+                : history.note}">
+        </td>
+
+    </tr>
+
+</table>
+
+<br>
+
+<a th:href="@{/bodies/view}">
+    ボディ一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

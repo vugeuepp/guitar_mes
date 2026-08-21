@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ネック工程終了</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('ネック工程終了')}">
+</div>
+
+<div>
+    <p>
+        対象ネック：
+        <span th:text="${neck.serialNo}">
+        </span>
+    </p>
+
+    <p>
+        現在工程：
+        <span th:text="${neck.currentProcess}">
+        </span>
+    </p>
+</div>
+<div th:if="${errorMessage != null}"
+     class="error-message"
+     th:text="${errorMessage}">
+</div>
+
+<div th:if="${successMessage != null}"
+     class="success-message"
+     th:text="${successMessage}">
+</div>
+
+<div th:if="${runningHistory != null}">
+
+    <table border="1">
+
+        <tr>
+            <th>履歴ID</th>
+            <th>工程ID</th>
+            <th>作業者</th>
+            <th>開始時刻</th>
+        </tr>
+
+        <tr>
+            <td th:text="${runningHistory.id}">
+            </td>
+
+            <td th:text="${runningHistory.processId}">
+            </td>
+
+            <td th:text="${runningHistory.workerName}">
+            </td>
+
+            <td th:text="${runningHistory.startTime}">
+            </td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <form th:action="@{/neck-processes/end}"
+          method="post">
+
+        <input type="hidden"
+               name="historyId"
+               th:value="${runningHistory.id}">
+
+        <input type="hidden"
+               name="neckId"
+               th:value="${neck.id}">
+
+        <!-- PLEKの場合 -->
+        <div th:if="${neck.currentProcess == 'PLEK'}">
+
+            <label for="plekResult">
+                工程結果
+            </label>
+
+            <select id="plekResult"
+                    name="result"
+                    required>
+
+                <option value="">
+                    選択してください
+                </option>
+
+                <option value="COMPLETED">
+                    完了
+                </option>
+
+                <option value="NG">
+                    NG
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- フレット擦り合わせ・ナット手成形の場合 -->
+        <div th:if="${neck.currentProcess
+                     == 'フレット擦り合わせ・ナット手成形'}">
+
+            <label for="finishResult">
+                工程結果
+            </label>
+
+            <select id="finishResult"
+                    name="result"
+                    required>
+
+                <option value="">
+                    選択してください
+                </option>
+
+                <option value="COMPLETED">
+                    完了
+                </option>
+
+                <option value="NG">
+                    NG
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- ネックパーツ付けの場合 -->
+        <div th:if="${neck.currentProcess
+                     == 'ネックパーツ付け'}">
+
+            <p>
+                工程結果：完了
+            </p>
+
+            <input type="hidden"
+                   name="result"
+                   value="COMPLETED">
+
+        </div>
+
+        <div>
+            <label for="note">
+                備考
+            </label>
+
+            <textarea id="note"
+                      name="note"
+                      rows="4"
+                      cols="40"></textarea>
+        </div>
+
+        <button type="submit">
+            工程終了
+        </button>
+
+    </form>
+
+</div>
+
+<div th:if="${runningHistory == null}">
+
+    <p>
+        現在実施中の工程はありません。
+    </p>
+
+</div>
+
+<br>
+
+<a th:href="@{/necks/view}">
+    ネック一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>
