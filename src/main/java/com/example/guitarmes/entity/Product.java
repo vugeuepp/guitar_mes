@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -31,6 +33,14 @@ public class Product {
     private Integer fretCount;
 
     private String scale;
+    
+    @ManyToOne
+    @JoinColumn(name = "body_master_id")
+    private BodyMaster bodyMaster;
+
+    @ManyToOne
+    @JoinColumn(name = "neck_master_id")
+    private NeckMaster neckMaster;
 
     public Product() {
     }
@@ -136,6 +146,24 @@ public class Product {
 	public void setScale(String scale) {
 		this.scale = scale;
 	}
+
+	public BodyMaster getBodyMaster() {
+		return bodyMaster;
+	}
+
+	public void setBodyMaster(BodyMaster bodyMaster) {
+		this.bodyMaster = bodyMaster;
+	}
+
+	public NeckMaster getNeckMaster() {
+		return neckMaster;
+	}
+
+	public void setNeckMaster(NeckMaster neckMaster) {
+		this.neckMaster = neckMaster;
+	}
+	
+	
 
     
 }

@@ -15,123 +15,193 @@
      "~{fragments/header :: header('ネック取付登録')}">
 </div>
 
-<form th:action="@{/assemblies/create}"
+<section>
+
+    <h2>
+        生産計画
+    </h2>
+
+    <p>
+        生産指示番号：
+
+        <strong th:text=
+                "${productionOrder.orderNo}">
+        </strong>
+    </p>
+
+    <p>
+        モデル番号：
+
+        <span th:text=
+              "${productionOrder.product.modelNo}">
+        </span>
+    </p>
+
+    <p>
+        製品名：
+
+        <span th:text=
+              "${productionOrder.product.productName}">
+        </span>
+    </p>
+
+    <p>
+        カラー：
+
+        <span th:text=
+              "${productionOrder.product.color}">
+        </span>
+    </p>
+
+    <p>
+        生産進捗：
+
+        <span th:text=
+              "${productionOrder.startedQuantity
+                + ' / '
+                + productionOrder.plannedQuantity
+                + ' 台着手'}">
+        </span>
+    </p>
+
+</section>
+
+<hr>
+
+<!-- 候補が不足している場合 -->
+<div th:if="${#lists.isEmpty(necks)
+             or #lists.isEmpty(bodies)}">
+
+    <p class="error-message"
+       th:if="${#lists.isEmpty(necks)}">
+
+        組立可能なネックがありません。
+
+    </p>
+
+    <p class="error-message"
+       th:if="${#lists.isEmpty(bodies)}">
+
+        組立可能なボディがありません。
+
+    </p>
+
+    <p>
+        ネックとボディの工程を完了し、
+        両方を組立可能な状態にしてください。
+    </p>
+
+</div>
+
+<form th:if="${not #lists.isEmpty(necks)
+              and not #lists.isEmpty(bodies)}"
+      th:action="@{/assemblies/create}"
       method="post">
 
-    <div>
-        <label>
-            ギター
-        </label>
+    <input type="hidden"
+           name="productionOrderId"
+           th:value="${productionOrder.id}">
 
-        <!-- ギター指定あり -->
-        <div th:if="${selectedGuitar != null}">
+    <fieldset>
 
-            <span th:text="${selectedGuitar.serialNo
-                    + ' ('
-                    + selectedGuitar.product.productName
-                    + ')'}">
-            </span>
+        <legend>
+            使用部材
+        </legend>
 
-            <input type="hidden"
-                   name="guitarId"
-                   th:value="${selectedGuitar.id}">
+        <div>
 
-        </div>
+            <label for="neckId">
+                ネック
+            </label>
 
-        <!-- ギター指定なし -->
-        <div th:if="${selectedGuitar == null}">
-
-            <select name="guitarId"
+            <select id="neckId"
+                    name="neckId"
                     required>
 
                 <option value="">
                     選択してください
                 </option>
 
-                <option th:each="guitar : ${guitars}"
-                        th:value="${guitar.id}"
-                        th:text="${guitar.serialNo
-                            + ' ('
-                            + guitar.product.productName
-                            + ')'}">
+                <option
+                    th:each="neck : ${necks}"
+                    th:value="${neck.id}"
+                    th:text="${neck.serialNo
+                        + ' / '
+                        + neck.modelName}">
                 </option>
 
             </select>
 
         </div>
-    </div>
 
-    <div>
-        <label for="neckId">
-            ネック
-        </label>
+        <div>
 
-        <select id="neckId"
-                name="neckId"
-                required>
+            <label for="bodyId">
+                ボディ
+            </label>
 
-            <option value="">
-                選択してください
-            </option>
+            <select id="bodyId"
+                    name="bodyId"
+                    required>
 
-            <option th:each="neck : ${necks}"
-                    th:value="${neck.id}"
-                    th:text="${neck.serialNo
-                        + ' ('
-                        + neck.modelName
-                        + ')'}">
-            </option>
+                <option value="">
+                    選択してください
+                </option>
 
-        </select>
-    </div>
-
-    <div>
-        <label for="bodyId">
-            ボディ
-        </label>
-
-        <select id="bodyId"
-                name="bodyId"
-                required>
-
-            <option value="">
-                選択してください
-            </option>
-
-            <option th:each="body : ${bodies}"
+                <option
+                    th:each="body : ${bodies}"
                     th:value="${body.id}"
                     th:text="${body.serialNo
-                        + ' ('
+                        + ' / '
                         + body.modelName
                         + ' / '
-                        + body.color
-                        + ')'}">
-            </option>
+                        + body.color}">
+                </option>
 
-        </select>
-    </div>
+            </select>
 
-    <div>
-        <label for="workerName">
-            作業者
-        </label>
+        </div>
 
-        <input type="text"
-               id="workerName"
-               name="workerName"
-               required>
-    </div>
+    </fieldset>
 
-    <button type="submit">
-        登録
+    <fieldset>
+
+        <legend>
+            作業情報
+        </legend>
+
+        <div>
+
+            <label for="workerName">
+                作業者
+            </label>
+
+            <input type="text"
+                   id="workerName"
+                   name="workerName"
+                   required>
+
+        </div>
+
+    </fieldset>
+
+    <button type="submit"
+            class="process-button process-start-button">
+
+        ネック取付を登録
+
     </button>
 
 </form>
 
 <br>
 
-<a th:href="@{/assemblies/view}">
-    組立実績一覧へ戻る
+<a th:href=
+   "@{/production-orders/{id}/view(
+       id=${productionOrder.id})}">
+
+    生産計画詳細へ戻る
+
 </a>
 
 <div th:replace=

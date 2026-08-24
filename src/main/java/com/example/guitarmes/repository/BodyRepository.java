@@ -16,6 +16,10 @@ public interface BodyRepository
     List<Body> findByStatus(
             String status);
 
+    List<Body> findByStatusAndBodyMaster_Id(
+            String status,
+            Long bodyMasterId);
+
     long countByStatus(
             String status);
 

@@ -1,5 +1,7 @@
 package com.example.guitarmes.service;
 
+import static com.example.guitarmes.common.GuitarProcessConstants.*;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,6 +17,7 @@ import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.GuitarRepository;
@@ -56,6 +59,42 @@ public class GuitarService {
 		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
 		guitar.setProduct(product);
 		return guitarRepository.save(guitar);
+	}
+	
+	@Transactional
+	public Guitar createGuitar(
+	        ProductionOrder productionOrder) {
+
+	    if (productionOrder == null) {
+	        throw new BusinessException(
+	                "生産計画が指定されていません。");
+	    }
+
+	    if (productionOrder.getProduct() == null) {
+	        throw new BusinessException(
+	                "生産計画に製品が設定されていません。");
+	    }
+
+	    Guitar guitar =
+	            new Guitar();
+
+	    guitar.setSerialNo(
+	            generateSerialNo());
+
+	    guitar.setProduct(
+	            productionOrder.getProduct());
+
+	    guitar.setProductionOrder(
+	            productionOrder);
+
+	    /*
+	     * ネック取付が完了した時点でGuitarが成立する。
+	     * 次に開始するGuitar工程を初期値として設定する。
+	     */
+	    guitar.setCurrentProcess(
+	            PARTS_INSTALLATION);
+
+	    return guitarRepository.save(guitar);
 	}
 
 	public Guitar getGuitarById(Long id) {
@@ -160,6 +199,14 @@ public class GuitarService {
 	
 	public List<Guitar> getGuitarsByProductId(Long productId) {
 		return guitarRepository.findByProductId(productId);
+	}
+	
+	public List<Guitar> getGuitarsByProductionOrderId(
+	        Long productionOrderId) {
+
+	    return guitarRepository
+	            .findByProductionOrderIdOrderByIdAsc(
+	                    productionOrderId);
 	}
 
 }
