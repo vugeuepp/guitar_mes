@@ -10,12 +10,18 @@
 <div th:replace=
  "~{fragments/header :: header('ギター一覧')}">
 </div>
-<p>
-    <a th:href="@{/guitars/new}">
-        新規ギター登録
-    </a>
-</p>
+<div class="information-message">
 
+    <p>
+        ギター個体は、生産計画のネック取付時に
+        自動生成されます。
+    </p>
+
+    <a th:href="@{/production-orders/view}">
+        生産計画一覧を開く
+    </a>
+
+</div>
 <table border="1">
     <tr>
         <th>ID</th>
@@ -38,12 +44,6 @@
             </a>
         </td>
         <td>
-            <!-- ネック取付が必要な場合 -->
-            <a th:if="${guitar.needAssembly}"
-               th:href="@{/assemblies/new(guitarId=${guitar.id})}">
-                ネック取付登録
-            </a>
-
             <!-- 実施中工程がある場合 -->
             <a th:if="${!guitar.needAssembly and guitar.hasRunningProcess}"
                th:href="@{/processes/end/view(guitarId=${guitar.id})}">

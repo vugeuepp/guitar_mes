@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>生産計画一覧</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+ "~{fragments/header :: header('生産計画一覧')}">
+</div>
+
+<p>
+
+    <a th:href=
+       "@{/production-orders/new}">
+        生産計画登録
+    </a>
+
+</p>
+
+<table border="1">
+
+    <tr>
+
+        <th>指示番号</th>
+        <th>製品</th>
+        <th>計画数</th>
+        <th>着手数</th>
+        <th>完成数</th>
+        <th>状態</th>
+
+    </tr>
+
+    <tr th:each=
+        "order : ${orders}">
+
+        <td>
+
+            <a th:href=
+               "@{/production-orders/{id}/view(
+               id=${order.id})}"
+
+               th:text=
+               "${order.orderNo}">
+            </a>
+
+        </td>
+
+		<td th:text="${order.product.modelNo
+		        + ' / '
+		        + order.product.productName
+		        + ' / '
+		        + order.product.color}">
+		</td>
+
+        <td th:text=
+            "${order.plannedQuantity}">
+        </td>
+
+        <td th:text=
+            "${order.startedQuantity}">
+        </td>
+
+        <td th:text=
+            "${order.completedQuantity}">
+        </td>
+
+        <td th:text=
+            "${order.status}">
+        </td>
+
+    </tr>
+
+</table>
+
+<div th:replace=
+ "~{fragments/menu :: menu}">
+</div>
+
+</body>
+</html>

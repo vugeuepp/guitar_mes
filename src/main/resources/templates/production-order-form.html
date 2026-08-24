@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>生産計画登録</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('生産計画登録')}">
+</div>
+
+<div th:if="${#lists.isEmpty(products)}">
+
+    <p class="error-message">
+        登録可能な製品マスタがありません。
+    </p>
+
+    <p>
+        <a th:href="@{/products/new}">
+            製品マスタを登録する
+        </a>
+    </p>
+
+</div>
+
+<form th:if="${not #lists.isEmpty(products)}"
+      th:action="@{/production-orders/create}"
+      method="post"
+      id="productionOrderForm">
+
+    <fieldset>
+
+        <legend>
+            対象製品
+        </legend>
+
+        <!-- シリーズ -->
+        <div>
+            <label for="seriesSelect">
+                シリーズ
+            </label>
+
+            <select id="seriesSelect"
+                    required>
+
+                <option value="">
+                    選択してください
+                </option>
+
+            </select>
+        </div>
+
+        <!-- モデル -->
+        <div>
+            <label for="modelSelect">
+                モデル
+            </label>
+
+            <select id="modelSelect"
+                    required
+                    disabled>
+
+                <option value="">
+                    先にシリーズを選択してください
+                </option>
+
+            </select>
+        </div>
+
+        <!-- カラー -->
+        <div>
+            <label for="colorSelect">
+                カラー
+            </label>
+
+            <select id="colorSelect"
+                    required
+                    disabled>
+
+                <option value="">
+                    先にモデルを選択してください
+                </option>
+
+            </select>
+        </div>
+
+        <!-- 指板材 -->
+        <div>
+            <label for="fingerboardSelect">
+                指板材
+            </label>
+
+            <select id="fingerboardSelect"
+                    required
+                    disabled>
+
+                <option value="">
+                    先にカラーを選択してください
+                </option>
+
+            </select>
+        </div>
+
+        <!-- Controllerへ送信するProduct ID -->
+        <input type="hidden"
+               id="productId"
+               name="productId">
+
+        <!-- 最終的に確定した製品 -->
+        <div id="selectedProductInfo"
+             class="selected-product-info"
+             hidden>
+
+            <p>
+                選択製品：
+            </p>
+
+            <strong id="selectedProductText">
+            </strong>
+
+        </div>
+
+        <!-- Productが特定できなかった場合 -->
+        <p id="productErrorMessage"
+           class="error-message"
+           hidden>
+        </p>
+
+    </fieldset>
+
+    <fieldset>
+
+        <legend>
+            計画内容
+        </legend>
+
+        <div>
+            <label for="plannedQuantity">
+                計画数
+            </label>
+
+            <input type="number"
+                   id="plannedQuantity"
+                   name="plannedQuantity"
+                   min="1"
+                   required>
+
+            <span>
+                台
+            </span>
+        </div>
+
+        <div>
+            <label for="plannedStartDate">
+                開始予定日
+            </label>
+
+            <input type="date"
+                   id="plannedStartDate"
+                   name="plannedStartDate">
+        </div>
+
+        <div>
+            <label for="dueDate">
+                納期
+            </label>
+
+            <input type="date"
+                   id="dueDate"
+                   name="dueDate">
+        </div>
+
+    </fieldset>
+
+    <button type="submit"
+            id="registerButton"
+            class="process-button process-start-button"
+            disabled>
+
+        生産計画を登録
+
+    </button>
+
+</form>
+
+<br>
+
+<a th:href="@{/production-orders/view}">
+    生産計画一覧へ戻る
+</a>
+
+<div th:replace=
+     "~{fragments/menu :: menu}">
+</div>
+
+<script th:inline="javascript">
+
+    const products =
+        /*[[${products}]]*/ [];
+
+    const seriesSelect =
+        document.getElementById(
+            "seriesSelect"
+        );
+
+    const modelSelect =
+        document.getElementById(
+            "modelSelect"
+        );
+
+    const colorSelect =
+        document.getElementById(
+            "colorSelect"
+        );
+
+    const fingerboardSelect =
+        document.getElementById(
+            "fingerboardSelect"
+        );
+
+    const productIdInput =
+        document.getElementById(
+            "productId"
+        );
+
+    const registerButton =
+        document.getElementById(
+            "registerButton"
+        );
+
+    const selectedProductInfo =
+        document.getElementById(
+            "selectedProductInfo"
+        );
+
+    const selectedProductText =
+        document.getElementById(
+            "selectedProductText"
+        );
+
+    const productErrorMessage =
+        document.getElementById(
+            "productErrorMessage"
+        );
+
+    /*
+     * 製品名からシリーズを判定する。
+     */
+    function getSeries(productName) {
+
+        if (productName.includes(
+                "Traditional")) {
+
+            return "Traditional";
+        }
+
+        if (productName.includes(
+                "Hybrid II")) {
+
+            return "Hybrid II";
+        }
+
+        return "その他";
+    }
+
+    /*
+     * selectへoptionを追加する。
+     */
+    function appendOption(
+            selectElement,
+            value,
+            text) {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value = value;
+        option.textContent = text;
+
+        selectElement.appendChild(
+            option
+        );
+    }
+
+    /*
+     * モデル選択を初期化する。
+     */
+    function resetModelSelect() {
+
+        modelSelect.innerHTML =
+            '<option value="">'
+            + '先にシリーズを選択してください'
+            + '</option>';
+
+        modelSelect.disabled = true;
+    }
+
+    /*
+     * カラー選択を初期化する。
+     */
+    function resetColorSelect() {
+
+        colorSelect.innerHTML =
+            '<option value="">'
+            + '先にモデルを選択してください'
+            + '</option>';
+
+        colorSelect.disabled = true;
+    }
+
+    /*
+     * 指板材選択を初期化する。
+     */
+    function resetFingerboardSelect() {
+
+        fingerboardSelect.innerHTML =
+            '<option value="">'
+            + '先にカラーを選択してください'
+            + '</option>';
+
+        fingerboardSelect.disabled = true;
+    }
+
+    /*
+     * 確定済みProductを解除する。
+     */
+    function resetSelectedProduct() {
+
+        productIdInput.value = "";
+
+        registerButton.disabled = true;
+
+        selectedProductInfo.hidden = true;
+
+        selectedProductText.textContent =
+            "";
+
+        productErrorMessage.hidden = true;
+
+        productErrorMessage.textContent =
+            "";
+    }
+
+    /*
+     * エラーを表示する。
+     */
+    function showProductError(message) {
+
+        resetSelectedProduct();
+
+        productErrorMessage.textContent =
+            message;
+
+        productErrorMessage.hidden = false;
+    }
+
+    /*
+     * Productを確定する。
+     */
+    function selectProduct(product) {
+
+        if (product == null) {
+
+            showProductError(
+                "対象となる製品が見つかりません。"
+            );
+
+            return;
+        }
+
+        productIdInput.value =
+            product.id;
+
+        selectedProductText.textContent =
+            product.modelNo
+            + " / "
+            + product.productName
+            + " / "
+            + product.color
+            + " / "
+            + product.fingerboardMaterial;
+
+        selectedProductInfo.hidden =
+            false;
+
+        productErrorMessage.hidden =
+            true;
+
+        registerButton.disabled =
+            false;
+    }
+
+    /*
+     * シリーズ一覧を生成する。
+     */
+    function initializeSeriesSelect() {
+
+        const seriesNames = [
+            ...new Set(
+                products.map(
+                    product =>
+                        getSeries(
+                            product.productName
+                        )
+                )
+            )
+        ];
+
+        seriesNames.forEach(series => {
+
+            appendOption(
+                seriesSelect,
+                series,
+                series
+            );
+        });
+    }
+
+    /*
+     * シリーズ変更
+     */
+    seriesSelect.addEventListener(
+        "change",
+        function () {
+
+            resetModelSelect();
+            resetColorSelect();
+            resetFingerboardSelect();
+            resetSelectedProduct();
+
+            const selectedSeries =
+                seriesSelect.value;
+
+            if (selectedSeries === "") {
+                return;
+            }
+
+            const matchingProducts =
+                products.filter(
+                    product =>
+                        getSeries(
+                            product.productName
+                        ) === selectedSeries
+                );
+
+            const modelNames = [
+                ...new Set(
+                    matchingProducts.map(
+                        product =>
+                            product.productName
+                    )
+                )
+            ];
+
+            modelSelect.innerHTML =
+                '<option value="">'
+                + '選択してください'
+                + '</option>';
+
+            modelNames.forEach(
+                modelName => {
+
+                    appendOption(
+                        modelSelect,
+                        modelName,
+                        modelName
+                    );
+                }
+            );
+
+            modelSelect.disabled = false;
+        }
+    );
+
+    /*
+     * モデル変更
+     */
+    modelSelect.addEventListener(
+        "change",
+        function () {
+
+            resetColorSelect();
+            resetFingerboardSelect();
+            resetSelectedProduct();
+
+            const selectedModel =
+                modelSelect.value;
+
+            if (selectedModel === "") {
+                return;
+            }
+
+            const matchingProducts =
+                products.filter(
+                    product =>
+                        product.productName
+                        === selectedModel
+                );
+
+            /*
+             * 同じカラーを重複表示しない。
+             */
+            const colors = [
+                ...new Set(
+                    matchingProducts.map(
+                        product =>
+                            product.color
+                    )
+                )
+            ];
+
+            colorSelect.innerHTML =
+                '<option value="">'
+                + '選択してください'
+                + '</option>';
+
+            colors.forEach(color => {
+
+                appendOption(
+                    colorSelect,
+                    color,
+                    color
+                );
+            });
+
+            colorSelect.disabled = false;
+        }
+    );
+
+    /*
+     * カラー変更
+     */
+    colorSelect.addEventListener(
+        "change",
+        function () {
+
+            resetFingerboardSelect();
+            resetSelectedProduct();
+
+            const selectedModel =
+                modelSelect.value;
+
+            const selectedColor =
+                colorSelect.value;
+
+            if (selectedModel === ""
+                    || selectedColor === "") {
+
+                return;
+            }
+
+            const matchingProducts =
+                products.filter(
+                    product =>
+                        product.productName
+                            === selectedModel
+                        && product.color
+                            === selectedColor
+                );
+
+            if (matchingProducts.length === 0) {
+
+                showProductError(
+                    "選択条件に対応する"
+                    + "製品がありません。"
+                );
+
+                return;
+            }
+
+            /*
+             * 指板材を重複なしで取得する。
+             */
+            const fingerboardMaterials = [
+                ...new Set(
+                    matchingProducts.map(
+                        product =>
+                            product
+                                .fingerboardMaterial
+                    )
+                )
+            ];
+
+            /*
+             * 指板材が1種類の場合は自動選択する。
+             */
+            if (fingerboardMaterials.length
+                    === 1) {
+
+                const fingerboard =
+                    fingerboardMaterials[0];
+
+                /*
+                 * 同じモデル・色・指板材で
+                 * Productが複数ないか確認する。
+                 */
+                const exactProducts =
+                    matchingProducts.filter(
+                        product =>
+                            product
+                                .fingerboardMaterial
+                            === fingerboard
+                    );
+
+                if (exactProducts.length !== 1) {
+
+                    showProductError(
+                        "同一仕様の製品マスタが"
+                        + "複数登録されています。"
+                    );
+
+                    return;
+                }
+
+                fingerboardSelect.innerHTML =
+                    "";
+
+                appendOption(
+                    fingerboardSelect,
+                    exactProducts[0].id,
+                    fingerboard
+                        + "（自動選択）"
+                );
+
+                fingerboardSelect.value =
+                    String(
+                        exactProducts[0].id
+                    );
+
+                /*
+                 * Product IDはhiddenで送るため、
+                 * selectがdisabledでも問題ない。
+                 */
+                fingerboardSelect.disabled =
+                    true;
+
+                selectProduct(
+                    exactProducts[0]
+                );
+
+                return;
+            }
+
+            /*
+             * 指板材が複数ある場合は
+             * ユーザーに選択させる。
+             */
+            fingerboardSelect.innerHTML =
+                '<option value="">'
+                + '選択してください'
+                + '</option>';
+
+            fingerboardMaterials.forEach(
+                fingerboard => {
+
+                    const exactProducts =
+                        matchingProducts.filter(
+                            product =>
+                                product
+                                    .fingerboardMaterial
+                                === fingerboard
+                        );
+
+                    /*
+                     * 同一指板材でProductが
+                     * 1件の場合だけ候補へ追加する。
+                     */
+                    if (exactProducts.length === 1) {
+
+                        appendOption(
+                            fingerboardSelect,
+                            exactProducts[0].id,
+                            fingerboard
+                        );
+                    }
+                }
+            );
+
+            fingerboardSelect.disabled =
+                false;
+        }
+    );
+
+    /*
+     * 指板材変更
+     */
+    fingerboardSelect.addEventListener(
+        "change",
+        function () {
+
+            resetSelectedProduct();
+
+            const selectedProductId =
+                fingerboardSelect.value;
+
+            if (selectedProductId === "") {
+                return;
+            }
+
+            const selectedProduct =
+                products.find(
+                    product =>
+                        String(product.id)
+                        === selectedProductId
+                );
+
+            selectProduct(
+                selectedProduct
+            );
+        }
+    );
+
+    /*
+     * 登録時の最終検証
+     */
+    document
+        .getElementById(
+            "productionOrderForm"
+        )
+        .addEventListener(
+            "submit",
+            function (event) {
+
+                if (productIdInput.value === "") {
+
+                    event.preventDefault();
+
+                    alert(
+                        "シリーズ、モデル、カラー、"
+                        + "指板材を確定してください。"
+                    );
+
+                    return;
+                }
+
+                const plannedStartDate =
+                    document.getElementById(
+                        "plannedStartDate"
+                    ).value;
+
+                const dueDate =
+                    document.getElementById(
+                        "dueDate"
+                    ).value;
+
+                if (plannedStartDate !== ""
+                        && dueDate !== ""
+                        && dueDate
+                            < plannedStartDate) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "納期は開始予定日以降に"
+                        + "してください。"
+                    );
+                }
+            }
+        );
+
+    initializeSeriesSelect();
+
+</script>
+
+</body>
+</html>

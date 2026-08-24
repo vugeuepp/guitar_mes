@@ -17,28 +17,40 @@ import com.example.guitarmes.service.AssemblyService;
 @RestController
 @RequestMapping("/api/assemblies")
 public class AssemblyController {
-	private final AssemblyService assemblyService;
-	
-	public AssemblyController(AssemblyService assemblyService) {
-		this.assemblyService = assemblyService;
-	}
-	
-	@PostMapping
-	public Assembly createAssembly(@RequestBody AssemblyCreateRequest request) {
-		return assemblyService.createAssembly(
-				request.getGuitarId(), 
-				request.getNeckId(), 
-				request.getBodyId(), 
-				request.getWorkerName());
-	}
-	
-	@GetMapping
-	public List<AssemblyResponse> getAssemblies() {
-		return assemblyService.getAssemblies();
-	}
-	
-	@GetMapping("/{id}")
-	public AssemblyResponse getAssemblyById(@PathVariable Long id) {
-		return assemblyService.getAssemblyById(id);
-	}
+
+    private final AssemblyService assemblyService;
+
+    public AssemblyController(
+            AssemblyService assemblyService) {
+
+        this.assemblyService =
+                assemblyService;
+    }
+
+    @PostMapping
+    public Assembly createAssembly(
+            @RequestBody
+            AssemblyCreateRequest request) {
+
+        return assemblyService.createAssembly(
+                request.getProductionOrderId(),
+                request.getNeckId(),
+                request.getBodyId(),
+                request.getWorkerName());
+    }
+
+    @GetMapping
+    public List<AssemblyResponse>
+            getAssemblies() {
+
+        return assemblyService.getAssemblies();
+    }
+
+    @GetMapping("/{id}")
+    public AssemblyResponse getAssemblyById(
+            @PathVariable Long id) {
+
+        return assemblyService
+                .getAssemblyById(id);
+    }
 }

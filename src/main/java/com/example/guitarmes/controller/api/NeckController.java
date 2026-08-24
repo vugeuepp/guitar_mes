@@ -16,26 +16,36 @@ import com.example.guitarmes.service.NeckService;
 @RestController
 @RequestMapping("/api/necks")
 public class NeckController {
-	private final NeckService neckService;
-	
-	public NeckController(NeckService neckService) {
-		this.neckService = neckService;
-	}
-	
-	@GetMapping
-	public List<Neck> getNecks() {
-		return neckService.getNecks();
-	}
-	
-	@GetMapping("/{id}")
-	public Neck getNeckById(@PathVariable Long id) {
-		return neckService.getNeckById(id);
-	}
-	
-	@PostMapping
-	public Neck createNeck(@RequestBody NeckCreateRequest request) {
-		return neckService.createNeck(
-				request.getSerialNo(), 
-				request.getModelName());
-	}
+
+    private final NeckService neckService;
+
+    public NeckController(
+            NeckService neckService) {
+
+        this.neckService =
+                neckService;
+    }
+
+    @GetMapping
+    public List<Neck> getNecks() {
+
+        return neckService.getNecks();
+    }
+
+    @GetMapping("/{id}")
+    public Neck getNeckById(
+            @PathVariable Long id) {
+
+        return neckService
+                .getNeckById(id);
+    }
+
+    @PostMapping
+    public Neck createNeck(
+            @RequestBody
+            NeckCreateRequest request) {
+
+        return neckService.createNeck(
+                request.getNeckMasterId());
+    }
 }

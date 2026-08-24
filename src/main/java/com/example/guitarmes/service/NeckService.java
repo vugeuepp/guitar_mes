@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import com.example.guitarmes.dto.ComponentStatusCountResponse;
 import com.example.guitarmes.entity.Neck;
 import com.example.guitarmes.entity.NeckMaster;
+import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.NeckMasterRepository;
 import com.example.guitarmes.repository.NeckRepository;
@@ -147,5 +149,25 @@ public class NeckService {
 		        displayName,
 		        neckRepository.countByStatus(status),
 		        cssClass);
+	}
+	public List<Neck> getAvailableNecksByProduct(
+	        Product product) {
+
+	    if (product == null) {
+	        throw new BusinessException(
+	                "製品が指定されていません。");
+	    }
+
+	    if (product.getNeckMaster() == null) {
+	        throw new BusinessException(
+	                "製品に対応するネックマスタが"
+	                + "設定されていません。");
+	    }
+
+	    return neckRepository
+	            .findByStatusAndNeckMaster_Id(
+	                    AVAILABLE,
+	                    product.getNeckMaster()
+	                            .getId());
 	}
 }

@@ -16,6 +16,10 @@ public interface NeckRepository
     List<Neck> findByStatus(
             String status);
 
+    List<Neck> findByStatusAndNeckMaster_Id(
+            String status,
+            Long neckMasterId);
+
     long countByStatus(
             String status);
 

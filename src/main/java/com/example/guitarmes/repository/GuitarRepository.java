@@ -9,5 +9,9 @@ import com.example.guitarmes.entity.Guitar;
 
 public interface GuitarRepository extends JpaRepository<Guitar, Long> {
 	List<Guitar> findByProductId(Long productId);
+	
 	Optional<Guitar> findTopBySerialNoStartingWithOrderBySerialNoDesc(String prefix);
+
+	List<Guitar> findByProductionOrderIdOrderByIdAsc(Long productionOrderId);
+
 }

@@ -16,28 +16,35 @@ import com.example.guitarmes.service.BodyService;
 @RestController
 @RequestMapping("/api/bodies")
 public class BodyController {
-	private final BodyService bodyService;
-	
-	public BodyController(BodyService bodyService) {
-		this.bodyService = bodyService;
-	}
-	
-	@GetMapping
-	public List<Body> getBodies() {
-		return bodyService.getBodies();
-	}
-	
-	@GetMapping("/{id}")
-	public Body getBodyById(@PathVariable Long id) {
-		return bodyService.getBodyById(id);
-	}
-	
-	@PostMapping
-	public Body createBody(@RequestBody BodyCreateRequest request) {
-		return bodyService.createBody(
-				request.getSerialNo(), 
-				request.getModelName(), 
-				request.getColor()
-				);
-	}
+
+    private final BodyService bodyService;
+
+    public BodyController(
+            BodyService bodyService) {
+
+        this.bodyService = bodyService;
+    }
+
+    @GetMapping
+    public List<Body> getBodies() {
+
+        return bodyService.getBodies();
+    }
+
+    @GetMapping("/{id}")
+    public Body getBodyById(
+            @PathVariable Long id) {
+
+        return bodyService
+                .getBodyById(id);
+    }
+
+    @PostMapping
+    public Body createBody(
+            @RequestBody
+            BodyCreateRequest request) {
+
+        return bodyService.createBody(
+                request.getBodyMasterId());
+    }
 }

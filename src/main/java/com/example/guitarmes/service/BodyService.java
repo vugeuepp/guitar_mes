@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import com.example.guitarmes.dto.ComponentStatusCountResponse;
 import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.entity.BodyMaster;
+import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.BodyRepository;
@@ -159,5 +161,26 @@ public class BodyService {
 		        displayName,
 		        bodyRepository.countByStatus(status),
 		        cssClass);
+	}
+	
+	public List<Body> getAvailableBodiesByProduct(
+	        Product product) {
+
+	    if (product == null) {
+	        throw new BusinessException(
+	                "製品が指定されていません。");
+	    }
+
+	    if (product.getBodyMaster() == null) {
+	        throw new BusinessException(
+	                "製品に対応するボディマスタが"
+	                + "設定されていません。");
+	    }
+
+	    return bodyRepository
+	            .findByStatusAndBodyMaster_Id(
+	                    AVAILABLE,
+	                    product.getBodyMaster()
+	                            .getId());
 	}
 }

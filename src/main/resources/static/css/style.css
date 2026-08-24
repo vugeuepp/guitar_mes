@@ -253,3 +253,15 @@ h1 {
     background-color: #fdecec;
     border-color: #e6a5ad;
 }
+.information-message {
+    margin: 16px 0;
+    padding: 12px 16px;
+    color: #174ea6;
+    background-color: #e8f0fe;
+    border: 1px solid #aecbfa;
+    border-radius: 6px;
+}
+
+.information-message p {
+    margin-top: 0;
+}
