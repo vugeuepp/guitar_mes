@@ -16,7 +16,6 @@ import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
@@ -53,13 +52,13 @@ public class GuitarService {
 		return prefix + String.format("%04d", nextNumber);
 	}
 	
-	public Guitar createGuitar(Product product) {
-		Guitar guitar = new Guitar();
-		guitar.setSerialNo(generateSerialNo());
-		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
-		guitar.setProduct(product);
-		return guitarRepository.save(guitar);
-	}
+//	public Guitar createGuitar(Product product) {
+//		Guitar guitar = new Guitar();
+//		guitar.setSerialNo(generateSerialNo());
+//		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
+//		guitar.setProduct(product);
+//		return guitarRepository.save(guitar);
+//	}
 	
 	@Transactional
 	public Guitar createGuitar(

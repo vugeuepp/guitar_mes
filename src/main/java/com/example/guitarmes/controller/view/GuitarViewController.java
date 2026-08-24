@@ -4,17 +4,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.dto.AssemblyResponse;
 import com.example.guitarmes.entity.ManufacturingProcess;
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.service.AssemblyService;
 import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProcessService;
-import com.example.guitarmes.service.ProductService;
 
 
 @Controller
@@ -22,14 +18,12 @@ public class GuitarViewController {
 	private final GuitarService guitarService;
 	private final ProcessService processService;
 	private final AssemblyService assemblyService;
-	private final ProductService productService;
 
 	public GuitarViewController(GuitarService guitarService, ProcessService processService,
-			AssemblyService assemblyService, ProductService productService) {
+			AssemblyService assemblyService) {
 		this.guitarService = guitarService;
 		this.processService = processService;
 		this.assemblyService = assemblyService;
-		this.productService = productService;
 	}
 
 	@GetMapping("/guitars/view")
@@ -41,13 +35,6 @@ public class GuitarViewController {
 	@GetMapping("/guitars/new")
 	public String newGuitarForm(Model model) {
 		return "redirect:/production-orders/view";
-	}
-	
-	@PostMapping("/guitars/create")
-	public String createGuitar(@RequestParam Long productId) {
-		Product product = productService.getProductById(productId);
-		guitarService.createGuitar(product);
-		return "redirect:/guitars/view";
 	}
 	
 	@GetMapping("/guitars/{id}/view")
