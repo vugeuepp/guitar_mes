@@ -40,8 +40,7 @@ public class GuitarViewController {
 	
 	@GetMapping("/guitars/new")
 	public String newGuitarForm(Model model) {
-		model.addAttribute("products", productService.getProducts());
-		return "guitar-form";
+		return "redirect:/production-orders/view";
 	}
 	
 	@PostMapping("/guitars/create")
@@ -66,11 +65,6 @@ public class GuitarViewController {
 			nextProcess = null;
 		}
 		model.addAttribute("nextProcess", nextProcess);
-		
-		boolean needAssembly = nextProcess != null 
-				&& "ネック取付".equals(nextProcess.getProcessName())
-				&& assembly == null;
-		model.addAttribute("needAssembly", needAssembly);
 		
 		boolean hasRunningProcess = processService.hasRunningProcess(id);
 		model.addAttribute("hasRunningProcess", hasRunningProcess);
