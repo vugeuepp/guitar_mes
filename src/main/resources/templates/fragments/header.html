@@ -3,11 +3,85 @@
 
 <th:block th:fragment="header(title)">
 
-    <h1>Guitar MES</h1>
+    <header class="app-header">
 
-    <h2 th:text="${title}"></h2>
+		<div class="app-header-main">
 
-    <hr>
+		    <a class="app-brand"
+		       th:href="@{/}">
+
+		        <span class="app-brand-mark">
+		            GM
+		        </span>
+
+		        <span class="app-brand-text">
+		            Guitar MES
+		        </span>
+
+		    </a>
+
+		    <span class="app-subtitle">
+		        Production Control System
+		    </span>
+
+		    <!-- モバイル用メニューボタン -->
+		    <button type="button"
+		            id="menuToggle"
+		            class="menu-toggle"
+		            aria-label="メニュー">
+
+		        ☰
+
+		    </button>
+
+		</div>
+
+		<!-- 共通ナビゲーション -->
+		<div th:replace=
+		     "~{fragments/menu :: menu}">
+		</div>
+
+    </header>
+
+    <div class="page-heading">
+
+        <h1 th:text="${title}">
+        </h1>
+
+    </div>
+	<script>
+
+	document.addEventListener(
+	    "DOMContentLoaded",
+	    function() {
+
+	        const menuToggle =
+	            document.getElementById(
+	                "menuToggle"
+	            );
+
+	        const topNav =
+	            document.getElementById(
+	                "topNav"
+	            );
+
+	        if (!menuToggle || !topNav) {
+	            return;
+	        }
+
+	        menuToggle.addEventListener(
+	            "click",
+	            function() {
+
+	                topNav.classList.toggle(
+	                    "mobile-open"
+	                );
+
+	            }
+	        );
+	    });
+
+	</script>
 
 </th:block>
 

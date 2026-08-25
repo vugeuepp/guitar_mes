@@ -71,17 +71,16 @@
             "${order.completedQuantity}">
         </td>
 
-        <td th:text=
-            "${order.status}">
-        </td>
+		<td>
+		    <span class="status-badge"
+		          th:classappend="${@productionOrderDisplay.getCssClass(order.status)}"
+		          th:text="${@productionOrderDisplay.getLabel(order.status)}">
+		    </span>
+		</td>
 
     </tr>
 
 </table>
-
-<div th:replace=
- "~{fragments/menu :: menu}">
-</div>
 
 </body>
 </html>

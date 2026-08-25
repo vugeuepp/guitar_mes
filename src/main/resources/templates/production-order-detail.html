@@ -142,13 +142,12 @@
 </section>
 
 <p>
+    状態：
 
-状態：
-
-<span th:text=
-      "${order.status}">
-</span>
-
+    <span class="status-badge"
+          th:classappend="${@productionOrderDisplay.getCssClass(order.status)}"
+          th:text="${@productionOrderDisplay.getLabel(order.status)}">
+    </span>
 </p>
 
 <p>
@@ -229,10 +228,6 @@
    "@{/production-orders/view}">
    一覧へ戻る
 </a>
-
-<div th:replace=
- "~{fragments/menu :: menu}">
-</div>
 
 </body>
 </html>
