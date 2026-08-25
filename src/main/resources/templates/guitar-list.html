@@ -1,68 +1,226 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>ギター一覧</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <title>
+        ギター管理一覧
+    </title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+
 </head>
 
 <body>
+
 <div th:replace=
- "~{fragments/header :: header('ギター一覧')}">
+     "~{fragments/header :: header('ギター管理一覧')}">
 </div>
-<div class="information-message">
 
-    <p>
-        ギター個体は、生産計画のネック取付時に
-        自動生成されます。
-    </p>
+<main class="page-container">
 
-    <a th:href="@{/production-orders/view}">
-        生産計画一覧を開く
-    </a>
+    <div class="page-toolbar">
 
-</div>
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>シリアル番号</th>
-        <th>モデル</th>
-        <th>現在工程</th>
-        <th>進捗率</th>
-        <th>詳細</th>
-        <th>操作</th>
-    </tr>
-    <tr th:each="guitar : ${guitars}">
-        <td th:text="${guitar.id}"></td>
-        <td th:text="${guitar.serialNo}"></td>
-		<td th:text="${guitar.productName}"></td>
-        <td th:text="${guitar.currentProcess}"></td>
-        <td th:text="${guitar.progressRate + '%'}"></td>
-        <td>
-            <a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
-                詳細
-            </a>
-        </td>
-        <td>
-            <!-- 実施中工程がある場合 -->
-            <a th:if="${!guitar.needAssembly and guitar.hasRunningProcess}"
-               th:href="@{/processes/end/view(guitarId=${guitar.id})}">
-                工程終了
+        <p class="page-toolbar-description">
+            ネック取付時に生成されたギター個体と、
+            現在の製造進捗を確認できます。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-primary"
+               th:href="@{/production-orders/view}">
+
+                生産計画一覧を開く
+
             </a>
 
-            <!-- 通常工程を開始できる場合 -->
-            <a th:if="${!guitar.needAssembly and !guitar.hasRunningProcess and guitar.hasNextProcess}"
-               th:href="@{/processes/start/view(guitarId=${guitar.id})}">
-                工程開始
-            </a>
+        </div>
 
-            <!-- 開始可能工程がない場合 -->
-            <span th:if="${!guitar.needAssembly and !guitar.hasRunningProcess and !guitar.hasNextProcess}">
-                完成または開始可能工程なし
-            </span>
-        </td>
-    </tr>
-</table>
-<br>
+    </div>
+
+    <!-- Guitarが0件の場合 -->
+    <div th:if="${#lists.isEmpty(guitars)}"
+         class="empty-state">
+
+        <p>
+            生成済みのギター個体はありません。
+        </p>
+
+        <p>
+            生産計画詳細からネック取付を登録すると、
+            ギター個体が自動生成されます。
+        </p>
+
+        <a class="btn btn-primary"
+           th:href="@{/production-orders/view}">
+
+            生産計画一覧を開く
+
+        </a>
+
+    </div>
+
+    <!-- Guitar一覧 -->
+    <div th:if="${not #lists.isEmpty(guitars)}"
+         class="table-container">
+
+        <table class="data-table guitar-management-table">
+
+            <colgroup>
+
+                <col class="guitar-management-column-id">
+
+                <col class="guitar-management-column-serial">
+
+                <col class="guitar-management-column-product">
+
+                <col class="guitar-management-column-process">
+
+                <col class="guitar-management-column-progress">
+
+                <col class="guitar-management-column-status">
+
+                <col class="guitar-management-column-operation">
+
+                <col class="guitar-management-column-detail">
+
+            </colgroup>
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>シリアル番号</th>
+                    <th>製品</th>
+                    <th>現在工程</th>
+                    <th>進捗率</th>
+                    <th>状態</th>
+                    <th>操作</th>
+                    <th>詳細</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr th:each="guitar : ${guitars}"
+                    th:classappend=
+                    "${guitar.currentProcess == '完成'}
+                    ? 'completed'
+                    : ''">
+
+                    <td th:text="${guitar.id}">
+                    </td>
+
+                    <td>
+
+                        <span class="guitar-serial-number"
+                              th:text="${guitar.serialNo}">
+                        </span>
+
+                    </td>
+
+                    <td class="guitar-management-product-cell"
+                        th:text="${guitar.productName}">
+                    </td>
+
+                    <td th:text="${guitar.currentProcess}">
+                    </td>
+
+                    <td th:text="${guitar.progressRate + '%'}">
+                    </td>
+
+                    <!-- 状態 -->
+					<td class="status-cell">
+
+					    <span th:if="${guitar.hasRunningProcess}"
+					          class="status-badge status-working">
+					        作業中
+					    </span>
+
+					    <span th:if="${!guitar.hasRunningProcess
+					                  and guitar.currentProcess != '完成'}"
+					          class="status-badge status-waiting">
+					        工程待ち
+					    </span>
+
+					    <span th:if="${!guitar.hasRunningProcess
+					                  and guitar.currentProcess == '完成'}"
+					          class="status-badge status-available">
+					        完成
+					    </span>
+
+					</td>
+
+                    <!-- 工程操作 -->
+                    <td class="guitar-operation-cell">
+
+                        <a th:if="${guitar.hasRunningProcess}"
+                           class="btn btn-process-end"
+                           th:href="@{/processes/end/view(
+                               guitarId=${guitar.id})}">
+
+                            工程終了
+
+                        </a>
+
+                        <a th:if="${!guitar.hasRunningProcess
+                                   and guitar.hasNextProcess}"
+                           class="btn btn-primary"
+                           th:href="@{/processes/start/view(
+                               guitarId=${guitar.id})}">
+
+                            工程開始
+
+                        </a>
+
+                        <span th:if="${!guitar.hasRunningProcess
+                                      and !guitar.hasNextProcess
+                                      and guitar.currentProcess == '完成'}"
+                              class="list-no-action">
+
+                            完成済み
+
+                        </span>
+
+                        <span th:if="${!guitar.hasRunningProcess
+                                      and !guitar.hasNextProcess
+                                      and guitar.currentProcess != '完成'}"
+                              class="list-no-action">
+
+                            操作なし
+
+                        </span>
+
+                    </td>
+
+                    <!-- 詳細 -->
+                    <td class="table-action-cell">
+
+                        <a class="btn btn-detail"
+                           th:href="@{/guitars/{id}/view(
+                               id=${guitar.id})}">
+
+                            詳細
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
 </body>
+
 </html>

@@ -1,79 +1,140 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>製品一覧</title>
-
+    <title>製品マスタ一覧</title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
-
 </head>
-
 <body>
 
-<div th:replace=
- "~{fragments/header :: header('製品一覧')}">
+<div th:replace="~{fragments/header :: header('製品マスタ一覧')}">
 </div>
 
-<p>
-    <a th:href="@{/products/new}">
-        製品登録
-    </a>
-</p>
+<main class="page-container">
 
-<form th:action="@{/products/view}"
-      method="get">
+    <div class="page-toolbar">
 
-    <input type="text"
-           name="keyword"
-           th:value="${keyword}"
-           placeholder="製品名検索">
+        <p class="page-toolbar-description">
+            生産計画で使用する製品マスタを管理します。
+        </p>
 
-    <button type="submit">
-        検索
-    </button>
+        <div class="page-toolbar-actions">
 
-</form>
+            <form th:action="@{/products/view}"
+                  method="get">
 
-<br>
+                <input type="text"
+                       name="keyword"
+                       th:value="${keyword}"
+                       placeholder="製品名検索">
 
-<table border="1">
+                <button type="submit"
+                        class="btn btn-secondary">
+                    検索
+                </button>
 
-    <tr>
-        <th>ID</th>
-        <th>モデル番号</th>
-        <th>製品名</th>
-        <th>カラー</th>
-        <th>ボディ材</th>
-        <th>ネック材</th>
-    </tr>
+            </form>
 
-    <tr th:each="product : ${products}">
+            <a class="btn btn-primary"
+               th:href="@{/products/new}">
+                製品登録
+            </a>
 
-		<td>
-		    <a th:href=
-		       "@{/products/{id}/view(id=${product.id})}"
-		       th:text="${product.id}">
-		    </a>
-		</td>
+        </div>
 
-        <td th:text="${product.modelNo}"></td>
+    </div>
 
-        <td th:text="${product.productName}"></td>
+    <div th:if="${#lists.isEmpty(products)}"
+         class="empty-state">
 
-        <td th:text="${product.color}"></td>
+        <p>登録されている製品はありません。</p>
 
-        <td th:text="${product.bodyMaterial}"></td>
+    </div>
 
-        <td th:text="${product.neckMaterial}"></td>
+    <div th:unless="${#lists.isEmpty(products)}"
+         class="table-container">
 
-    </tr>
+        <table class="data-table product-management-table">
 
-</table>
+            <colgroup>
+                <col class="product-column-id">
+                <col class="product-column-model-no">
+                <col class="product-column-name">
+                <col class="product-column-color">
+                <col class="product-column-fingerboard">
+                <col class="product-column-body-master">
+                <col class="product-column-neck-master">
+                <col class="product-column-detail">
+            </colgroup>
+
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>モデル番号</th>
+                <th>製品名</th>
+                <th>カラー</th>
+                <th>指板材</th>
+                <th>Body Master</th>
+                <th>Neck Master</th>
+                <th>詳細</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <tr th:each="product : ${products}">
+
+                <td th:text="${product.id}">
+                </td>
+
+                <td th:text="${product.modelNo}">
+                </td>
+
+                <td>
+                    <div class="product-name-primary"
+                         th:text="${product.productName}">
+                    </div>
+
+                    <div class="product-name-secondary"
+                         th:text="${product.pickupLayout}">
+                    </div>
+                </td>
+
+                <td th:text="${product.color}">
+                </td>
+
+                <td th:text="${product.fingerboardMaterial}">
+                </td>
+
+                <td th:text="${product.bodyMaster != null
+                              ? product.bodyMaster.modelCode
+                              : '-'}">
+                </td>
+
+                <td th:text="${product.neckMaster != null
+                              ? product.neckMaster.modelName
+                              : '-'}">
+                </td>
+
+                <td class="list-action-cell">
+
+                    <a class="btn btn-detail"
+                       th:href="@{/products/{id}/view(id=${product.id})}">
+                        詳細
+                    </a>
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
 
 </body>
-
 </html>

@@ -3,45 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <title>ボディマスタ一覧</title>
-
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
 <body>
 
-<div th:replace=
-     "~{fragments/header :: header('ボディマスタ一覧')}">
+<div th:replace="~{fragments/header :: header('ボディマスタ一覧')}">
 </div>
 
-<p>
-    <a th:href="@{/body-masters/new}">
-        ボディマスタ登録
-    </a>
-</p>
+<main class="page-container">
 
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>モデルコード</th>
-        <th>モデル名</th>
-        <th>ボディタイプ</th>
-        <th>材質</th>
-        <th>カラー</th>
-    </tr>
+    <div class="page-toolbar">
 
-    <tr th:each="bodyMaster : ${bodyMasters}">
-		<td>
-		    <a th:href="@{/body-masters/{id}/view(id=${bodyMaster.id})}"
-		       th:text="${bodyMaster.id}">
-		    </a>
-		</td>
-        <td th:text="${bodyMaster.modelCode}"></td>
-        <td th:text="${bodyMaster.modelName}"></td>
-        <td th:text="${bodyMaster.bodyType}"></td>
-        <td th:text="${bodyMaster.material}"></td>
-        <td th:text="${bodyMaster.color}"></td>
-    </tr>
-</table>
+        <p class="page-toolbar-description">
+            ボディマスタ情報を管理します。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-primary"
+               th:href="@{/body-masters/new}">
+                ボディマスタ登録
+            </a>
+
+        </div>
+
+    </div>
+
+    <div th:if="${#lists.isEmpty(bodyMasters)}"
+         class="empty-state">
+
+        <p>登録されているボディマスタはありません。</p>
+
+    </div>
+
+    <div th:unless="${#lists.isEmpty(bodyMasters)}"
+         class="table-container">
+
+        <table class="data-table body-master-table">
+
+            <colgroup>
+                <col class="body-master-column-id">
+                <col class="body-master-column-code">
+                <col class="body-master-column-name">
+                <col class="body-master-column-type">
+                <col class="body-master-column-material">
+                <col class="body-master-column-color">
+                <col class="body-master-column-detail">
+            </colgroup>
+
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>モデルコード</th>
+                <th>モデル名</th>
+                <th>ボディタイプ</th>
+                <th>材質</th>
+                <th>カラー</th>
+                <th>詳細</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <tr th:each="bodyMaster : ${bodyMasters}">
+
+                <td th:text="${bodyMaster.id}">
+                </td>
+
+                <td th:text="${bodyMaster.modelCode}">
+                </td>
+
+                <td class="body-master-name"
+                    th:text="${bodyMaster.modelName}">
+                </td>
+
+                <td th:text="${bodyMaster.bodyType}">
+                </td>
+
+                <td th:text="${bodyMaster.material}">
+                </td>
+
+                <td th:text="${bodyMaster.color}">
+                </td>
+
+                <td class="list-action-cell">
+
+                    <a class="btn btn-detail"
+                       th:href="@{/body-masters/{id}/view(id=${bodyMaster.id})}">
+                        詳細
+                    </a>
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
 
 </body>
 </html>

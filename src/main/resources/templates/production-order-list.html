@@ -2,85 +2,212 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
+
     <meta charset="UTF-8">
-    <title>生産計画一覧</title>
+
+    <title>
+        生産計画一覧
+    </title>
 
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
+
 </head>
 
 <body>
 
 <div th:replace=
- "~{fragments/header :: header('生産計画一覧')}">
+     "~{fragments/header :: header('生産計画一覧')}">
 </div>
 
-<p>
+<main class="page-container">
 
-    <a th:href=
-       "@{/production-orders/new}">
-        生産計画登録
-    </a>
+    <!-- 説明・主要操作 -->
+    <div class="page-toolbar">
 
-</p>
+        <p class="page-toolbar-description">
+            製品仕様ごとの生産計画と、
+            着手・完成状況を確認できます。
+        </p>
 
-<table border="1">
+        <div class="page-toolbar-actions">
 
-    <tr>
+            <a class="btn btn-primary"
+               th:href="@{/production-orders/new}">
 
-        <th>指示番号</th>
-        <th>製品</th>
-        <th>計画数</th>
-        <th>着手数</th>
-        <th>完成数</th>
-        <th>状態</th>
+                生産計画を登録
 
-    </tr>
-
-    <tr th:each=
-        "order : ${orders}">
-
-        <td>
-
-            <a th:href=
-               "@{/production-orders/{id}/view(
-               id=${order.id})}"
-
-               th:text=
-               "${order.orderNo}">
             </a>
 
-        </td>
+        </div>
 
-		<td th:text="${order.product.modelNo
-		        + ' / '
-		        + order.product.productName
-		        + ' / '
-		        + order.product.color}">
-		</td>
+    </div>
 
-        <td th:text=
-            "${order.plannedQuantity}">
-        </td>
+    <!-- 0件表示 -->
+    <div th:if="${#lists.isEmpty(orders)}"
+         class="empty-state">
 
-        <td th:text=
-            "${order.startedQuantity}">
-        </td>
+        <p>
+            生産計画はまだ登録されていません。
+        </p>
 
-        <td th:text=
-            "${order.completedQuantity}">
-        </td>
+        <a class="btn btn-primary"
+           th:href="@{/production-orders/new}">
 
-		<td>
-		    <span class="status-badge"
-		          th:classappend="${@productionOrderDisplay.getCssClass(order.status)}"
-		          th:text="${@productionOrderDisplay.getLabel(order.status)}">
-		    </span>
-		</td>
+            最初の生産計画を登録
 
-    </tr>
+        </a>
 
-</table>
+    </div>
+
+    <!-- 生産計画一覧 -->
+    <div th:if="${not #lists.isEmpty(orders)}"
+         class="table-container">
+
+        <table class="data-table production-order-table">
+
+            <colgroup>
+
+                <col class="production-order-column-number">
+
+                <col class="production-order-column-product">
+
+                <col class="production-order-column-fingerboard">
+
+                <col class="production-order-column-quantity">
+
+                <col class="production-order-column-quantity">
+
+                <col class="production-order-column-quantity">
+
+                <col class="production-order-column-status">
+
+                <col class="production-order-column-action">
+
+            </colgroup>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        生産指示番号
+                    </th>
+
+                    <th>
+                        製品
+                    </th>
+
+                    <th>
+                        指板材
+                    </th>
+
+                    <th>
+                        計画数
+                    </th>
+
+                    <th>
+                        着手数
+                    </th>
+
+                    <th>
+                        完成数
+                    </th>
+
+                    <th>
+                        状態
+                    </th>
+
+                    <th>
+                        詳細
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr th:each="order : ${orders}"
+                    th:classappend=
+                    "${order.status == 'COMPLETED'}
+                    ? 'completed'
+                    : ''">
+
+                    <td>
+
+                        <span class="order-number"
+                              th:text="${order.orderNo}">
+                        </span>
+
+                    </td>
+
+                    <td class="production-order-product-cell">
+
+                        <div class="product-primary"
+                             th:text="${order.product.productName}">
+                        </div>
+
+                        <div class="product-secondary"
+                             th:text="${order.product.modelNo
+                                 + ' / '
+                                 + order.product.color}">
+                        </div>
+
+                    </td>
+
+                    <td th:text=
+                        "${order.product.fingerboardMaterial}">
+                    </td>
+
+                    <td th:text=
+                        "${order.plannedQuantity + ' 台'}">
+                    </td>
+
+                    <td th:text=
+                        "${order.startedQuantity + ' 台'}">
+                    </td>
+
+                    <td th:text=
+                        "${order.completedQuantity + ' 台'}">
+                    </td>
+
+                    <td>
+
+                        <span class="status-badge"
+                              th:classappend=
+                              "${@productionOrderDisplay
+                                  .getCssClass(order.status)}"
+                              th:text=
+                              "${@productionOrderDisplay
+                                  .getLabel(order.status)}">
+                        </span>
+
+                    </td>
+
+                    <td class="table-action-cell">
+
+                        <a class="btn btn-detail"
+                           th:href=
+                           "@{/production-orders/{id}/view(
+                               id=${order.id})}">
+
+                            詳細
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
 
 </body>
+
 </html>

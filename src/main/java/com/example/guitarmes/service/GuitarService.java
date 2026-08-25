@@ -15,197 +15,337 @@ import com.example.guitarmes.common.ProcessConstants;
 import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
-import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.GuitarRepository;
 
-
-
 @Service
 public class GuitarService {
-	private final GuitarRepository guitarRepository;
-	
-	public GuitarService(GuitarRepository guitarRepository) {
-		this.guitarRepository = guitarRepository;
-	}
-	
-	public List<Guitar> getGuitars() {
-		return guitarRepository.findAll();
-	}
-	
-	private String generateSerialNo() {
-		String year = String.valueOf(LocalDate.now().getYear()).substring(2);
-		String prefix = "DY" + year;
-		
-		Guitar lastGuitar = guitarRepository.findTopBySerialNoStartingWithOrderBySerialNoDesc(prefix).orElse(null);
-		
-		int nextNumber = 1;
-		
-		if(lastGuitar != null) {
-			String lastSerial = lastGuitar.getSerialNo();
-			
-			nextNumber = Integer.parseInt(lastSerial.substring(4)) + 1; 
-		}
-		
-		return prefix + String.format("%04d", nextNumber);
-	}
-	
-//	public Guitar createGuitar(Product product) {
-//		Guitar guitar = new Guitar();
-//		guitar.setSerialNo(generateSerialNo());
-//		guitar.setCurrentProcess(ProcessConstants.NOT_STARTED);
-//		guitar.setProduct(product);
-//		return guitarRepository.save(guitar);
-//	}
-	
-	@Transactional
-	public Guitar createGuitar(
-	        ProductionOrder productionOrder) {
 
-	    if (productionOrder == null) {
-	        throw new BusinessException(
-	                "生産計画が指定されていません。");
-	    }
+    private final GuitarRepository guitarRepository;
 
-	    if (productionOrder.getProduct() == null) {
-	        throw new BusinessException(
-	                "生産計画に製品が設定されていません。");
-	    }
+    public GuitarService(
+            GuitarRepository guitarRepository) {
 
-	    Guitar guitar =
-	            new Guitar();
+        this.guitarRepository =
+                guitarRepository;
+    }
 
-	    guitar.setSerialNo(
-	            generateSerialNo());
+    /**
+     * Guitarを全件取得する。
+     */
+    public List<Guitar> getGuitars() {
 
-	    guitar.setProduct(
-	            productionOrder.getProduct());
+        return guitarRepository.findAll();
+    }
 
-	    guitar.setProductionOrder(
-	            productionOrder);
+    /**
+     * Guitarのシリアル番号を自動採番する。
+     *
+     * 形式：
+     * DY + 年下2桁 + 4桁連番
+     */
+    private String generateSerialNo() {
 
-	    /*
-	     * ネック取付が完了した時点でGuitarが成立する。
-	     * 次に開始するGuitar工程を初期値として設定する。
-	     */
-	    guitar.setCurrentProcess(
-	            PARTS_INSTALLATION);
+        String year =
+                String.valueOf(
+                        LocalDate.now().getYear())
+                        .substring(2);
 
-	    return guitarRepository.save(guitar);
-	}
+        String prefix =
+                "DY" + year;
 
-	public Guitar getGuitarById(Long id) {
-		return findGuitarOrThrow(id);
-	}
-	
-	@Transactional
-	public Guitar updateGuitar(Long id, String currentProcess) {
-		Guitar guitar = findGuitarOrThrow(id);
-		
-		guitar.setCurrentProcess(currentProcess);
-		
-		return guitarRepository.save(guitar);
-	}
-	
-	private Guitar findGuitarOrThrow(Long id) {
-		return guitarRepository.findById(id).orElseThrow(
-				() -> new NotFoundException("指定されたギターが存在しません。"));
-	}
-	
-	public List<GuitarProgressResponse> getGuitarProgressList(ProcessService processService, AssemblyService assemblyService) {
-		List<GuitarProgressResponse> responses = new ArrayList<>();
-		for (Guitar guitar : guitarRepository.findAll()) {
-			Long guitarId = guitar.getId();
-			int progressRate = processService.getProgressRate(guitarId);
-			boolean hasRunningProcess = processService.hasRunningProcess(guitarId);
-			boolean hasNextProcess = processService.hasNextProcess(guitarId);
-			
-			ManufacturingProcess nextProcess = null;
-			
-			try {
-				nextProcess = processService.getNextAvailableProcess(guitarId);
-			} catch (BusinessException e) {
-				nextProcess = null;
-			}
-			
-			boolean needAssembly = nextProcess != null && ProcessConstants.NECK_ASSEMBLY.equals(nextProcess.getProcessName()) && assemblyService.getAssemblyByGuitarId(guitarId) == null;
-			
-			String productName = guitar.getProduct().getProductName();
-			
-			responses.add(
-					new GuitarProgressResponse(
-						guitar.getId(),
-						guitar.getSerialNo(), 
-						productName,
-						guitar.getCurrentProcess(),
-						progressRate,
-						hasRunningProcess,
-						hasNextProcess,
-						needAssembly));
-		}
-		return responses;
-	}
-	
-	public long getTotalGuitarCount() {
-	    return guitarRepository.count();
-	}
-	
-	public long getCompletedGuitarCount() {
-		long count = 0;
-		for (Guitar guitar : guitarRepository.findAll()) {
-			if(ProcessConstants.COMPLETED.equals(guitar.getCurrentProcess())) {
-				count++;
-			}
-		}
-		return count;
-	}
-	
-	public long getInProgressGuitarCount() {
-		return getTotalGuitarCount() - getCompletedGuitarCount();
-	}
-	
-	public List<ProcessCountResponse> getProcessCounts() {
-		Map<String, Long> countMap = new LinkedHashMap<>();
-		
-		for (Guitar guitar : guitarRepository.findAll()) {
-			String currentProcess = guitar.getCurrentProcess();
-			
-			if (currentProcess == null) {
-				currentProcess = "未設定";
-			}
-			
-			countMap.put(currentProcess, countMap.getOrDefault(currentProcess, 0L) + 1);
-		}
-		
-		List<ProcessCountResponse> responses = new ArrayList<>();
-		
-		for (Map.Entry<String, Long> entry : countMap. entrySet()) {
-			responses.add(new ProcessCountResponse(entry.getKey(), entry.getValue()));
-		}
-		
-		return responses;
-	}
-	
-	public int getCompletionRate() {
-		long total = getTotalGuitarCount();
-		if (total == 0) {
-			return 0;
-		}
-		return (int)((getCompletedGuitarCount() * 100) / total);
-	}
-	
-	public List<Guitar> getGuitarsByProductId(Long productId) {
-		return guitarRepository.findByProductId(productId);
-	}
-	
-	public List<Guitar> getGuitarsByProductionOrderId(
-	        Long productionOrderId) {
+        Guitar lastGuitar =
+                guitarRepository
+                        .findTopBySerialNoStartingWithOrderBySerialNoDesc(
+                                prefix)
+                        .orElse(null);
 
-	    return guitarRepository
-	            .findByProductionOrderIdOrderByIdAsc(
-	                    productionOrderId);
-	}
+        int nextNumber = 1;
 
+        if (lastGuitar != null) {
+
+            String lastSerial =
+                    lastGuitar.getSerialNo();
+
+            nextNumber =
+                    Integer.parseInt(
+                            lastSerial.substring(4))
+                    + 1;
+        }
+
+        return prefix
+                + String.format(
+                        "%04d",
+                        nextNumber);
+    }
+
+    /**
+     * ProductionOrderからGuitarを生成する。
+     *
+     * ネック取付が完了した時点で
+     * Guitar個体が成立する。
+     */
+    @Transactional
+    public Guitar createGuitar(
+            ProductionOrder productionOrder) {
+
+        if (productionOrder == null) {
+
+            throw new BusinessException(
+                    "生産計画が指定されていません。");
+        }
+
+        if (productionOrder.getProduct()
+                == null) {
+
+            throw new BusinessException(
+                    "生産計画に製品が設定されていません。");
+        }
+
+        Guitar guitar =
+                new Guitar();
+
+        guitar.setSerialNo(
+                generateSerialNo());
+
+        guitar.setProduct(
+                productionOrder.getProduct());
+
+        guitar.setProductionOrder(
+                productionOrder);
+
+        /*
+         * ネック取付完了後に開始する
+         * 最初のGuitar工程。
+         */
+        guitar.setCurrentProcess(
+                PARTS_INSTALLATION);
+
+        return guitarRepository.save(
+                guitar);
+    }
+
+    /**
+     * IDを指定してGuitarを取得する。
+     */
+    public Guitar getGuitarById(
+            Long id) {
+
+        return findGuitarOrThrow(id);
+    }
+
+    /**
+     * Guitarの現在工程を更新する。
+     */
+    @Transactional
+    public Guitar updateGuitar(
+            Long id,
+            String currentProcess) {
+
+        Guitar guitar =
+                findGuitarOrThrow(id);
+
+        guitar.setCurrentProcess(
+                currentProcess);
+
+        return guitarRepository.save(
+                guitar);
+    }
+
+    /**
+     * Guitarを取得する。
+     */
+    private Guitar findGuitarOrThrow(
+            Long id) {
+
+        return guitarRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "指定されたギターが"
+                                + "存在しません。"));
+    }
+
+    /**
+     * Guitar一覧・ダッシュボード用の
+     * 進捗情報を作成する。
+     */
+    public List<GuitarProgressResponse>
+            getGuitarProgressList(
+                    ProcessService processService,
+                    AssemblyService assemblyService) {
+
+        List<GuitarProgressResponse> responses =
+                new ArrayList<>();
+
+        for (Guitar guitar
+                : guitarRepository.findAll()) {
+
+            Long guitarId =
+                    guitar.getId();
+
+            int progressRate =
+                    processService
+                            .getProgressRate(
+                                    guitarId);
+
+            boolean hasRunningProcess =
+                    processService
+                            .hasRunningProcess(
+                                    guitarId);
+
+            boolean hasNextProcess =
+                    processService
+                            .hasNextProcess(
+                                    guitarId);
+
+            String productName = "-";
+
+            if (guitar.getProduct() != null) {
+
+                productName =
+                        guitar.getProduct()
+                                .getProductName();
+            }
+
+            GuitarProgressResponse response =
+                    new GuitarProgressResponse(
+                            guitar.getId(),
+                            guitar.getSerialNo(),
+                            productName,
+                            guitar.getCurrentProcess(),
+                            progressRate,
+                            hasRunningProcess,
+                            hasNextProcess);
+
+            responses.add(response);
+        }
+
+        return responses;
+    }
+
+    /**
+     * Guitar総数を取得する。
+     */
+    public long getTotalGuitarCount() {
+
+        return guitarRepository.count();
+    }
+
+    /**
+     * 完成済みGuitar数を取得する。
+     */
+    public long getCompletedGuitarCount() {
+
+        long count = 0;
+
+        for (Guitar guitar
+                : guitarRepository.findAll()) {
+
+            if (ProcessConstants.COMPLETED
+                    .equals(
+                            guitar.getCurrentProcess())) {
+
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * 製造中Guitar数を取得する。
+     */
+    public long getInProgressGuitarCount() {
+
+        return getTotalGuitarCount()
+                - getCompletedGuitarCount();
+    }
+
+    /**
+     * 現在工程別のGuitar数を取得する。
+     */
+    public List<ProcessCountResponse>
+            getProcessCounts() {
+
+        Map<String, Long> countMap =
+                new LinkedHashMap<>();
+
+        for (Guitar guitar
+                : guitarRepository.findAll()) {
+
+            String currentProcess =
+                    guitar.getCurrentProcess();
+
+            if (currentProcess == null
+                    || currentProcess.isBlank()) {
+
+                currentProcess = "未設定";
+            }
+
+            countMap.put(
+                    currentProcess,
+                    countMap.getOrDefault(
+                            currentProcess,
+                            0L)
+                    + 1);
+        }
+
+        List<ProcessCountResponse> responses =
+                new ArrayList<>();
+
+        for (Map.Entry<String, Long> entry
+                : countMap.entrySet()) {
+
+            responses.add(
+                    new ProcessCountResponse(
+                            entry.getKey(),
+                            entry.getValue()));
+        }
+
+        return responses;
+    }
+
+    /**
+     * Guitar完成率を取得する。
+     */
+    public int getCompletionRate() {
+
+        long total =
+                getTotalGuitarCount();
+
+        if (total == 0) {
+            return 0;
+        }
+
+        return (int) (
+                getCompletedGuitarCount()
+                * 100
+                / total);
+    }
+
+    /**
+     * Product IDでGuitarを取得する。
+     */
+    public List<Guitar> getGuitarsByProductId(
+            Long productId) {
+
+        return guitarRepository
+                .findByProductId(
+                        productId);
+    }
+
+    /**
+     * ProductionOrder IDでGuitarを取得する。
+     */
+    public List<Guitar>
+            getGuitarsByProductionOrderId(
+                    Long productionOrderId) {
+
+        return guitarRepository
+                .findByProductionOrderIdOrderByIdAsc(
+                        productionOrderId);
+    }
 }
