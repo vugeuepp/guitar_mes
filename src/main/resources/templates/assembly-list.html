@@ -1,45 +1,110 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="UTF-8">
-	<title>組込実績一覧</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <title>ネック取付実績一覧</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div th:replace=
- "~{fragments/header :: header('組立実績一覧')}">
-</div>
-<p>
-    ネック取付は、生産計画詳細画面から登録してください。
-</p>
 
-<p>
-    <a th:href="@{/production-orders/view}">
-        生産計画一覧を開く
-    </a>
-</p>
-<table border="1">
-	<tr>
-		<th>ID</th>
-		<th>Guitar</th>
-		<th>Neck</th>
-		<th>Body</th>
-		<th>Worker</th>
-	</tr>
-	
-	<tr th:each="assembly : ${assemblies}">
-		<td>
-			<a th:href="@{/assemblies/{id}/view(id=${assembly.assemblyId})}"
-			   th:text="${assembly.assemblyId}">
-			</a>
-		</td>
-		<td th:text="${assembly.guitarSerial}"></td>
-		<td th:text="${assembly.neckSerial}"></td>
-		<td th:text="${assembly.bodySerial}"></td>
-		<td th:text="${assembly.workerName}"></td>
-	</tr>
-</table>
-<div th:replace="~{fragments/menu :: menu}">
+<div th:replace="~{fragments/header :: header('ネック取付実績一覧')}">
 </div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            ネック取付実績を確認できます。
+            新規登録は生産計画詳細画面から実施してください。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-primary"
+               th:href="@{/production-orders/view}">
+                生産計画一覧
+            </a>
+        </div>
+
+    </div>
+
+    <div th:if="${#lists.isEmpty(assemblies)}"
+         class="empty-state">
+
+        <p>ネック取付実績はありません。</p>
+
+    </div>
+
+    <div th:unless="${#lists.isEmpty(assemblies)}"
+         class="table-container">
+
+        <table class="data-table assembly-management-table">
+
+            <colgroup>
+                <col class="assembly-column-id">
+                <col class="assembly-column-guitar">
+                <col class="assembly-column-neck">
+                <col class="assembly-column-body">
+                <col class="assembly-column-worker">
+                <col class="assembly-column-date">
+                <col class="assembly-column-detail">
+            </colgroup>
+
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>ギター</th>
+                <th>ネック</th>
+                <th>ボディ</th>
+                <th>作業者</th>
+                <th>組立日時</th>
+                <th>詳細</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <tr th:each="assembly : ${assemblies}">
+
+                <td th:text="${assembly.assemblyId}">
+                </td>
+
+                <td>
+                    <span class="assembly-serial"
+                          th:text="${assembly.guitarSerial}">
+                    </span>
+                </td>
+
+                <td th:text="${assembly.neckSerial}">
+                </td>
+
+                <td th:text="${assembly.bodySerial}">
+                </td>
+
+                <td th:text="${assembly.workerName}">
+                </td>
+
+                <td th:text="${assembly.assemblyDateText}">
+                </td>
+
+                <td class="list-action-cell">
+
+                    <a class="btn btn-detail"
+                       th:href="@{/assemblies/{id}/view(id=${assembly.assemblyId})}">
+                        詳細
+                    </a>
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
 </body>
 </html>

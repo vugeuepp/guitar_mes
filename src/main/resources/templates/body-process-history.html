@@ -1,140 +1,258 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>ボディ工程履歴</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディ工程履歴
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('ボディ工程履歴')}">
 </div>
 
-<div>
-    <p>
-        シリアル番号：
-        <strong th:text="${body.serialNo}">
-        </strong>
-    </p>
+<main class="page-container">
 
-    <p>
-        モデル：
-        <span th:text="${body.modelName}">
-        </span>
-    </p>
+    <div class="page-toolbar">
 
-    <p>
-        カラー：
-        <span th:text="${body.color}">
-        </span>
-    </p>
+        <p class="page-toolbar-description">
+            ボディ工程の実施履歴を確認できます。
+        </p>
 
-    <p>
-        現在工程：
-        <span th:text="${body.currentProcess}">
-        </span>
-    </p>
-</div>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                ボディ一覧へ戻る
+            </a>
+        </div>
 
-<div th:if="${#lists.isEmpty(histories)}">
+    </div>
 
-    <p>
-        工程履歴はありません。
-    </p>
+    <section class="detail-section">
 
-</div>
+        <div class="detail-section-heading">
 
-<table th:if="${!#lists.isEmpty(histories)}"
-       border="1">
+            <div>
+                <p class="detail-section-caption">
+                    Body Information
+                </p>
 
-    <tr>
-        <th>履歴ID</th>
-        <th>工程</th>
-        <th>結果</th>
-        <th>作業者</th>
-        <th>開始日時</th>
-        <th>終了日時</th>
-        <th>作業時間</th>
-        <th>備考</th>
-    </tr>
+                <h2 class="detail-section-title"
+                    th:text="${body.serialNo}">
+                </h2>
+            </div>
 
-    <tr th:each="history : ${histories}">
+        </div>
 
-        <td th:text="${history.historyId}">
-        </td>
+        <div class="detail-grid">
 
-        <td th:text="${history.processName}">
-        </td>
+            <div class="detail-item">
 
-        <td>
-            <span th:switch="${history.result}">
+                <div class="detail-label">
+                    シリアル番号
+                </div>
 
-                <span th:case="'PASSED'"
-                      class="status-badge status-available">
-                    合格
+                <div class="detail-value"
+                     th:text="${body.serialNo}">
+                </div>
+
+            </div>
+
+            <div class="detail-item">
+
+                <div class="detail-label">
+                    モデル
+                </div>
+
+                <div class="detail-value"
+                     th:text="${body.modelName}">
+                </div>
+
+            </div>
+
+            <div class="detail-item">
+
+                <div class="detail-label">
+                    カラー
+                </div>
+
+                <div class="detail-value"
+                     th:text="${body.color}">
+                </div>
+
+            </div>
+
+            <div class="detail-item">
+
+                <div class="detail-label">
+                    現在工程
+                </div>
+
+                <div class="detail-value"
+                     th:text="${body.currentProcess}">
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <div th:if="${#lists.isEmpty(histories)}"
+         class="empty-state">
+
+        <p>
+            工程履歴はありません。
+        </p>
+
+    </div>
+
+    <section th:if="${not #lists.isEmpty(histories)}"
+             class="detail-section">
+
+        <div class="detail-section-heading">
+
+            <div>
+                <p class="detail-section-caption">
+                    Process History
+                </p>
+
+                <h2 class="detail-section-title">
+                    工程履歴
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(histories)}">
                 </span>
-
-                <span th:case="'REWORK'"
-                      class="status-badge status-rework">
-                    手直し
+                <span>
+                    件
                 </span>
+            </div>
 
-                <span th:case="'REJECTED'"
-                      class="status-badge status-rejected">
-                    不合格
-                </span>
+        </div>
 
-                <span th:case="'COMPLETED'"
-                      class="status-badge status-assembled">
-                    完了
-                </span>
+        <div class="table-container">
 
-                <span th:case="null">
-                    実施中
-                </span>
+            <table class="data-table">
 
-                <span th:case="*"
-                      th:text="${history.result}">
-                </span>
+                <thead>
+                    <tr>
+                        <th>
+                            履歴ID
+                        </th>
+                        <th>
+                            工程
+                        </th>
+                        <th>
+                            結果
+                        </th>
+                        <th>
+                            作業者
+                        </th>
+                        <th>
+                            開始日時
+                        </th>
+                        <th>
+                            終了日時
+                        </th>
+                        <th>
+                            作業時間
+                        </th>
+                        <th>
+                            備考
+                        </th>
+                    </tr>
+                </thead>
 
-            </span>
-        </td>
+                <tbody>
 
-        <td th:text="${history.workerName}">
-        </td>
+                    <tr th:each="history : ${histories}">
 
-        <td th:text="${history.startTimeText}">
-        </td>
+                        <td th:text="${history.historyId}">
+                        </td>
 
-        <td th:text="${history.endTimeText}">
-        </td>
+                        <td th:text="${history.processName}">
+                        </td>
 
-        <td th:text="${history.workMinutesText}">
-        </td>
+                        <td>
 
-        <td th:text="${#strings.isEmpty(history.note)
-                ? '-'
-                : history.note}">
-        </td>
+                            <span th:switch="${history.result}">
 
-    </tr>
+                                <span th:case="'PASSED'"
+                                      class="status-badge status-available">
+                                    合格
+                                </span>
 
-</table>
+                                <span th:case="'REWORK'"
+                                      class="status-badge status-rework">
+                                    手直し
+                                </span>
 
-<br>
+                                <span th:case="'REJECTED'"
+                                      class="status-badge status-rejected">
+                                    不合格
+                                </span>
 
-<a th:href="@{/bodies/view}">
-    ボディ一覧へ戻る
-</a>
+                                <span th:case="'COMPLETED'"
+                                      class="status-badge status-assembled">
+                                    完了
+                                </span>
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                                <span th:case="null">
+                                    実施中
+                                </span>
+
+                                <span th:case="*"
+                                      th:text="${history.result}">
+                                </span>
+
+                            </span>
+
+                        </td>
+
+                        <td th:text="${history.workerName}">
+                        </td>
+
+                        <td th:text="${history.startTimeText}">
+                        </td>
+
+                        <td th:text="${history.endTimeText}">
+                        </td>
+
+                        <td th:text="${history.workMinutesText}">
+                        </td>
+
+                        <td th:text="${#strings.isEmpty(history.note)
+                                ? '-'
+                                : history.note}">
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+
+        <a class="btn btn-outline"
+           th:href="@{/bodies/view}">
+            ボディ一覧へ戻る
+        </a>
+
+    </div>
+
+</main>
 
 </body>
 </html>

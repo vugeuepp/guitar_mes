@@ -1,147 +1,292 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>工程時間分析</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        工程時間分析
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('工程時間分析')}">
 </div>
 
-<section class="analysis-section">
+<main class="page-container">
 
-    <h2>ボディ工程</h2>
+    <div class="page-toolbar">
 
-    <div th:if="${#lists.isEmpty(bodyAverageTimes)}">
-        <p>
-            ボディ工程データはありません。
+        <p class="page-toolbar-description">
+            ボディ・ネック・ギター工程の平均作業時間と
+            完了実績を確認できます。
         </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/}">
+                ホームへ戻る
+            </a>
+        </div>
+
     </div>
 
-    <table th:if="${not #lists.isEmpty(bodyAverageTimes)}"
-           border="1">
+    <!-- ボディ工程 -->
 
-        <tr>
-            <th>工程</th>
-            <th>平均作業時間</th>
-            <th>完了実績</th>
-        </tr>
+    <section class="detail-section">
 
-        <tr th:each="average : ${bodyAverageTimes}">
+        <div class="detail-section-heading">
 
-            <td th:text="${average.processName}">
-            </td>
+            <div>
+                <p class="detail-section-caption">
+                    Body Process Analysis
+                </p>
 
-            <td>
-                <span th:if="${average.completedCount > 0}"
-                      th:text="${average.averageMinutes + '分'}">
+                <h2 class="detail-section-title">
+                    ボディ工程
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(bodyAverageTimes)}">
                 </span>
-
-                <span th:if="${average.completedCount == 0}">
-                    -
+                <span>
+                    工程
                 </span>
-            </td>
+            </div>
 
-            <td th:text="${average.completedCount + '件'}">
-            </td>
+        </div>
 
-        </tr>
+        <div th:if="${#lists.isEmpty(bodyAverageTimes)}"
+             class="empty-state">
 
-    </table>
+            <p>
+                ボディ工程データはありません。
+            </p>
 
-</section>
+        </div>
 
-<section class="analysis-section">
+        <div th:if="${not #lists.isEmpty(bodyAverageTimes)}"
+             class="table-container">
 
-    <h2>ネック工程</h2>
+            <table class="data-table">
 
-    <div th:if="${#lists.isEmpty(neckAverageTimes)}">
-        <p>
-            ネック工程データはありません。
-        </p>
+                <thead>
+                    <tr>
+                        <th>
+                            工程
+                        </th>
+                        <th>
+                            平均作業時間
+                        </th>
+                        <th>
+                            完了実績
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr th:each="average : ${bodyAverageTimes}">
+
+                        <td th:text="${average.processName}">
+                        </td>
+
+                        <td>
+
+                            <span th:if="${average.completedCount > 0}"
+                                  th:text="${average.averageMinutes + '分'}">
+                            </span>
+
+                            <span th:if="${average.completedCount == 0}">
+                                -
+                            </span>
+
+                        </td>
+
+                        <td th:text="${average.completedCount + '件'}">
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <!-- ネック工程 -->
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+
+            <div>
+                <p class="detail-section-caption">
+                    Neck Process Analysis
+                </p>
+
+                <h2 class="detail-section-title">
+                    ネック工程
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(neckAverageTimes)}">
+                </span>
+                <span>
+                    工程
+                </span>
+            </div>
+
+        </div>
+
+        <div th:if="${#lists.isEmpty(neckAverageTimes)}"
+             class="empty-state">
+
+            <p>
+                ネック工程データはありません。
+            </p>
+
+        </div>
+
+        <div th:if="${not #lists.isEmpty(neckAverageTimes)}"
+             class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>
+                            工程
+                        </th>
+                        <th>
+                            平均作業時間
+                        </th>
+                        <th>
+                            完了実績
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr th:each="average : ${neckAverageTimes}">
+
+                        <td th:text="${average.processName}">
+                        </td>
+
+                        <td>
+
+                            <span th:if="${average.completedCount > 0}"
+                                  th:text="${average.averageMinutes + '分'}">
+                            </span>
+
+                            <span th:if="${average.completedCount == 0}">
+                                -
+                            </span>
+
+                        </td>
+
+                        <td th:text="${average.completedCount + '件'}">
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <!-- ギター工程 -->
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+
+            <div>
+                <p class="detail-section-caption">
+                    Guitar Process Analysis
+                </p>
+
+                <h2 class="detail-section-title">
+                    ギター工程
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(guitarAverageTimes)}">
+                </span>
+                <span>
+                    工程
+                </span>
+            </div>
+
+        </div>
+
+        <div th:if="${#lists.isEmpty(guitarAverageTimes)}"
+             class="empty-state">
+
+            <p>
+                ギター工程データはありません。
+            </p>
+
+        </div>
+
+        <div th:if="${not #lists.isEmpty(guitarAverageTimes)}"
+             class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>
+                            工程
+                        </th>
+                        <th>
+                            平均作業時間
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr th:each="average : ${guitarAverageTimes}">
+
+                        <td th:text="${average.processName}">
+                        </td>
+
+                        <td th:text="${average.averageMinutes + '分'}">
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+
+        <a class="btn btn-outline"
+           th:href="@{/}">
+            ホームへ戻る
+        </a>
+
     </div>
 
-    <table th:if="${not #lists.isEmpty(neckAverageTimes)}"
-           border="1">
-
-        <tr>
-            <th>工程</th>
-            <th>平均作業時間</th>
-            <th>完了実績</th>
-        </tr>
-
-        <tr th:each="average : ${neckAverageTimes}">
-
-            <td th:text="${average.processName}">
-            </td>
-
-            <td>
-                <span th:if="${average.completedCount > 0}"
-                      th:text="${average.averageMinutes + '分'}">
-                </span>
-
-                <span th:if="${average.completedCount == 0}">
-                    -
-                </span>
-            </td>
-
-            <td th:text="${average.completedCount + '件'}">
-            </td>
-
-        </tr>
-
-    </table>
-
-</section>
-
-<section class="analysis-section">
-
-    <h2>ギター工程</h2>
-
-    <div th:if="${#lists.isEmpty(guitarAverageTimes)}">
-        <p>
-            ギター工程データはありません。
-        </p>
-    </div>
-
-    <table th:if="${not #lists.isEmpty(guitarAverageTimes)}"
-           border="1">
-
-        <tr>
-            <th>工程</th>
-            <th>平均作業時間</th>
-        </tr>
-
-        <tr th:each="average : ${guitarAverageTimes}">
-
-            <td th:text="${average.processName}">
-            </td>
-
-            <td th:text="${average.averageMinutes + '分'}">
-            </td>
-
-        </tr>
-
-    </table>
-
-</section>
-
-<br>
-
-<a th:href="@{/}">
-    ホームへ戻る
-</a>
-
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+</main>
 
 </body>
 </html>

@@ -1,33 +1,97 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="UTF-8">
-	<title>工程履歴</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        工程履歴
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
 <body>
-<div th:replace=
- "~{fragments/header :: header('工程履歴')}">
-</div>
-<table border="1">
-	<tr>
-		<th>工程</th>
-		<th>作業者</th>
-		<th>開始時間</th>
-		<th>終了時間</th>
-		<th>作業時間(分)</th>
-	</tr>
-	
-	<tr th:each="history : ${histories}">
-		<td th:text="${history.processName}"></td>
-		<td th:text="${history.workerName}"></td>
-		<td th:text="${history.startTimeText}"></td>
-		<td th:text="${history.endTimeText}"></td>
-		<td th:text="${history.workMinutesText}"></td>
-	</tr>
-</table>
 
-<div th:replace="~{fragments/menu :: menu}">
+<div th:replace=
+     "~{fragments/header :: header('工程履歴')}">
 </div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            ギター工程の実施履歴を確認できます。
+        </p>
+
+    </div>
+
+    <div th:if="${#lists.isEmpty(histories)}"
+         class="empty-state">
+
+        <p>
+            工程履歴はありません。
+        </p>
+
+    </div>
+
+    <div th:if="${not #lists.isEmpty(histories)}"
+         class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>
+                        工程
+                    </th>
+
+                    <th>
+                        作業者
+                    </th>
+
+                    <th>
+                        開始時間
+                    </th>
+
+                    <th>
+                        終了時間
+                    </th>
+
+                    <th>
+                        作業時間(分)
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr th:each="history : ${histories}">
+
+                    <td th:text="${history.processName}">
+                    </td>
+
+                    <td th:text="${history.workerName}">
+                    </td>
+
+                    <td th:text="${history.startTimeText}">
+                    </td>
+
+                    <td th:text="${history.endTimeText}">
+                    </td>
+
+                    <td th:text="${history.workMinutesText}">
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
 </body>
 </html>

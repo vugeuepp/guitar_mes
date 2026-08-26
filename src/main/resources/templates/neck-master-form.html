@@ -2,8 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>ネックマスタ登録</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ネックマスタ登録
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
@@ -13,60 +16,198 @@
      "~{fragments/header :: header('ネックマスタ登録')}">
 </div>
 
-<form th:action="@{/neck-masters/create}"
-      method="post">
+<main class="page-container">
 
-    <div>
-        <label>モデルコード</label>
-        <input type="text"
-               name="modelCode">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ネックマスタの仕様情報を登録します。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/neck-masters/view}">
+                ネックマスタ一覧へ戻る
+            </a>
+        </div>
     </div>
 
-    <div>
-        <label>モデル名</label>
-        <input type="text"
-               name="modelName">
-    </div>
+    <form th:action="@{/neck-masters/create}"
+          method="post"
+          class="form-container">
 
-    <div>
-        <label>ネックタイプ</label>
-        <input type="text"
-               name="neckType">
-    </div>
+        <section class="form-section">
 
-    <div>
-        <label>ネック材</label>
-        <input type="text"
-               name="neckMaterial">
-    </div>
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Neck Master
+                    </p>
 
-    <div>
-        <label>指板材</label>
-        <input type="text"
-               name="fingerboardMaterial">
-    </div>
+                    <h2 class="form-section-title">
+                        基本情報
+                    </h2>
+                </div>
 
-    <div>
-        <label>フレット数</label>
-        <input type="number"
-               name="fretCount">
-    </div>
+                <p class="form-section-description">
+                    ネックモデルの基本情報を入力してください。
+                </p>
+            </div>
 
-    <div>
-        <label>スケール</label>
-        <input type="text"
-               name="scale">
-    </div>
+            <div class="form-grid">
 
-    <button type="submit">
-        登録
-    </button>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="modelCode">
+                        モデルコード
+                    </label>
 
-</form>
+                    <input type="text"
+                           id="modelCode"
+                           name="modelCode"
+                           class="form-input">
+                </div>
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="modelName">
+                        モデル名
+                    </label>
+
+                    <input type="text"
+                           id="modelName"
+                           name="modelName"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="neckType">
+                        ネックタイプ
+                    </label>
+
+                    <input type="text"
+                           id="neckType"
+                           name="neckType"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Material Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        材料構成
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    ネックと指板の仕様を入力してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="neckMaterial">
+                        ネック材
+                    </label>
+
+                    <input type="text"
+                           id="neckMaterial"
+                           name="neckMaterial"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="fingerboardMaterial">
+                        指板材
+                    </label>
+
+                    <input type="text"
+                           id="fingerboardMaterial"
+                           name="fingerboardMaterial"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Neck Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        ネック仕様
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    フレット数とスケールを入力してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="fretCount">
+                        フレット数
+                    </label>
+
+                    <input type="number"
+                           id="fretCount"
+                           name="fretCount"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="scale">
+                        スケール
+                    </label>
+
+                    <input type="text"
+                           id="scale"
+                           name="scale"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/neck-masters/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                ネックマスタを登録
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
 
 </body>
 </html>

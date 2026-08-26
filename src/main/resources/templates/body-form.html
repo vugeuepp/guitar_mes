@@ -1,146 +1,248 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>ボディ登録</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディ登録
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('ボディ登録')}">
 </div>
 
-<div th:if="${#lists.isEmpty(bodyMasters)}">
+<main class="page-container">
 
-    <p>
-        登録可能なボディマスタがありません。
-    </p>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ボディマスタを選択して、
+            新しいボディ個体を登録します。
+        </p>
 
-    <p>
-        <a th:href="@{/body-masters/new}">
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                ボディ一覧へ戻る
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(bodyMasters)}"
+         class="empty-state">
+
+        <p>
+            登録可能なボディマスタがありません。
+        </p>
+
+        <a class="btn btn-primary"
+           th:href="@{/body-masters/new}">
             ボディマスタを登録する
         </a>
-    </p>
 
-</div>
-
-<form th:if="${!#lists.isEmpty(bodyMasters)}"
-      th:action="@{/bodies/create}"
-      method="post"
-      id="bodyForm">
-
-    <div>
-        <p>
-            シリアル番号は登録時に自動採番されます。
-        </p>
     </div>
 
-    <div>
-        <label for="seriesSelect">
-            シリーズ
-        </label>
+    <form th:if="${not #lists.isEmpty(bodyMasters)}"
+          th:action="@{/bodies/create}"
+          method="post"
+          id="bodyForm"
+          class="form-container">
 
-        <select id="seriesSelect"
-                required>
+        <section class="form-section">
 
-            <option value="">
-                選択してください
-            </option>
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Body Identification
+                    </p>
 
-            <option value="Traditional">
-                Traditional
-            </option>
+                    <h2 class="form-section-title">
+                        個体情報
+                    </h2>
+                </div>
 
-            <option value="Hybrid II">
-                Hybrid II
-            </option>
+                <p class="form-section-description">
+                    シリアル番号は登録時に自動採番されます。
+                </p>
+            </div>
 
-        </select>
-    </div>
+            <div class="information-message">
+                <p>
+                    シリアル番号は登録時に自動採番されます。
+                </p>
+            </div>
 
-    <div>
-        <label for="modelSelect">
-            モデル
-        </label>
+        </section>
 
-        <select id="modelSelect"
-                required
-                disabled>
+        <section class="form-section">
 
-            <option value="">
-                先にシリーズを選択してください
-            </option>
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Body Specification
+                    </p>
 
-        </select>
-    </div>
+                    <h2 class="form-section-title">
+                        ボディ仕様
+                    </h2>
+                </div>
 
-    <div>
-        <label for="colorSelect">
-            カラー
-        </label>
+                <p class="form-section-description">
+                    シリーズ、モデル、カラーの順に
+                    対象ボディを選択してください。
+                </p>
+            </div>
 
-        <select id="colorSelect"
-                required
-                disabled>
+            <div class="form-grid">
 
-            <option value="">
-                先にモデルを選択してください
-            </option>
+                <div class="form-group">
+                    <label for="seriesSelect"
+                           class="form-label">
+                        シリーズ
 
-        </select>
-    </div>
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
 
-    <input type="hidden"
-           id="bodyMasterId"
-           name="bodyMasterId">
+                    <select id="seriesSelect"
+                            class="form-select"
+                            required>
 
-    <div>
-        <button type="submit"
-                id="registerButton"
-                disabled>
-            登録
-        </button>
-    </div>
+                        <option value="">
+                            選択してください
+                        </option>
 
-</form>
+                        <option value="Traditional">
+                            Traditional
+                        </option>
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                        <option value="Hybrid II">
+                            Hybrid II
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelSelect"
+                           class="form-label">
+                        モデル
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="modelSelect"
+                            class="form-select"
+                            required
+                            disabled>
+
+                        <option value="">
+                            先にシリーズを選択してください
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="colorSelect"
+                           class="form-label">
+                        カラー
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="colorSelect"
+                            class="form-select"
+                            required
+                            disabled>
+
+                        <option value="">
+                            先にモデルを選択してください
+                        </option>
+
+                    </select>
+                </div>
+
+            </div>
+
+            <input type="hidden"
+                   id="bodyMasterId"
+                   name="bodyMasterId">
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    id="registerButton"
+                    class="btn btn-primary"
+                    disabled>
+                ボディを登録
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
 
 <script th:inline="javascript">
-    const bodyMasters = /*[[${bodyMasters}]]*/ [];
+    const bodyMasters =
+        /*[[${bodyMasters}]]*/ [];
 
     const seriesSelect =
-        document.getElementById("seriesSelect");
+        document.getElementById(
+            "seriesSelect"
+        );
 
     const modelSelect =
-        document.getElementById("modelSelect");
+        document.getElementById(
+            "modelSelect"
+        );
 
     const colorSelect =
-        document.getElementById("colorSelect");
+        document.getElementById(
+            "colorSelect"
+        );
 
     const bodyMasterIdInput =
-        document.getElementById("bodyMasterId");
+        document.getElementById(
+            "bodyMasterId"
+        );
 
     const registerButton =
-        document.getElementById("registerButton");
+        document.getElementById(
+            "registerButton"
+        );
 
     function resetModelSelect() {
         modelSelect.innerHTML =
-            '<option value="">先にシリーズを選択してください</option>';
+            '<option value="">'
+            + '先にシリーズを選択してください'
+            + '</option>';
 
         modelSelect.disabled = true;
     }
 
     function resetColorSelect() {
         colorSelect.innerHTML =
-            '<option value="">先にモデルを選択してください</option>';
+            '<option value="">'
+            + '先にモデルを選択してください'
+            + '</option>';
 
         colorSelect.disabled = true;
     }
@@ -151,7 +253,10 @@
     }
 
     function getBaseModelName(modelName) {
-        return modelName.replace(/ Body$/, "");
+        return modelName.replace(
+            / Body$/,
+            ""
+        );
     }
 
     seriesSelect.addEventListener(
@@ -188,17 +293,25 @@
             ];
 
             modelSelect.innerHTML =
-                '<option value="">選択してください</option>';
+                '<option value="">'
+                + '選択してください'
+                + '</option>';
 
-            modelNames.forEach(modelName => {
-                const option =
-                    document.createElement("option");
+            modelNames.forEach(
+                modelName => {
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
 
-                option.value = modelName;
-                option.textContent = modelName;
+                    option.value = modelName;
+                    option.textContent = modelName;
 
-                modelSelect.appendChild(option);
-            });
+                    modelSelect.appendChild(
+                        option
+                    );
+                }
+            );
 
             modelSelect.disabled = false;
         }
@@ -226,18 +339,28 @@
                 );
 
             colorSelect.innerHTML =
-                '<option value="">選択してください</option>';
+                '<option value="">'
+                + '選択してください'
+                + '</option>';
 
-            matchingMasters.forEach(bodyMaster => {
-                const option =
-                    document.createElement("option");
+            matchingMasters.forEach(
+                bodyMaster => {
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
 
-                option.value = bodyMaster.id;
-                option.textContent =
-                    bodyMaster.color;
+                    option.value =
+                        bodyMaster.id;
 
-                colorSelect.appendChild(option);
-            });
+                    option.textContent =
+                        bodyMaster.color;
+
+                    colorSelect.appendChild(
+                        option
+                    );
+                }
+            );
 
             colorSelect.disabled = false;
         }
@@ -258,7 +381,9 @@
     );
 
     document
-        .getElementById("bodyForm")
+        .getElementById(
+            "bodyForm"
+        )
         .addEventListener(
             "submit",
             function (event) {
@@ -266,7 +391,8 @@
                     event.preventDefault();
 
                     alert(
-                        "シリーズ、モデル、カラーを選択してください。"
+                        "シリーズ、モデル、カラーを"
+                        + "選択してください。"
                     );
                 }
             }

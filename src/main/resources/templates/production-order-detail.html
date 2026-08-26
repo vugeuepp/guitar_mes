@@ -1,238 +1,317 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
-<meta charset="UTF-8">
-
-<title>
-生産計画詳細
-</title>
-
-<link rel="stylesheet"
-      th:href="@{/css/style.css}">
-
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        生産計画詳細
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
-
 <body>
-
 <div th:replace=
- "~{fragments/header :: header('生産計画詳細')}">
+     "~{fragments/header :: header('生産計画詳細')}">
 </div>
 
-<p>
-
-指示番号：
-
-<span th:text=
-      "${order.orderNo}">
-</span>
-
-</p>
-
-<p>
-    モデル番号：
-    <span th:text="${order.product.modelNo}">
-    </span>
-</p>
-
-<p>
-    製品名：
-    <span th:text="${order.product.productName}">
-    </span>
-</p>
-
-<p>
-    カラー：
-    <span th:text="${order.product.color}">
-    </span>
-</p>
-
-<p>
-    指板材：
-
-    <span th:text=
-          "${order.product.fingerboardMaterial}">
-    </span>
-</p>
-
-<p>
-
-計画数：
-
-<span th:text=
-      "${order.plannedQuantity}">
-</span>
-
-</p>
-
-<p>
-
-着手数：
-
-<span th:text=
-      "${order.startedQuantity}">
-</span>
-
-</p>
-
-<p>
-
-完成数：
-
-<span th:text=
-      "${order.completedQuantity}">
-</span>
-
-</p>
-
-<hr>
-
-<section>
-
-    <h2>
-        生成済みギター
-    </h2>
-
-    <p th:if="${#lists.isEmpty(guitars)}">
-        まだギター個体は生成されていません。
-    </p>
-
-    <table th:if="${not #lists.isEmpty(guitars)}"
-           border="1">
-
-        <tr>
-            <th>シリアル番号</th>
-            <th>現在工程</th>
-            <th>製品</th>
-            <th>詳細</th>
-        </tr>
-
-        <tr th:each="guitar : ${guitars}">
-
-            <td th:text="${guitar.serialNo}">
-            </td>
-
-            <td th:text="${guitar.currentProcess}">
-            </td>
-
-            <td th:text="${guitar.product.modelNo
-                    + ' / '
-                    + guitar.product.productName
-                    + ' / '
-                    + guitar.product.color}">
-            </td>
-
-            <td>
-                <form th:action=
-                      "@{/guitars/{id}/view(id=${guitar.id})}"
-                      method="get">
-
-                    <button type="submit"
-                            class="history-button">
-                        詳細
-                    </button>
-
-                </form>
-            </td>
-
-        </tr>
-
-    </table>
-
-</section>
-
-<p>
-
-状態：
-
-<span th:text=
-      "${order.status}">
-</span>
-
-</p>
-
-<p>
-
-開始予定日：
-
-<span th:text=
-      "${order.plannedStartDate}">
-</span>
-
-</p>
-
-<p>
-
-納期：
-
-<span th:text=
-      "${order.dueDate}">
-</span>
-
-</p>
-
-<br>
-
-<hr>
-
-<section>
-
-    <h2>
-        製造開始
-    </h2>
-
-    <!-- 計画数に達していない場合 -->
-    <form th:if="${order.startedQuantity
-                    < order.plannedQuantity
-                  and order.status != 'COMPLETED'
-                  and order.status != 'CANCELLED'}"
-          th:action="@{/assemblies/new}"
-          method="get">
-
-        <input type="hidden"
-               name="productionOrderId"
-               th:value="${order.id}">
-
-        <button type="submit"
-                class="process-button process-start-button">
-
-            ネック取付
-
-        </button>
-
-    </form>
-
-    <!-- 計画数に到達 -->
-    <p th:if="${order.startedQuantity
-               >= order.plannedQuantity}">
-
-        この生産計画は計画数に達しています。
-
-    </p>
-
-    <!-- 中止済み -->
-    <p th:if="${order.status == 'CANCELLED'}">
-
-        この生産計画は中止されています。
-
-    </p>
-
-    <!-- 完了済み -->
-    <p th:if="${order.status == 'COMPLETED'}">
-
-        この生産計画は完了しています。
-
-    </p>
-
-</section>
-<a th:href=
-   "@{/production-orders/view}">
-   一覧へ戻る
-</a>
-
-<div th:replace=
- "~{fragments/menu :: menu}">
-</div>
-
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            生産計画の製品仕様、進捗状況、
+            生成済みのギター個体を確認できます。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/view}">
+                一覧へ戻る
+            </a>
+        </div>
+    </div>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    生産指示番号
+                </p>
+                <h2 class="detail-section-title"
+                    th:text="${order.orderNo}">
+                </h2>
+            </div>
+
+            <span class="status-badge"
+                  th:classappend=
+                  "${@productionOrderDisplay
+                      .getCssClass(order.status)}"
+                  th:text=
+                  "${@productionOrderDisplay
+                      .getLabel(order.status)}">
+            </span>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル番号
+                </div>
+                <div class="detail-value"
+                     th:text="${order.product.modelNo}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    製品名
+                </div>
+                <div class="detail-value"
+                     th:text="${order.product.productName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    カラー
+                </div>
+                <div class="detail-value"
+                     th:text="${order.product.color}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    指板材
+                </div>
+                <div class="detail-value"
+                     th:text=
+                     "${order.product.fingerboardMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    生産開始予定日
+                </div>
+                <div class="detail-value"
+                     th:text="${order.plannedStartDate}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    納期
+                </div>
+                <div class="detail-value"
+                     th:text="${order.dueDate}">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Production Progress
+                </p>
+                <h2 class="detail-section-title">
+                    生産進捗
+                </h2>
+            </div>
+        </div>
+
+        <div class="production-progress-grid">
+            <div class="production-progress-card">
+                <div class="production-progress-label">
+                    計画数
+                </div>
+                <div class="production-progress-value">
+                    <span th:text="${order.plannedQuantity}">
+                    </span>
+                    <span class="production-progress-unit">
+                        台
+                    </span>
+                </div>
+            </div>
+
+            <div class="production-progress-card">
+                <div class="production-progress-label">
+                    着手数
+                </div>
+                <div class="production-progress-value">
+                    <span th:text="${order.startedQuantity}">
+                    </span>
+                    <span class="production-progress-unit">
+                        台
+                    </span>
+                </div>
+            </div>
+
+            <div class="production-progress-card">
+                <div class="production-progress-label">
+                    完成数
+                </div>
+                <div class="production-progress-value">
+                    <span th:text="${order.completedQuantity}">
+                    </span>
+                    <span class="production-progress-unit">
+                        台
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Start Production
+                </p>
+                <h2 class="detail-section-title">
+                    製造開始
+                </h2>
+            </div>
+        </div>
+
+        <div class="detail-action-panel">
+            <div class="detail-action-description">
+                <p th:if="${order.startedQuantity
+                            < order.plannedQuantity
+                          and order.status != 'COMPLETED'
+                          and order.status != 'CANCELLED'}">
+                    この生産計画に対応するBodyとNeckを選択し、
+                    ネック取付を開始します。
+                </p>
+
+                <p th:if="${order.startedQuantity
+                           >= order.plannedQuantity}">
+                    この生産計画は計画数に達しています。
+                </p>
+
+                <p th:if="${order.status == 'CANCELLED'}">
+                    この生産計画は中止されています。
+                </p>
+
+                <p th:if="${order.status == 'COMPLETED'}">
+                    この生産計画は完了しています。
+                </p>
+            </div>
+
+            <form th:if="${order.startedQuantity
+                          < order.plannedQuantity
+                        and order.status != 'COMPLETED'
+                        and order.status != 'CANCELLED'}"
+                  th:action="@{/assemblies/new}"
+                  method="get">
+                <input type="hidden"
+                       name="productionOrderId"
+                       th:value="${order.id}">
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    ネック取付
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Generated Guitars
+                </p>
+                <h2 class="detail-section-title">
+                    生成済みギター
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(guitars)}">
+                </span>
+                <span>
+                    台
+                </span>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(guitars)}"
+             class="empty-state">
+            <p>
+                まだギター個体は生成されていません。
+            </p>
+        </div>
+
+        <div th:if="${not #lists.isEmpty(guitars)}"
+             class="table-container">
+            <table class="data-table production-order-guitar-table">
+                <colgroup>
+                    <col class="production-order-guitar-column-serial">
+                    <col class="production-order-guitar-column-process">
+                    <col class="production-order-guitar-column-product">
+                    <col class="production-order-guitar-column-action">
+                </colgroup>
+
+                <thead>
+                    <tr>
+                        <th>
+                            シリアル番号
+                        </th>
+                        <th>
+                            現在工程
+                        </th>
+                        <th>
+                            製品
+                        </th>
+                        <th>
+                            詳細
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr th:each="guitar : ${guitars}">
+                        <td>
+                            <span class="guitar-serial-number"
+                                  th:text="${guitar.serialNo}">
+                            </span>
+                        </td>
+
+                        <td th:text="${guitar.currentProcess}">
+                        </td>
+
+                        <td th:text="${guitar.product.modelNo
+                                + ' / '
+                                + guitar.product.productName
+                                + ' / '
+                                + guitar.product.color}">
+                        </td>
+
+                        <td class="table-action-cell">
+                            <form th:action=
+                                  "@{/guitars/{id}/view(
+                                      id=${guitar.id})}"
+                                  method="get">
+                                <button type="submit"
+                                        class="btn btn-detail">
+                                    詳細
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/production-orders/view}">
+            一覧へ戻る
+        </a>
+    </div>
+</main>
 </body>
 </html>

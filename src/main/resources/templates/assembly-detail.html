@@ -1,38 +1,119 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="UTF-8">
-	<title>Assembly詳細</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        Assembly詳細
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
 <body>
-	<h1>Assembly詳細</h1>
-	<p>
-		組立ID：
-		<span th:text="${assembly.assemblyId}"></span>
-	</p>
-	<p>
-		ギター：
-		<span th:text="${assembly.guitarSerial}"></span>
-	</p>
-	<p>
-		ネック：
-		<span th:text="${assembly.neckSerial}"></span>
-	</p>
-	<p>
-		ボディ：
-		<span th:text="${assembly.bodySerial}"></span>
-	</p>
-	<p>
-		作業者：
-		<span th:text="${assembly.workerName}"></span>
-	</p>
-	<p>
-		組立日時：
-		<span th:text="${assembly.assemblyDateText}"></span>
-	</p>
-	<a th:href="@{/assemblies/view}">
-		一覧へ戻る
-	</a>
+
+<div th:replace=
+     "~{fragments/header :: header('Assembly詳細')}">
+</div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ネック取付実績の詳細情報を確認できます。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/assemblies/view}">
+                一覧へ戻る
+            </a>
+        </div>
+    </div>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Assembly Information
+                </p>
+
+                <h2 class="detail-section-title">
+                    <span th:text="${assembly.assemblyId}">
+                    </span>
+                </h2>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    組立ID
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.assemblyId}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ギター
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.guitarSerial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネック
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.neckSerial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディ
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.bodySerial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    作業者
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.workerName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    組立日時
+                </div>
+                <div class="detail-value"
+                     th:text="${assembly.assemblyDateText}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/assemblies/view}">
+            一覧へ戻る
+        </a>
+    </div>
+
+</main>
+
 </body>
 </html>

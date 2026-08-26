@@ -6,29 +6,76 @@
 	<link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div th:replace=
- "~{fragments/header :: header('ネック一覧')}">
-</div>
-<p>
-	<a th:href="@{/necks/new}">
-		新規ネック登録
-	</a>
-</p>
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>シリアル番号</th>
-        <th>モデル名</th>
-        <th>ネックタイプ</th>
-        <th>ネック材</th>
-        <th>指板材</th>
-        <th>フレット数</th>
-        <th>スケール</th>
-        <th>現在工程</th>
-        <th>ステータス</th>
-		<th>工程操作</th>
-		<th>履歴</th>
-    </tr>
+	<div th:replace=
+	 "~{fragments/header :: header('ネック管理一覧')}">
+	</div>
+
+	<main class="page-container">
+
+	    <div class="page-toolbar">
+
+	        <p class="page-toolbar-description">
+
+	            ネック個体の登録状況と
+	            工程進捗を確認できます。
+
+	        </p>
+
+	        <div class="page-toolbar-actions">
+
+	            <a class="btn btn-primary"
+	               th:href="@{/necks/new}">
+
+	                新規ネック登録
+
+	            </a>
+
+	        </div>
+
+	    </div>
+		<main class="table-container">
+
+		    <table class="data-table neck-management-table">
+
+		        <colgroup>
+
+		            <col class="neck-column-id">
+		            <col class="neck-column-serial">
+		            <col class="neck-column-model">
+		            <col class="neck-column-type">
+		            <col class="neck-column-material">
+		            <col class="neck-column-fingerboard">
+		            <col class="neck-column-fret">
+		            <col class="neck-column-scale">
+		            <col class="neck-column-process">
+		            <col class="neck-column-status">
+		            <col class="neck-column-action">
+		            <col class="neck-column-history">
+
+		        </colgroup>
+
+		        <thead>
+
+		            <tr>
+
+		                <th>ID</th>
+		                <th>シリアル番号</th>
+		                <th>モデル名</th>
+		                <th>ネックタイプ</th>
+		                <th>ネック材</th>
+		                <th>指板材</th>
+		                <th>フレット数</th>
+		                <th>スケール</th>
+		                <th>現在工程</th>
+		                <th>状態</th>
+		                <th>工程操作</th>
+		                <th>履歴</th>
+
+		            </tr>
+
+		        </thead>
+
+		        <tbody>
 
     <tr th:each="neck : ${necks}">
         <td th:text="${neck.id}"></td>
@@ -45,49 +92,20 @@
         <td th:text="${neck.neckMaster?.fretCount}"></td>
         <td th:text="${neck.neckMaster?.scale}"></td>
 
-        <td th:text="${neck.currentProcess}"></td>
 		<td>
-		    <span th:switch="${neck.status}">
-
-		        <span th:case="'WAITING'"
-		              class="status-badge status-waiting">
-		            工程待ち
-		        </span>
-
-		        <span th:case="'WORKING'"
-		              class="status-badge status-working">
-		            作業中
-		        </span>
-
-		        <span th:case="'AVAILABLE'"
-		              class="status-badge status-available">
-		            組立待ち
-		        </span>
-
-		        <span th:case="'RETURNED'"
-		              class="status-badge status-returned">
-		            塗装前工程へ差し戻し
-		        </span>
-
-		        <span th:case="'ASSEMBLED'"
-		              class="status-badge status-assembled">
-		            組立済み
-		        </span>
-
-		        <span th:case="'REJECTED'"
-		              class="status-badge status-rejected">
-		            製造終了
-		        </span>
-
-		        <span th:case="*"
-		              class="status-badge"
-		              th:text="${neck.status}">
-		        </span>
-
+		    <span class="neck-current-process"
+		          th:text="${neck.currentProcess}">
+		    </span>
+		</td>
+		<td class="status-cell">
+		    <span class="status-badge"
+		          th:classappend="${@statusDisplay.getCssClass(neck.status)}"
+		          th:text="${@statusDisplay.getLabel(neck.status)}">
 		    </span>
 		</td>
 		<td>
-		    <!-- 工程実施中：終了だけ表示 -->
+
+		    <!-- 作業中 -->
 		    <form th:if="${neck.status == 'WORKING'}"
 		          th:action="@{/neck-processes/end/view}"
 		          method="get">
@@ -96,12 +114,14 @@
 		               name="neckId"
 		               th:value="${neck.id}">
 
-		        <button type="submit" class="process-button process-end-button">
+			   <button type="submit"
+			           class="btn btn-process-end">
 		            工程終了
 		        </button>
+
 		    </form>
 
-		    <!-- 工程待ち：開始だけ表示 -->
+		    <!-- 工程待ち -->
 		    <form th:if="${neck.status == 'WAITING'}"
 		          th:action="@{/neck-processes/start/view}"
 		          method="get">
@@ -110,38 +130,31 @@
 		               name="neckId"
 		               th:value="${neck.id}">
 
-		        <button type="submit" class="process-button process-start-button">
+			   <button type="submit"
+			           class="btn btn-primary">
 		            工程開始
 		        </button>
+
 		    </form>
 
-		    <!-- 全工程完了 -->
-		    <span th:if="${neck.status == 'AVAILABLE'}">
-		        組立待ち
-		    </span>
+		    <!-- 操作不可 -->
+			<span class="list-no-action"
+			      th:if="${neck.status == 'AVAILABLE'
+			            or neck.status == 'RETURNED'
+			            or neck.status == 'ASSEMBLED'
+			            or neck.status == 'REJECTED'}"
+			      th:text="${@statusDisplay.getLabel(neck.status)}">
+				  操作不可
+			</span>
 
-		    <!-- 塗装前工程へ差し戻し -->
-		    <span th:if="${neck.status == 'RETURNED'}">
-		        塗装前工程へ差し戻し
-		    </span>
-
-		    <!-- 組立済み -->
-		    <span th:if="${neck.status == 'ASSEMBLED'}">
-		        組立済み
-		    </span>
-
-		    <!-- 不合格 -->
-		    <span th:if="${neck.status == 'REJECTED'}">
-		        製造終了
-		    </span>
 		</td>
 		<td>
 		    <form th:action=
 		          "@{/necks/{id}/process-history(id=${neck.id})}"
 		          method="get">
 
-		        <button type="submit"
-		                class="history-button">
+				  <button type="submit"
+				          class="btn btn-detail">
 		            工程履歴
 		        </button>
 
@@ -152,8 +165,6 @@
 
 
 <br>
-
-<div th:replace="~{fragments/menu :: menu}">
-</div>
+</main>
 </body>
 </html>

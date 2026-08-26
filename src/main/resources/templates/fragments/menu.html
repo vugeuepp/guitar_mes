@@ -3,65 +3,84 @@
 
 <th:block th:fragment="menu">
 
-    <hr>
+	<nav id="topNav"
+	     class="top-nav"
+	     aria-label="メインメニュー">
 
-    <h2>メニュー</h2>
+        <div class="top-nav-inner">
 
-    <ul>
-        <li>
-            <a th:href="@{/}">
-                Home
+            <a class="top-nav-link"
+               th:href="@{/}">
+                ダッシュボード
             </a>
-        </li>
 
-        <li>
-            <a th:href="@{/guitars/view}">
+            <a class="top-nav-link"
+               th:href="@{/production-orders/view}">
+                生産計画
+            </a>
+
+            <a class="top-nav-link"
+               th:href="@{/guitars/view}">
                 ギター管理
             </a>
-        </li>
 
-        <li>
-            <a th:href="@{/necks/view}">
+            <a class="top-nav-link"
+               th:href="@{/necks/view}">
                 ネック管理
             </a>
-        </li>
 
-        <li>
-            <a th:href="@{/bodies/view}">
+            <a class="top-nav-link"
+               th:href="@{/bodies/view}">
                 ボディ管理
             </a>
-        </li>
-		<li>
-		    <a th:href="@{/process-analysis/view}">
-		        工程時間分析
-		    </a>
-		</li>
-		<li>
-		    <a th:href="@{/products/view}">
-		        製品管理
-		    </a>
-		</li>
-		<li>
-		    <a th:href="@{/body-masters/view}">
-		        ボディマスタ管理
-		    </a>
-		</li>
-		
 
-        <li>
-            <a th:href="@{/assemblies/view}">
-                組立実績
+            <a class="top-nav-link"
+               th:href="@{/assemblies/view}">
+                ネック取付実績
             </a>
-        </li>
-		<li>
 
-		    <a th:href=
-		       "@{/production-orders/view}">
-		        生産計画
-		    </a>
+            <a class="top-nav-link"
+               th:href="@{/process-analysis/view}">
+                工程時間分析
+            </a>
 
-		</li>
-    </ul>
+            <!-- マスタ管理ドロップダウン -->
+            <div class="top-nav-dropdown">
+
+                <button type="button"
+                        class="top-nav-link top-nav-dropdown-button"
+                        aria-haspopup="true">
+
+                    マスタ管理
+
+                    <span class="dropdown-arrow"
+                          aria-hidden="true">
+                        ▼
+                    </span>
+
+                </button>
+
+                <div class="top-nav-dropdown-menu">
+
+                    <a th:href="@{/products/view}">
+                        製品マスタ
+                    </a>
+
+                    <a th:href="@{/body-masters/view}">
+                        ボディマスタ
+                    </a>
+
+                    <a th:href="@{/neck-masters/view}">
+                        ネックマスタ
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </nav>
 
 </th:block>
 

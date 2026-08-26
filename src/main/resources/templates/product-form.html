@@ -1,81 +1,237 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>製品一覧</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        製品登録
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
-
 </head>
-
 <body>
 
 <div th:replace=
- "~{fragments/header :: header('製品登録')}">
+     "~{fragments/header :: header('製品登録')}">
 </div>
 
-<form th:action="@{/products/create}"
-      method="post">
+<main class="page-container">
 
-    <div>
-        <label>モデル番号</label>
-        <input type="text" name="modelNo">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ギター製品仕様を登録します。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/products/view}">
+                製品一覧へ戻る
+            </a>
+        </div>
     </div>
 
-    <div>
-        <label>製品名</label>
-        <input type="text" name="productName">
-    </div>
+    <form th:action="@{/products/create}"
+          method="post"
+          class="form-container">
 
-    <div>
-        <label>カラー</label>
-        <input type="text" name="color">
-    </div>
+        <section class="form-section">
 
-    <div>
-        <label>ボディ材</label>
-        <input type="text" name="bodyMaterial">
-    </div>
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Product Master
+                    </p>
 
-    <div>
-        <label>ネック材</label>
-        <input type="text" name="neckMaterial">
-    </div>
+                    <h2 class="form-section-title">
+                        基本情報
+                    </h2>
+                </div>
 
-    <div>
-        <label>指板材</label>
-        <input type="text" name="fingerboardMaterial">
-    </div>
+                <p class="form-section-description">
+                    製品の基本仕様を入力してください。
+                </p>
+            </div>
 
-    <div>
-        <label>PU構成</label>
-        <input type="text" name="pickupLayout">
-    </div>
+            <div class="form-grid">
 
-    <div>
-        <label>フレット数</label>
-        <input type="number" name="fretCount">
-    </div>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="modelNo">
+                        モデル番号
+                    </label>
 
-    <div>
-        <label>スケール</label>
-        <input type="text" name="scale">
-    </div>
+                    <input type="text"
+                           id="modelNo"
+                           name="modelNo"
+                           class="form-input">
+                </div>
 
-    <button type="submit">
-        登録
-    </button>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="productName">
+                        製品名
+                    </label>
 
-</form>
+                    <input type="text"
+                           id="productName"
+                           name="productName"
+                           class="form-input">
+                </div>
 
-<div th:replace=
- "~{fragments/menu :: menu}">
-</div>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="color">
+                        カラー
+                    </label>
+
+                    <input type="text"
+                           id="color"
+                           name="color"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="pickupLayout">
+                        PU構成
+                    </label>
+
+                    <input type="text"
+                           id="pickupLayout"
+                           name="pickupLayout"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Material Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        材料構成
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    ボディ・ネック・指板の仕様を入力してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="bodyMaterial">
+                        ボディ材
+                    </label>
+
+                    <input type="text"
+                           id="bodyMaterial"
+                           name="bodyMaterial"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="neckMaterial">
+                        ネック材
+                    </label>
+
+                    <input type="text"
+                           id="neckMaterial"
+                           name="neckMaterial"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="fingerboardMaterial">
+                        指板材
+                    </label>
+
+                    <input type="text"
+                           id="fingerboardMaterial"
+                           name="fingerboardMaterial"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Neck Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        ネック仕様
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    フレット数とスケールを入力してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="fretCount">
+                        フレット数
+                    </label>
+
+                    <input type="number"
+                           id="fretCount"
+                           name="fretCount"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="scale">
+                        スケール
+                    </label>
+
+                    <input type="text"
+                           id="scale"
+                           name="scale"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/products/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                製品を登録
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
 
 </body>
-
 </html>

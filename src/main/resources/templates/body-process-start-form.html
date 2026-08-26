@@ -1,77 +1,183 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>ボディ工程開始</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディ工程開始
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('ボディ工程開始')}">
 </div>
 
-<form th:action="@{/body-processes/start}"
-      method="post">
+<main class="page-container">
 
-    <div>
-        <p>
-            対象ボディ：
-            <span th:text="${selectedBody.serialNo
-                    + ' / '
-                    + selectedBody.modelName
-                    + ' / '
-                    + selectedBody.color}">
-            </span>
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            ボディ工程の開始登録を行います。
         </p>
 
-        <input type="hidden"
-               name="bodyId"
-               th:value="${selectedBody.id}">
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                ボディ一覧へ戻る
+            </a>
+        </div>
+
     </div>
 
-    <div>
-        <p>
-            開始工程：
-            <strong th:text="${currentProcess.processName}">
-            </strong>
-        </p>
+    <form th:action="@{/body-processes/start}"
+          method="post"
+          class="form-container">
 
-        <input type="hidden"
-               name="processId"
-               th:value="${currentProcess.id}">
-    </div>
+        <section class="form-section">
 
-    <div>
-        <label for="workerName">
-            作業者
-        </label>
+            <div class="form-section-heading">
 
-        <input type="text"
-               id="workerName"
-               name="workerName"
-               required>
-    </div>
+                <div>
+                    <p class="form-section-caption">
+                        Target Body
+                    </p>
 
-    <button type="submit">
-        工程開始
-    </button>
+                    <h2 class="form-section-title">
+                        対象ボディ
+                    </h2>
+                </div>
 
-</form>
+                <p class="form-section-description">
+                    工程開始対象のボディを確認します。
+                </p>
 
-<br>
+            </div>
 
-<a th:href="@{/bodies/view}">
-    ボディ一覧へ戻る
-</a>
+            <div class="selected-product-info">
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                <div class="selected-product-label">
+                    対象ボディ
+                </div>
+
+                <strong class="selected-product-value"
+                        th:text="${selectedBody.serialNo
+                            + ' / '
+                            + selectedBody.modelName
+                            + ' / '
+                            + selectedBody.color}">
+                </strong>
+
+                <input type="hidden"
+                       name="bodyId"
+                       th:value="${selectedBody.id}">
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Process
+                    </p>
+
+                    <h2 class="form-section-title">
+                        開始工程
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    開始対象の工程を確認します。
+                </p>
+
+            </div>
+
+            <div class="selected-product-info">
+
+                <div class="selected-product-label">
+                    工程
+                </div>
+
+                <strong class="selected-product-value"
+                        th:text="${currentProcess.processName}">
+                </strong>
+
+                <input type="hidden"
+                       name="processId"
+                       th:value="${currentProcess.id}">
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Worker Information
+                    </p>
+
+                    <h2 class="form-section-title">
+                        作業者情報
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    作業者名を入力してください。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="workerName"
+                           class="form-label">
+                        作業者
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="workerName"
+                           name="workerName"
+                           class="form-input"
+                           required>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                工程開始
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
 
 </body>
 </html>

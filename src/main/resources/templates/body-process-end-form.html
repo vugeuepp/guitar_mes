@@ -1,167 +1,314 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>ボディ工程終了</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディ工程終了
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('ボディ工程終了')}">
 </div>
 
-<div>
-    <p>
-        対象ボディ：
-        <span th:text="${body.serialNo}">
-        </span>
-    </p>
+<main class="page-container">
 
-    <p>
-        現在工程：
-        <span th:text="${body.currentProcess}">
-        </span>
-    </p>
-</div>
+    <div class="page-toolbar">
 
-<div th:if="${runningHistory != null}">
+        <p class="page-toolbar-description">
+            実施中のボディ工程に結果を登録して終了します。
+        </p>
 
-    <table border="1">
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/bodies/view}">
+                ボディ一覧へ戻る
+            </a>
+        </div>
 
-        <tr>
-            <th>履歴ID</th>
-            <th>工程ID</th>
-            <th>作業者</th>
-            <th>開始時刻</th>
-        </tr>
+    </div>
 
-        <tr>
-            <td th:text="${runningHistory.id}">
-            </td>
+    <section class="detail-section">
 
-            <td th:text="${runningHistory.processId}">
-            </td>
+        <div class="detail-section-heading">
 
-            <td th:text="${runningHistory.workerName}">
-            </td>
+            <div>
+                <p class="detail-section-caption">
+                    Target Body
+                </p>
 
-            <td th:text="${runningHistory.startTime}">
-            </td>
-        </tr>
-
-    </table>
-
-    <br>
-
-    <form th:action="@{/body-processes/end}"
-          method="post">
-
-        <input type="hidden"
-               name="historyId"
-               th:value="${runningHistory.id}">
-
-        <input type="hidden"
-               name="bodyId"
-               th:value="${body.id}">
-
-        <!-- 塗装後検品の場合 -->
-        <div th:if="${body.currentProcess == '塗装後検品'}">
-
-            <label for="inspectionResult">
-                検品結果
-            </label>
-
-            <select id="inspectionResult"
-                    name="result"
-                    required>
-
-                <option value="">
-                    選択してください
-                </option>
-
-                <option value="PASSED">
-                    合格
-                </option>
-
-                <option value="REWORK">
-                    手直し
-                </option>
-
-                <option value="REJECTED">
-                    不合格
-                </option>
-
-            </select>
+                <h2 class="detail-section-title">
+                    対象ボディ
+                </h2>
+            </div>
 
         </div>
 
-        <!-- バフがけの場合 -->
-        <div th:if="${body.currentProcess == 'バフがけ'}">
+        <div class="detail-grid detail-grid-2col">
 
-            <p>
-                工程結果：完了
-            </p>
+            <div class="detail-item">
+                <div class="detail-label">
+                    シリアル番号
+                </div>
+
+                <div class="detail-value"
+                     th:text="${body.serialNo}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    現在工程
+                </div>
+
+                <div class="detail-value"
+                     th:text="${body.currentProcess}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <div th:if="${runningHistory != null}">
+
+        <section class="detail-section">
+
+            <div class="detail-section-heading">
+
+                <div>
+                    <p class="detail-section-caption">
+                        Running Process
+                    </p>
+
+                    <h2 class="detail-section-title">
+                        実施中工程
+                    </h2>
+                </div>
+
+            </div>
+
+            <div class="table-container">
+
+                <table class="data-table">
+
+                    <thead>
+                        <tr>
+                            <th>
+                                履歴ID
+                            </th>
+                            <th>
+                                工程ID
+                            </th>
+                            <th>
+                                作業者
+                            </th>
+                            <th>
+                                開始時刻
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td th:text="${runningHistory.id}">
+                            </td>
+
+                            <td th:text="${runningHistory.processId}">
+                            </td>
+
+                            <td th:text="${runningHistory.workerName}">
+                            </td>
+
+                            <td th:text="${runningHistory.startTime}">
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <form th:action="@{/body-processes/end}"
+              method="post"
+              class="form-container">
 
             <input type="hidden"
-                   name="result"
-                   value="COMPLETED">
-
-        </div>
-
-        <!-- パーツ付けの場合 -->
-        <div th:if="${body.currentProcess == 'パーツ付け'}">
-
-            <p>
-                工程結果：完了
-            </p>
+                   name="historyId"
+                   th:value="${runningHistory.id}">
 
             <input type="hidden"
-                   name="result"
-                   value="COMPLETED">
+                   name="bodyId"
+                   th:value="${body.id}">
 
-        </div>
+            <section class="form-section">
 
-        <div>
-            <label for="note">
-                備考
-            </label>
+                <div class="form-section-heading">
 
-            <textarea id="note"
-                      name="note"
-                      rows="4"
-                      cols="40"></textarea>
-        </div>
+                    <div>
+                        <p class="form-section-caption">
+                            Process Result
+                        </p>
 
-        <button type="submit">
-            工程終了
-        </button>
+                        <h2 class="form-section-title">
+                            工程結果
+                        </h2>
+                    </div>
 
-    </form>
+                    <p class="form-section-description">
+                        工程結果と必要事項を入力してください。
+                    </p>
 
-</div>
+                </div>
 
-<div th:if="${runningHistory == null}">
+                <div class="form-grid">
 
-    <p>
-        現在実施中の工程はありません。
-    </p>
+                    <!-- 塗装後検品の場合 -->
+                    <div th:if="${body.currentProcess == '塗装後検品'}"
+                         class="form-group">
 
-</div>
+                        <label for="inspectionResult"
+                               class="form-label">
+                            検品結果
 
-<br>
+                            <span class="form-required">
+                                必須
+                            </span>
+                        </label>
 
-<a th:href="@{/bodies/view}">
-    ボディ一覧へ戻る
-</a>
+                        <select id="inspectionResult"
+                                name="result"
+                                class="form-select"
+                                required>
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                            <option value="">
+                                選択してください
+                            </option>
+
+                            <option value="PASSED">
+                                合格
+                            </option>
+
+                            <option value="REWORK">
+                                手直し
+                            </option>
+
+                            <option value="REJECTED">
+                                不合格
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <!-- バフがけの場合 -->
+                    <div th:if="${body.currentProcess == 'バフがけ'}"
+                         class="form-group">
+
+                        <div class="selected-product-info">
+
+                            <div class="selected-product-label">
+                                工程結果
+                            </div>
+
+                            <strong class="selected-product-value">
+                                完了
+                            </strong>
+
+                        </div>
+
+                        <input type="hidden"
+                               name="result"
+                               value="COMPLETED">
+
+                    </div>
+
+                    <!-- パーツ付けの場合 -->
+                    <div th:if="${body.currentProcess == 'パーツ付け'}"
+                         class="form-group">
+
+                        <div class="selected-product-info">
+
+                            <div class="selected-product-label">
+                                工程結果
+                            </div>
+
+                            <strong class="selected-product-value">
+                                完了
+                            </strong>
+
+                        </div>
+
+                        <input type="hidden"
+                               name="result"
+                               value="COMPLETED">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="note"
+                               class="form-label">
+                            備考
+                        </label>
+
+                        <textarea id="note"
+                                  name="note"
+                                  rows="4"
+                                  cols="40"
+                                  class="form-input"></textarea>
+
+                        <p class="form-help">
+                            工程結果に関する補足事項がある場合に
+                            入力してください。
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <div class="form-actions">
+
+                <a class="btn btn-outline"
+                   th:href="@{/bodies/view}">
+                    キャンセル
+                </a>
+
+                <button type="submit"
+                        class="btn btn-process-end">
+                    工程終了
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div th:if="${runningHistory == null}"
+         class="empty-state">
+
+        <p>
+            現在実施中の工程はありません。
+        </p>
+
+        <a class="btn btn-outline"
+           th:href="@{/bodies/view}">
+            ボディ一覧へ戻る
+        </a>
+
+    </div>
+
+</main>
 
 </body>
 </html>

@@ -72,11 +72,23 @@ public class ProcessService {
         Guitar guitar =
                 findGuitarOrThrow(guitarId);
 
+        /*
+         * ProductionOrderを持たないGuitarは
+         * 新フロー導入前の旧データ。
+         */
+        if (guitar.getProductionOrder() == null) {
+
+            throw new BusinessException(
+                    "旧フローのギターデータでは"
+                    + "現行工程を開始できません。");
+        }
+
         if (GuitarProcessConstants.COMPLETED
                 .equals(guitar.getCurrentProcess())) {
 
             throw new BusinessException(
-                    "完成済みのギターでは工程を開始できません。");
+                    "完成済みのギターでは"
+                    + "工程を開始できません。");
         }
 
         if (hasRunningProcess(guitarId)) {

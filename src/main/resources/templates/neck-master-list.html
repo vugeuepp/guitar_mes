@@ -3,55 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <title>ネックマスタ一覧</title>
-
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
 <body>
 
-<div th:replace=
-     "~{fragments/header :: header('ネックマスタ一覧')}">
+<div th:replace="~{fragments/header :: header('ネックマスタ一覧')}">
 </div>
 
-<p>
-    <a th:href="@{/neck-masters/new}">
-        ネックマスタ登録
-    </a>
-</p>
+<main class="page-container">
 
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>モデルコード</th>
-        <th>モデル名</th>
-        <th>ネックタイプ</th>
-        <th>ネック材</th>
-        <th>指板材</th>
-        <th>フレット数</th>
-        <th>スケール</th>
-    </tr>
+    <div class="page-toolbar">
 
-    <tr th:each="neckMaster : ${neckMasters}">
-        <td>
-            <a th:href=
-               "@{/neck-masters/{id}/view(id=${neckMaster.id})}"
-               th:text="${neckMaster.id}">
+        <p class="page-toolbar-description">
+            ネックマスタ情報を管理します。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-primary"
+               th:href="@{/neck-masters/new}">
+                ネックマスタ登録
             </a>
-        </td>
 
-        <td th:text="${neckMaster.modelCode}"></td>
-        <td th:text="${neckMaster.modelName}"></td>
-        <td th:text="${neckMaster.neckType}"></td>
-        <td th:text="${neckMaster.neckMaterial}"></td>
-        <td th:text="${neckMaster.fingerboardMaterial}"></td>
-        <td th:text="${neckMaster.fretCount}"></td>
-        <td th:text="${neckMaster.scale}"></td>
-    </tr>
-</table>
+        </div>
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(neckMasters)}"
+         class="empty-state">
+
+        <p>登録されているネックマスタはありません。</p>
+
+    </div>
+
+    <div th:unless="${#lists.isEmpty(neckMasters)}"
+         class="table-container">
+
+        <table class="data-table neck-master-table">
+
+            <colgroup>
+                <col class="neck-master-column-id">
+                <col class="neck-master-column-code">
+                <col class="neck-master-column-name">
+                <col class="neck-master-column-type">
+                <col class="neck-master-column-material">
+                <col class="neck-master-column-fingerboard">
+                <col class="neck-master-column-fret">
+                <col class="neck-master-column-scale">
+                <col class="neck-master-column-detail">
+            </colgroup>
+
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>モデルコード</th>
+                <th>モデル名</th>
+                <th>ネックタイプ</th>
+                <th>ネック材</th>
+                <th>指板材</th>
+                <th>フレット数</th>
+                <th>スケール</th>
+                <th>詳細</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+            <tr th:each="neckMaster : ${neckMasters}">
+
+                <td th:text="${neckMaster.id}">
+                </td>
+
+                <td th:text="${neckMaster.modelCode}">
+                </td>
+
+                <td class="neck-master-name"
+                    th:text="${neckMaster.modelName}">
+                </td>
+
+                <td th:text="${neckMaster.neckType}">
+                </td>
+
+                <td th:text="${neckMaster.neckMaterial}">
+                </td>
+
+                <td th:text="${neckMaster.fingerboardMaterial}">
+                </td>
+
+                <td th:text="${neckMaster.fretCount}">
+                </td>
+
+                <td th:text="${neckMaster.scale}">
+                </td>
+
+                <td class="list-action-cell">
+
+                    <a class="btn btn-detail"
+                       th:href="@{/neck-masters/{id}/view(id=${neckMaster.id})}">
+                        詳細
+                    </a>
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
 
 </body>
 </html>

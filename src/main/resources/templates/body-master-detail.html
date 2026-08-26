@@ -2,8 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>ボディマスタ詳細</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディマスタ詳細
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
@@ -13,38 +16,94 @@
      "~{fragments/header :: header('ボディマスタ詳細')}">
 </div>
 
-<table border="1">
+<main class="page-container">
 
-    <tr>
-        <th>モデルコード</th>
-        <td th:text="${bodyMaster.modelCode}"></td>
-    </tr>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ボディマスタの仕様情報を確認できます。
+        </p>
 
-    <tr>
-        <th>モデル名</th>
-        <td th:text="${bodyMaster.modelName}"></td>
-    </tr>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/body-masters/view}">
+                ボディマスタ一覧へ戻る
+            </a>
+        </div>
+    </div>
 
-    <tr>
-        <th>ボディタイプ</th>
-        <td th:text="${bodyMaster.bodyType}"></td>
-    </tr>
+    <section class="detail-section">
 
-    <tr>
-        <th>材質</th>
-        <td th:text="${bodyMaster.material}"></td>
-    </tr>
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Body Master Information
+                </p>
 
-    <tr>
-        <th>カラー</th>
-        <td th:text="${bodyMaster.color}"></td>
-    </tr>
+                <h2 class="detail-section-title"
+                    th:text="${bodyMaster.modelCode}">
+                </h2>
+            </div>
+        </div>
 
-</table>
+        <div class="detail-grid">
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデルコード
+                </div>
+                <div class="detail-value"
+                     th:text="${bodyMaster.modelCode}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル名
+                </div>
+                <div class="detail-value"
+                     th:text="${bodyMaster.modelName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディタイプ
+                </div>
+                <div class="detail-value"
+                     th:text="${bodyMaster.bodyType}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    材質
+                </div>
+                <div class="detail-value"
+                     th:text="${bodyMaster.material}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    カラー
+                </div>
+                <div class="detail-value"
+                     th:text="${bodyMaster.color}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/body-masters/view}">
+            ボディマスタ一覧へ戻る
+        </a>
+    </div>
+
+</main>
 
 </body>
 </html>

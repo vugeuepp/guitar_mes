@@ -1,206 +1,259 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>生産計画登録</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        生産計画登録
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
-
 <div th:replace=
      "~{fragments/header :: header('生産計画登録')}">
 </div>
 
-<div th:if="${#lists.isEmpty(products)}">
-
-    <p class="error-message">
-        登録可能な製品マスタがありません。
-    </p>
-
-    <p>
-        <a th:href="@{/products/new}">
-            製品マスタを登録する
-        </a>
-    </p>
-
-</div>
-
-<form th:if="${not #lists.isEmpty(products)}"
-      th:action="@{/production-orders/create}"
-      method="post"
-      id="productionOrderForm">
-
-    <fieldset>
-
-        <legend>
-            対象製品
-        </legend>
-
-        <!-- シリーズ -->
-        <div>
-            <label for="seriesSelect">
-                シリーズ
-            </label>
-
-            <select id="seriesSelect"
-                    required>
-
-                <option value="">
-                    選択してください
-                </option>
-
-            </select>
-        </div>
-
-        <!-- モデル -->
-        <div>
-            <label for="modelSelect">
-                モデル
-            </label>
-
-            <select id="modelSelect"
-                    required
-                    disabled>
-
-                <option value="">
-                    先にシリーズを選択してください
-                </option>
-
-            </select>
-        </div>
-
-        <!-- カラー -->
-        <div>
-            <label for="colorSelect">
-                カラー
-            </label>
-
-            <select id="colorSelect"
-                    required
-                    disabled>
-
-                <option value="">
-                    先にモデルを選択してください
-                </option>
-
-            </select>
-        </div>
-
-        <!-- 指板材 -->
-        <div>
-            <label for="fingerboardSelect">
-                指板材
-            </label>
-
-            <select id="fingerboardSelect"
-                    required
-                    disabled>
-
-                <option value="">
-                    先にカラーを選択してください
-                </option>
-
-            </select>
-        </div>
-
-        <!-- Controllerへ送信するProduct ID -->
-        <input type="hidden"
-               id="productId"
-               name="productId">
-
-        <!-- 最終的に確定した製品 -->
-        <div id="selectedProductInfo"
-             class="selected-product-info"
-             hidden>
-
-            <p>
-                選択製品：
-            </p>
-
-            <strong id="selectedProductText">
-            </strong>
-
-        </div>
-
-        <!-- Productが特定できなかった場合 -->
-        <p id="productErrorMessage"
-           class="error-message"
-           hidden>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            対象製品と計画内容を指定して、
+            新しい生産計画を登録します。
         </p>
 
-    </fieldset>
-
-    <fieldset>
-
-        <legend>
-            計画内容
-        </legend>
-
-        <div>
-            <label for="plannedQuantity">
-                計画数
-            </label>
-
-            <input type="number"
-                   id="plannedQuantity"
-                   name="plannedQuantity"
-                   min="1"
-                   required>
-
-            <span>
-                台
-            </span>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/view}">
+                生産計画一覧へ戻る
+            </a>
         </div>
+    </div>
 
-        <div>
-            <label for="plannedStartDate">
-                開始予定日
-            </label>
+    <div th:if="${#lists.isEmpty(products)}"
+         class="empty-state">
+        <p>
+            登録可能な製品マスタがありません。
+        </p>
 
-            <input type="date"
-                   id="plannedStartDate"
-                   name="plannedStartDate">
+        <a class="btn btn-primary"
+           th:href="@{/products/new}">
+            製品マスタを登録する
+        </a>
+    </div>
+
+    <form th:if="${not #lists.isEmpty(products)}"
+          th:action="@{/production-orders/create}"
+          method="post"
+          id="productionOrderForm"
+          class="form-container">
+
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Product
+                    </p>
+                    <h2 class="form-section-title">
+                        対象製品
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    シリーズから順番に製品仕様を選択してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="seriesSelect"
+                           class="form-label">
+                        シリーズ
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="seriesSelect"
+                            class="form-select"
+                            required>
+                        <option value="">
+                            選択してください
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelSelect"
+                           class="form-label">
+                        モデル
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="modelSelect"
+                            class="form-select"
+                            required
+                            disabled>
+                        <option value="">
+                            先にシリーズを選択してください
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="colorSelect"
+                           class="form-label">
+                        カラー
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="colorSelect"
+                            class="form-select"
+                            required
+                            disabled>
+                        <option value="">
+                            先にモデルを選択してください
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="fingerboardSelect"
+                           class="form-label">
+                        指板材
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="fingerboardSelect"
+                            class="form-select"
+                            required
+                            disabled>
+                        <option value="">
+                            先にカラーを選択してください
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <input type="hidden"
+                   id="productId"
+                   name="productId">
+
+            <div id="selectedProductInfo"
+                 class="selected-product-info"
+                 hidden>
+                <div class="selected-product-label">
+                    選択製品
+                </div>
+
+                <strong id="selectedProductText"
+                        class="selected-product-value">
+                </strong>
+            </div>
+
+            <p id="productErrorMessage"
+               class="error-message"
+               hidden>
+            </p>
+        </section>
+
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Production Plan
+                    </p>
+                    <h2 class="form-section-title">
+                        計画内容
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    計画数量と製造予定期間を入力してください。
+                </p>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="plannedQuantity"
+                           class="form-label">
+                        計画数
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <div class="form-input-with-unit">
+                        <input type="number"
+                               id="plannedQuantity"
+                               name="plannedQuantity"
+                               class="form-input"
+                               min="1"
+                               required>
+
+                        <span class="form-input-unit">
+                            台
+                        </span>
+                    </div>
+
+                    <p class="form-help">
+                        1台以上の計画数量を入力してください。
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label for="plannedStartDate"
+                           class="form-label">
+                        開始予定日
+                    </label>
+
+                    <input type="date"
+                           id="plannedStartDate"
+                           name="plannedStartDate"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="dueDate"
+                           class="form-label">
+                        納期
+                    </label>
+
+                    <input type="date"
+                           id="dueDate"
+                           name="dueDate"
+                           class="form-input">
+
+                    <p class="form-help">
+                        開始予定日以降の日付を指定してください。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    id="registerButton"
+                    class="btn btn-primary"
+                    disabled>
+                生産計画を登録
+            </button>
         </div>
-
-        <div>
-            <label for="dueDate">
-                納期
-            </label>
-
-            <input type="date"
-                   id="dueDate"
-                   name="dueDate">
-        </div>
-
-    </fieldset>
-
-    <button type="submit"
-            id="registerButton"
-            class="process-button process-start-button"
-            disabled>
-
-        生産計画を登録
-
-    </button>
-
-</form>
-
-<br>
-
-<a th:href="@{/production-orders/view}">
-    生産計画一覧へ戻る
-</a>
-
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+    </form>
+</main>
 
 <script th:inline="javascript">
-
     const products =
         /*[[${products}]]*/ [];
 
@@ -253,16 +306,13 @@
      * 製品名からシリーズを判定する。
      */
     function getSeries(productName) {
-
         if (productName.includes(
                 "Traditional")) {
-
             return "Traditional";
         }
 
         if (productName.includes(
                 "Hybrid II")) {
-
             return "Hybrid II";
         }
 
@@ -294,7 +344,6 @@
      * モデル選択を初期化する。
      */
     function resetModelSelect() {
-
         modelSelect.innerHTML =
             '<option value="">'
             + '先にシリーズを選択してください'
@@ -307,7 +356,6 @@
      * カラー選択を初期化する。
      */
     function resetColorSelect() {
-
         colorSelect.innerHTML =
             '<option value="">'
             + '先にモデルを選択してください'
@@ -320,7 +368,6 @@
      * 指板材選択を初期化する。
      */
     function resetFingerboardSelect() {
-
         fingerboardSelect.innerHTML =
             '<option value="">'
             + '先にカラーを選択してください'
@@ -333,18 +380,12 @@
      * 確定済みProductを解除する。
      */
     function resetSelectedProduct() {
-
         productIdInput.value = "";
-
         registerButton.disabled = true;
-
         selectedProductInfo.hidden = true;
-
         selectedProductText.textContent =
             "";
-
         productErrorMessage.hidden = true;
-
         productErrorMessage.textContent =
             "";
     }
@@ -353,12 +394,10 @@
      * エラーを表示する。
      */
     function showProductError(message) {
-
         resetSelectedProduct();
 
         productErrorMessage.textContent =
             message;
-
         productErrorMessage.hidden = false;
     }
 
@@ -366,13 +405,10 @@
      * Productを確定する。
      */
     function selectProduct(product) {
-
         if (product == null) {
-
             showProductError(
                 "対象となる製品が見つかりません。"
             );
-
             return;
         }
 
@@ -390,10 +426,8 @@
 
         selectedProductInfo.hidden =
             false;
-
         productErrorMessage.hidden =
             true;
-
         registerButton.disabled =
             false;
     }
@@ -402,7 +436,6 @@
      * シリーズ一覧を生成する。
      */
     function initializeSeriesSelect() {
-
         const seriesNames = [
             ...new Set(
                 products.map(
@@ -415,7 +448,6 @@
         ];
 
         seriesNames.forEach(series => {
-
             appendOption(
                 seriesSelect,
                 series,
@@ -430,7 +462,6 @@
     seriesSelect.addEventListener(
         "change",
         function () {
-
             resetModelSelect();
             resetColorSelect();
             resetFingerboardSelect();
@@ -467,7 +498,6 @@
 
             modelNames.forEach(
                 modelName => {
-
                     appendOption(
                         modelSelect,
                         modelName,
@@ -486,7 +516,6 @@
     modelSelect.addEventListener(
         "change",
         function () {
-
             resetColorSelect();
             resetFingerboardSelect();
             resetSelectedProduct();
@@ -523,7 +552,6 @@
                 + '</option>';
 
             colors.forEach(color => {
-
                 appendOption(
                     colorSelect,
                     color,
@@ -541,7 +569,6 @@
     colorSelect.addEventListener(
         "change",
         function () {
-
             resetFingerboardSelect();
             resetSelectedProduct();
 
@@ -553,7 +580,6 @@
 
             if (selectedModel === ""
                     || selectedColor === "") {
-
                 return;
             }
 
@@ -567,12 +593,10 @@
                 );
 
             if (matchingProducts.length === 0) {
-
                 showProductError(
                     "選択条件に対応する"
                     + "製品がありません。"
                 );
-
                 return;
             }
 
@@ -611,12 +635,10 @@
                     );
 
                 if (exactProducts.length !== 1) {
-
                     showProductError(
                         "同一仕様の製品マスタが"
                         + "複数登録されています。"
                     );
-
                     return;
                 }
 
@@ -674,7 +696,6 @@
                      * 1件の場合だけ候補へ追加する。
                      */
                     if (exactProducts.length === 1) {
-
                         appendOption(
                             fingerboardSelect,
                             exactProducts[0].id,
@@ -695,7 +716,6 @@
     fingerboardSelect.addEventListener(
         "change",
         function () {
-
             resetSelectedProduct();
 
             const selectedProductId =
@@ -728,9 +748,7 @@
         .addEventListener(
             "submit",
             function (event) {
-
                 if (productIdInput.value === "") {
-
                     event.preventDefault();
 
                     alert(
@@ -767,8 +785,6 @@
         );
 
     initializeSeriesSelect();
-
 </script>
-
 </body>
 </html>

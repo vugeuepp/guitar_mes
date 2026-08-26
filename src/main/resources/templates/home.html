@@ -7,72 +7,255 @@
 </head>
 <body>
 <div th:replace="~{fragments/header :: header('ダッシュボード')}"></div>
+<main class="page-container">
+<section class="dashboard-summary">
 
-<table border="1">
-    <tr>
-        <th>総ギター数</th>
-        <th>仕掛中</th>
-        <th>完成</th>
-        <th>実施中工程</th>
-        <th>完成率</th>
-    </tr>
+    <div class="summary-card">
 
-    <tr>
-        <td th:text="${totalGuitarCount}"></td>
-        <td th:text="${inProgressGuitarCount}"></td>
-        <td th:text="${completedGuitarCount}"></td>
-        <td th:text="${runningProcessCount}"></td>
-        <td th:text="${completionRate + '%'}"></td>
-    </tr>
-</table>
+        <div class="summary-title">
+            総ギター数
+        </div>
+
+        <div class="summary-value"
+             th:text="${totalGuitarCount}">
+        </div>
+
+        <div class="summary-unit">
+            台
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-title">
+            製造中
+        </div>
+
+        <div class="summary-value"
+             th:text="${inProgressGuitarCount}">
+        </div>
+
+        <div class="summary-unit">
+            台
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-title">
+            完成
+        </div>
+
+        <div class="summary-value"
+             th:text="${completedGuitarCount}">
+        </div>
+
+        <div class="summary-unit">
+            台
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-title">
+            作業中工程
+        </div>
+
+        <div class="summary-value"
+             th:text="${runningProcessCount}">
+        </div>
+
+        <div class="summary-unit">
+            件
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-title">
+            完成率
+        </div>
+
+        <div class="summary-value"
+             th:text="${completionRate}">
+        </div>
+
+        <div class="summary-unit">
+            %
+        </div>
+
+    </div>
+
+</section>
 
 <br>
-<h2>部品在庫状況</h2>
-<table>
-	<tr>
-		<th>使用可能ネック</th>
-		<th>使用可能ボディ</th>
-	</tr>
-	
-	<tr>
-		<td th:text="${availableNeckCount}"></td>
-		<td th:text="${availableBodyCount}"></td>
-	</tr>
-</table>
-<h2>工程別平均作業時間</h2>
+<section class="dashboard-section">
 
-<table class="dashboard-table">
-    <tr>
-        <th>工程</th>
-        <th>平均時間</th>
-    </tr>
+    <div class="dashboard-section-heading">
 
-    <tr th:each="avg : ${averageProcessTimes}">
-        <td th:text="${avg.processName}"></td>
-        <td th:text="${avg.averageMinutes + '分'}"></td>
-    </tr>
-</table>
+        <h2>
+            組立可能部材
+        </h2>
+
+        <p>
+            ネック取付に使用できる部材数
+        </p>
+
+    </div>
+
+    <div class="component-summary">
+
+        <!-- 組立可能ネック -->
+        <a class="component-summary-card"
+           th:href="@{/necks/view}">
+
+            <div class="component-summary-label">
+                組立可能ネック
+            </div>
+
+            <div class="component-summary-number">
+
+                <span th:text="${availableNeckCount}">
+                </span>
+
+                <small>
+                    本
+                </small>
+
+            </div>
+
+            <div class="component-summary-link">
+                ネック一覧を確認
+                <span aria-hidden="true">
+                    →
+                </span>
+            </div>
+
+        </a>
+
+        <!-- 組立可能ボディ -->
+        <a class="component-summary-card"
+           th:href="@{/bodies/view}">
+
+            <div class="component-summary-label">
+                組立可能ボディ
+            </div>
+
+            <div class="component-summary-number">
+
+                <span th:text="${availableBodyCount}">
+                </span>
+
+                <small>
+                    本
+                </small>
+
+            </div>
+
+            <div class="component-summary-link">
+                ボディ一覧を確認
+                <span aria-hidden="true">
+                    →
+                </span>
+            </div>
+
+        </a>
+
+    </div>
+
+</section>
+<section class="dashboard-section">
+
+    <div class="dashboard-section-heading">
+
+        <h2>
+            ギター工程別平均作業時間
+        </h2>
+
+        <p>
+            完了済み実績から集計
+        </p>
+
+    </div>
+
+    <div class="guitar-average-summary">
+
+        <div th:each="avg : ${averageProcessTimes}"
+             class="guitar-average-card">
+
+            <div class="guitar-average-name"
+                 th:text="${avg.processName}">
+            </div>
+
+            <div class="guitar-average-value"
+                 th:text="${avg.averageMinutes}">
+            </div>
+
+            <div class="guitar-average-unit">
+                分
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+<br>
+<section class="dashboard-section">
+
+    <div class="dashboard-section-heading">
+
+        <h2>
+            ギター工程別状況
+        </h2>
+
+        <p>
+            現在どの工程に何台あるか
+        </p>
+
+    </div>
+
+    <div class="guitar-process-summary">
+
+        <div th:each="processCount : ${processCounts}"
+             class="guitar-process-card">
+
+            <div class="guitar-process-name"
+                 th:text="${processCount.processName}">
+            </div>
+
+            <div class="guitar-process-value"
+                 th:text="${processCount.count}">
+            </div>
+
+            <div class="guitar-process-unit">
+                台
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
 <br>
 
-<h2>工程別状況</h2>
-<table border="1">
-	<tr>
-		<th>工程</th>
-		<th>本数</th>
-	</tr>
-	
-	<tr th:each="processCount : ${processCounts}">
-		<td th:text="${processCount.processName}"></td>
-		<td th:text="${processCount.count}"></td>
-	</tr>
-</table>
-<br>
+<section class="dashboard-section">
 
-<section class="component-dashboard">
+    <div class="dashboard-section-heading">
 
-    <h2>
-        ボディ工程状況
-    </h2>
+        <h2>
+            ボディ工程状況
+        </h2>
+
+        <p>
+            ボディ製造の現在状況
+        </p>
+
+    </div>
 
     <div class="status-card-container">
 
@@ -96,19 +279,29 @@
 
     </div>
 
-    <p>
+    <div class="section-link">
+
         <a th:href="@{/bodies/view}">
-            ボディ一覧を確認
+            ボディ一覧を確認 →
         </a>
-    </p>
+
+    </div>
 
 </section>
 
-<section class="component-dashboard">
+<section class="dashboard-section">
 
-    <h2>
-        ネック工程状況
-    </h2>
+    <div class="dashboard-section-heading">
+
+        <h2>
+            ネック工程状況
+        </h2>
+
+        <p>
+            ネック製造の現在状況
+        </p>
+
+    </div>
 
     <div class="status-card-container">
 
@@ -132,55 +325,109 @@
 
     </div>
 
-    <p>
+    <div class="section-link">
+
         <a th:href="@{/necks/view}">
-            ネック一覧を確認
+            ネック一覧を確認 →
         </a>
-    </p>
+
+    </div>
 
 </section>
-
 <h2>現在のギター一覧</h2>
-<table border="1">
-	<tr>
-		<th>ID</th>
-		<th>シリアル番号</th>
-		<th>製品名</th>
-		<th>現在工程</th>
-		<th>進捗率</th>
-		<th>状態</th>
-		<th>詳細</th>
-	</tr>
-	
-	<tr th:each="guitar : ${guitars}"
-	    th:class="${guitar.currentProcess ==
-	               T(com.example.guitarmes.common.ProcessConstants).COMPLETED}
-	               ? 'completed' : ''">
-		<td th:text="${guitar.id}"></td>
-		<td th:text="${guitar.serialNo}"></td>
-		<td th:text="${guitar.productName}"></td>
-		<td th:text="${guitar.currentProcess}"></td>
-		<td th:text="${guitar.progressRate + '%'}"></td>
-		<td>
-			<span th:if="${guitar.hasRunningProcess}">
-				実施中
-			</span>
-			
-			<span th:if="${!guitar.hasRunningProcess}">
-				待機中
-			</span>
-		</td>
-		<td>
-			<a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
-				詳細
-			</a>
-		</td>
-	</tr>
-</table>
+<div class="table-container">
 
-<hr>
-<div th:replace="~{fragments/menu :: menu}">
+    <table class="data-table guitar-table">
+
+        <colgroup>
+            <col class="guitar-column-id">
+            <col class="guitar-column-serial">
+            <col class="guitar-column-product">
+            <col class="guitar-column-process">
+            <col class="guitar-column-progress">
+            <col class="guitar-column-status">
+            <col class="guitar-column-action">
+        </colgroup>
+
+        <thead>
+
+            <tr>
+                <th>ID</th>
+                <th>シリアル番号</th>
+                <th>製品名</th>
+                <th>現在工程</th>
+                <th>進捗率</th>
+                <th>状態</th>
+                <th>詳細</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr th:each="guitar : ${guitars}"
+                th:class="${guitar.currentProcess
+                           == T(com.example.guitarmes.common.ProcessConstants).COMPLETED}
+                           ? 'completed'
+                           : ''">
+
+                <td th:text="${guitar.id}">
+                </td>
+
+                <td th:text="${guitar.serialNo}">
+                </td>
+
+                <td class="guitar-product-cell"
+                    th:text="${guitar.productName}">
+                </td>
+
+                <td th:text="${guitar.currentProcess}">
+                </td>
+
+                <td th:text="${guitar.progressRate + '%'}">
+                </td>
+
+                <td>
+
+                    <span th:if="${guitar.hasRunningProcess}"
+                          class="status-badge status-working">
+                        作業中
+                    </span>
+
+                    <span th:if="${!guitar.hasRunningProcess
+                                  and guitar.currentProcess != '完成'}"
+                          class="status-badge status-waiting">
+                        工程待ち
+                    </span>
+
+                    <span th:if="${!guitar.hasRunningProcess
+                                  and guitar.currentProcess == '完成'}"
+                          class="status-badge status-available">
+                        完成
+                    </span>
+
+                </td>
+
+                <td class="table-action-cell">
+
+                    <a class="btn btn-detail"
+                       th:href="@{/guitars/{id}/view(
+                           id=${guitar.id})}">
+
+                        詳細
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
 </div>
 
+</main>
 </body>
 </html>

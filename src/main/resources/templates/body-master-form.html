@@ -2,8 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>ボディマスタ登録</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ボディマスタ登録
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
@@ -13,48 +16,126 @@
      "~{fragments/header :: header('ボディマスタ登録')}">
 </div>
 
-<form th:action="@{/body-masters/create}"
-      method="post">
+<main class="page-container">
 
-    <div>
-        <label>モデルコード</label>
-        <input type="text"
-               name="modelCode">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ボディマスタの仕様情報を登録します。
+        </p>
+
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/body-masters/view}">
+                ボディマスタ一覧へ戻る
+            </a>
+        </div>
     </div>
 
-    <div>
-        <label>モデル名</label>
-        <input type="text"
-               name="modelName">
-    </div>
+    <form th:action="@{/body-masters/create}"
+          method="post"
+          class="form-container">
 
-    <div>
-        <label>ボディタイプ</label>
-        <input type="text"
-               name="bodyType">
-    </div>
+        <section class="form-section">
 
-    <div>
-        <label>材質</label>
-        <input type="text"
-               name="material">
-    </div>
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Body Master
+                    </p>
 
-    <div>
-        <label>カラー</label>
-        <input type="text"
-               name="color">
-    </div>
+                    <h2 class="form-section-title">
+                        基本情報
+                    </h2>
+                </div>
 
-    <button type="submit">
-        登録
-    </button>
+                <p class="form-section-description">
+                    ボディモデルの情報を入力してください。
+                </p>
+            </div>
 
-</form>
+            <div class="form-grid">
 
-<div th:replace=
-     "~{fragments/menu :: menu}">
-</div>
+                <div class="form-group">
+                    <label class="form-label"
+                           for="modelCode">
+                        モデルコード
+                    </label>
+
+                    <input type="text"
+                           id="modelCode"
+                           name="modelCode"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="modelName">
+                        モデル名
+                    </label>
+
+                    <input type="text"
+                           id="modelName"
+                           name="modelName"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="bodyType">
+                        ボディタイプ
+                    </label>
+
+                    <input type="text"
+                           id="bodyType"
+                           name="bodyType"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="material">
+                        材質
+                    </label>
+
+                    <input type="text"
+                           id="material"
+                           name="material"
+                           class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"
+                           for="color">
+                        カラー
+                    </label>
+
+                    <input type="text"
+                           id="color"
+                           name="color"
+                           class="form-input">
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/body-masters/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                ボディマスタを登録
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
 
 </body>
 </html>

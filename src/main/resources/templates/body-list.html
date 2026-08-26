@@ -1,174 +1,182 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="UTF-8">
-	<title>ボディ一覧</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <title>ボディ管理一覧</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div th:replace=
- "~{fragments/header :: header('ボディ一覧')}">
+
+<div th:replace="~{fragments/header :: header('ボディ管理一覧')}">
 </div>
-<p>
-	<a th:href="@{/bodies/new}">
-		新規ボディ登録
-	</a>
-</p>
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>シリアル番号</th>
-        <th>モデルコード</th>
-        <th>モデル名</th>
-        <th>ボディタイプ</th>
-        <th>材質</th>
-        <th>カラー</th>
-        <th>現在工程</th>
-        <th>ステータス</th>
-		<th>工程操作</th>
-		<th>履歴</th>
-    </tr>
 
-    <tr th:each="body : ${bodies}">
-        <td th:text="${body.id}"></td>
+<main class="page-container">
 
-        <td th:text="${body.serialNo}"></td>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ボディ個体の登録状況と工程進捗を確認できます。
+        </p>
 
-        <td th:text="${body.bodyMaster != null ? body.bodyMaster.modelCode
-                : '未設定'}">
-        </td>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-primary"
+               th:href="@{/bodies/new}">
+                新規ボディ登録
+            </a>
+        </div>
+    </div>
 
-        <td th:text="${body.bodyMaster != null ? body.bodyMaster.modelName
-                : body.modelName}">
-        </td>
+    <div th:if="${#lists.isEmpty(bodies)}"
+         class="empty-state">
+        <p>登録されているボディはありません。</p>
+    </div>
 
-        <td th:text="${body.bodyMaster != null ? body.bodyMaster.bodyType : '未設定'}">
-        </td>
+    <div th:unless="${#lists.isEmpty(bodies)}"
+         class="table-container">
 
-        <td th:text="${body.bodyMaster != null
-                ? body.bodyMaster.material
-                : '未設定'}">
-        </td>
+        <table class="data-table body-management-table">
 
-        <td th:text="${body.bodyMaster != null
-                ? body.bodyMaster.color
-                : body.color}">
-        </td>
+            <colgroup>
+                <col class="body-column-id">
+                <col class="body-column-serial">
+                <col class="body-column-code">
+                <col class="body-column-model">
+                <col class="body-column-type">
+                <col class="body-column-material">
+                <col class="body-column-color">
+                <col class="body-column-process">
+                <col class="body-column-status">
+                <col class="body-column-action">
+                <col class="body-column-history">
+            </colgroup>
 
-        <td th:text="${body.currentProcess}"></td>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>シリアル番号</th>
+                <th>モデルコード</th>
+                <th>モデル名</th>
+                <th>ボディタイプ</th>
+                <th>材質</th>
+                <th>カラー</th>
+                <th>現在工程</th>
+                <th>状態</th>
+                <th>工程操作</th>
+                <th>履歴</th>
+            </tr>
+            </thead>
 
-		<td>
+            <tbody>
 
-		    <span th:switch="${body.status}">
+            <tr th:each="body : ${bodies}">
 
-		        <span th:case="'WAITING'"
-		              class="status-badge status-waiting">
-		            工程待ち
-		        </span>
+                <td th:text="${body.id}"></td>
 
-		        <span th:case="'WORKING'"
-		              class="status-badge status-working">
-		            作業中
-		        </span>
+                <td th:text="${body.serialNo}"></td>
 
-		        <span th:case="'WAITING_INSPECTION'"
-		              class="status-badge status-inspection">
-		            検品待ち
-		        </span>
+                <td th:text="${body.bodyMaster != null
+                              ? body.bodyMaster.modelCode
+                              : '未設定'}">
+                </td>
 
-		        <span th:case="'REWORK'"
-		              class="status-badge status-rework">
-		            手直し待ち
-		        </span>
+                <td th:text="${body.bodyMaster != null
+                              ? body.bodyMaster.modelName
+                              : body.modelName}">
+                </td>
 
-		        <span th:case="'AVAILABLE'"
-		              class="status-badge status-available">
-		            組立待ち
-		        </span>
+                <td th:text="${body.bodyMaster != null
+                              ? body.bodyMaster.bodyType
+                              : '未設定'}">
+                </td>
 
-		        <span th:case="'ASSEMBLED'"
-		              class="status-badge status-assembled">
-		            組立済み
-		        </span>
+                <td th:text="${body.bodyMaster != null
+                              ? body.bodyMaster.material
+                              : '未設定'}">
+                </td>
 
-		        <span th:case="'REJECTED'"
-		              class="status-badge status-rejected">
-		            製造終了
-		        </span>
+                <td th:text="${body.bodyMaster != null
+                              ? body.bodyMaster.color
+                              : body.color}">
+                </td>
 
-		        <span th:case="*"
-		              class="status-badge"
-		              th:text="${body.status}">
-		        </span>
+                <td>
+                    <span class="body-current-process"
+                          th:text="${body.currentProcess}">
+                    </span>
+                </td>
 
-		    </span>
+                <td class="status-cell">
+                    <span class="status-badge"
+                          th:classappend="${@statusDisplay.getCssClass(body.status)}"
+                          th:text="${@statusDisplay.getLabel(body.status)}">
+                    </span>
+                </td>
 
-		</td>
-		<td>
-		    <!-- 工程実施中：終了だけ表示 -->
-		    <form th:if="${body.status == 'WORKING'}"
-		          th:action="@{/body-processes/end/view}"
-		          method="get">
+                <td>
 
-		        <input type="hidden"
-		               name="bodyId"
-		               th:value="${body.id}">
+                    <form th:if="${body.status == 'WORKING'}"
+                          th:action="@{/body-processes/end/view}"
+                          method="get">
 
-		        <button type="submit" class="process-button process-end-button">
-		            工程終了
-		        </button>
-		    </form>
+                        <input type="hidden"
+                               name="bodyId"
+                               th:value="${body.id}">
 
-		    <!-- 待機状態：開始だけ表示 -->
-		    <form th:if="${body.status == 'WAITING'
-		                  or body.status == 'WAITING_INSPECTION'
-		                  or body.status == 'REWORK'}"
-		          th:action="@{/body-processes/start/view}"
-		          method="get">
+                        <button type="submit"
+                                class="btn btn-process-end">
+                            工程終了
+                        </button>
 
-		        <input type="hidden"
-		               name="bodyId"
-		               th:value="${body.id}">
+                    </form>
 
-		        <button type="submit" class="process-button process-start-button">
-		            工程開始
-		        </button>
-		    </form>
+                    <form th:if="${body.status == 'WAITING'
+                                  or body.status == 'WAITING_INSPECTION'
+                                  or body.status == 'REWORK'}"
+                          th:action="@{/body-processes/start/view}"
+                          method="get">
 
-		    <!-- 全工程完了 -->
-		    <span th:if="${body.status == 'AVAILABLE'}">
-		        組立待ち
-		    </span>
+                        <input type="hidden"
+                               name="bodyId"
+                               th:value="${body.id}">
 
-		    <!-- 組立済み -->
-		    <span th:if="${body.status == 'ASSEMBLED'}">
-		        組立済み
-		    </span>
+                        <button type="submit"
+                                class="btn btn-primary">
+                            工程開始
+                        </button>
 
-		    <!-- 不合格 -->
-		    <span th:if="${body.status == 'REJECTED'}">
-		        製造終了
-		    </span>
-		</td>
-		<td>
-		    <form th:action=
-		          "@{/bodies/{id}/process-history(id=${body.id})}"
-		          method="get">
+                    </form>
 
-		        <button type="submit"
-		                class="history-button">
-		            工程履歴
-		        </button>
+                    <span class="list-no-action"
+                          th:if="${body.status == 'AVAILABLE'
+                                or body.status == 'ASSEMBLED'
+                                or body.status == 'REJECTED'}">
+                        操作不可
+                    </span>
 
-		    </form>
-		</td>
-    </tr>
-</table>
+                </td>
 
+                <td>
 
-<br>
+                    <form th:action="@{/bodies/{id}/process-history(id=${body.id})}"
+                          method="get">
 
-<div th:replace="~{fragments/menu :: menu}">
-</div>
+                        <button type="submit"
+                                class="btn btn-detail">
+                            工程履歴
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
 </body>
 </html>
