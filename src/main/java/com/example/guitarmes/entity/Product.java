@@ -1,5 +1,6 @@
 package com.example.guitarmes.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,10 +14,14 @@ import jakarta.persistence.Table;
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String modelNo;
+
+    @Column(name = "internal_model_code")
+    private String internalModelCode;
 
     private String productName;
 
@@ -33,7 +38,7 @@ public class Product {
     private Integer fretCount;
 
     private String scale;
-    
+
     @ManyToOne
     @JoinColumn(name = "body_master_id")
     private BodyMaster bodyMaster;
@@ -61,109 +66,172 @@ public class Product {
         this.color = color;
         this.bodyMaterial = bodyMaterial;
         this.neckMaterial = neckMaterial;
-        this.fingerboardMaterial = fingerboardMaterial;
+        this.fingerboardMaterial =
+                fingerboardMaterial;
         this.pickupLayout = pickupLayout;
         this.fretCount = fretCount;
         this.scale = scale;
     }
 
-	public Long getId() {
-		return id;
-	}
+    public Product(
+            String modelNo,
+            String internalModelCode,
+            String productName,
+            String color,
+            String bodyMaterial,
+            String neckMaterial,
+            String fingerboardMaterial,
+            String pickupLayout,
+            Integer fretCount,
+            String scale,
+            BodyMaster bodyMaster,
+            NeckMaster neckMaster) {
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+        this.modelNo = modelNo;
+        this.internalModelCode =
+                internalModelCode;
+        this.productName = productName;
+        this.color = color;
+        this.bodyMaterial = bodyMaterial;
+        this.neckMaterial = neckMaterial;
+        this.fingerboardMaterial =
+                fingerboardMaterial;
+        this.pickupLayout = pickupLayout;
+        this.fretCount = fretCount;
+        this.scale = scale;
+        this.bodyMaster = bodyMaster;
+        this.neckMaster = neckMaster;
+    }
 
-	public String getModelNo() {
-		return modelNo;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setModelNo(String modelNo) {
-		this.modelNo = modelNo;
-	}
+    public void setId(
+            Long id) {
 
-	public String getProductName() {
-		return productName;
-	}
+        this.id = id;
+    }
 
-	public void setProductName(String productName) {
-		this.productName = productName;
-	}
+    public String getModelNo() {
+        return modelNo;
+    }
 
-	public String getColor() {
-		return color;
-	}
+    public void setModelNo(
+            String modelNo) {
 
-	public void setColor(String color) {
-		this.color = color;
-	}
+        this.modelNo = modelNo;
+    }
 
-	public String getBodyMaterial() {
-		return bodyMaterial;
-	}
+    public String getInternalModelCode() {
+        return internalModelCode;
+    }
 
-	public void setBodyMaterial(String bodyMaterial) {
-		this.bodyMaterial = bodyMaterial;
-	}
+    public void setInternalModelCode(
+            String internalModelCode) {
 
-	public String getNeckMaterial() {
-		return neckMaterial;
-	}
+        this.internalModelCode =
+                internalModelCode;
+    }
 
-	public void setNeckMaterial(String neckMaterial) {
-		this.neckMaterial = neckMaterial;
-	}
+    public String getProductName() {
+        return productName;
+    }
 
-	public String getFingerboardMaterial() {
-		return fingerboardMaterial;
-	}
+    public void setProductName(
+            String productName) {
 
-	public void setFingerboardMaterial(String fingerboardMaterial) {
-		this.fingerboardMaterial = fingerboardMaterial;
-	}
+        this.productName = productName;
+    }
 
-	public String getPickupLayout() {
-		return pickupLayout;
-	}
+    public String getColor() {
+        return color;
+    }
 
-	public void setPickupLayout(String pickupLayout) {
-		this.pickupLayout = pickupLayout;
-	}
+    public void setColor(
+            String color) {
 
-	public Integer getFretCount() {
-		return fretCount;
-	}
+        this.color = color;
+    }
 
-	public void setFretCount(Integer fretCount) {
-		this.fretCount = fretCount;
-	}
+    public String getBodyMaterial() {
+        return bodyMaterial;
+    }
 
-	public String getScale() {
-		return scale;
-	}
+    public void setBodyMaterial(
+            String bodyMaterial) {
 
-	public void setScale(String scale) {
-		this.scale = scale;
-	}
+        this.bodyMaterial = bodyMaterial;
+    }
 
-	public BodyMaster getBodyMaster() {
-		return bodyMaster;
-	}
+    public String getNeckMaterial() {
+        return neckMaterial;
+    }
 
-	public void setBodyMaster(BodyMaster bodyMaster) {
-		this.bodyMaster = bodyMaster;
-	}
+    public void setNeckMaterial(
+            String neckMaterial) {
 
-	public NeckMaster getNeckMaster() {
-		return neckMaster;
-	}
+        this.neckMaterial = neckMaterial;
+    }
 
-	public void setNeckMaster(NeckMaster neckMaster) {
-		this.neckMaster = neckMaster;
-	}
-	
-	
+    public String getFingerboardMaterial() {
+        return fingerboardMaterial;
+    }
 
-    
+    public void setFingerboardMaterial(
+            String fingerboardMaterial) {
+
+        this.fingerboardMaterial =
+                fingerboardMaterial;
+    }
+
+    public String getPickupLayout() {
+        return pickupLayout;
+    }
+
+    public void setPickupLayout(
+            String pickupLayout) {
+
+        this.pickupLayout = pickupLayout;
+    }
+
+    public Integer getFretCount() {
+        return fretCount;
+    }
+
+    public void setFretCount(
+            Integer fretCount) {
+
+        this.fretCount = fretCount;
+    }
+
+    public String getScale() {
+        return scale;
+    }
+
+    public void setScale(
+            String scale) {
+
+        this.scale = scale;
+    }
+
+    public BodyMaster getBodyMaster() {
+        return bodyMaster;
+    }
+
+    public void setBodyMaster(
+            BodyMaster bodyMaster) {
+
+        this.bodyMaster = bodyMaster;
+    }
+
+    public NeckMaster getNeckMaster() {
+        return neckMaster;
+    }
+
+    public void setNeckMaster(
+            NeckMaster neckMaster) {
+
+        this.neckMaster = neckMaster;
+    }
 }

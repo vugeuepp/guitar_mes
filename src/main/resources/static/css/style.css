@@ -2410,3 +2410,133 @@ body {
         width: 100%;
     }
 }
+/* ==================================================
+   Product Variation Form
+   ================================================== */
+.variation-section-heading {
+    align-items: center;
+}
+
+.variation-heading-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+.variation-count {
+    color: var(--app-muted);
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.variation-count strong {
+    color: var(--app-black);
+    font-size: 1.15rem;
+}
+
+.variation-list {
+    display: grid;
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.variation-card {
+    padding: 20px;
+    background-color: var(--app-background);
+    border: 1px solid var(--app-border);
+    border-left: 4px solid var(--app-red);
+    border-radius: 7px;
+}
+
+.variation-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.variation-card-title {
+    margin: 0;
+    color: var(--app-black);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.variation-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+    margin-left: 6px;
+    padding: 3px 8px;
+    color: #ffffff;
+    background-color: var(--app-black);
+    border-radius: 50%;
+    font-size: 0.8rem;
+}
+
+.variation-field-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 0.8fr)
+        minmax(220px, 1.2fr)
+        minmax(180px, 1fr);
+    gap: 20px;
+}
+
+.variation-remove-button:disabled {
+    visibility: hidden;
+}
+
+.variation-preview-table {
+    min-width: 720px;
+}
+
+.variation-preview-table th:first-child,
+.variation-preview-table td:first-child {
+    width: 70px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .variation-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .variation-heading-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .variation-field-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .variation-heading-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .variation-heading-actions .btn {
+        width: 100%;
+    }
+
+    .variation-card {
+        padding: 16px;
+    }
+
+    .variation-card-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .variation-card-heading .btn {
+        width: 100%;
+    }
+}

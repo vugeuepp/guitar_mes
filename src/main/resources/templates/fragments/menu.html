@@ -3,9 +3,9 @@
 
 <th:block th:fragment="menu">
 
-	<nav id="topNav"
-	     class="top-nav"
-	     aria-label="メインメニュー">
+    <nav id="topNav"
+         class="top-nav"
+         aria-label="メインメニュー">
 
         <div class="top-nav-inner">
 
@@ -49,7 +49,8 @@
 
                 <button type="button"
                         class="top-nav-link top-nav-dropdown-button"
-                        aria-haspopup="true">
+                        aria-haspopup="true"
+                        aria-label="マスタ管理メニュー">
 
                     マスタ管理
 
@@ -62,16 +63,20 @@
 
                 <div class="top-nav-dropdown-menu">
 
+                    <a th:href="@{/products/new}">
+                        製品・部材マスタ登録
+                    </a>
+
                     <a th:href="@{/products/view}">
-                        製品マスタ
+                        製品マスタ一覧
                     </a>
 
                     <a th:href="@{/body-masters/view}">
-                        ボディマスタ
+                        ボディマスタ一覧
                     </a>
 
                     <a th:href="@{/neck-masters/view}">
-                        ネックマスタ
+                        ネックマスタ一覧
                     </a>
 
                 </div>

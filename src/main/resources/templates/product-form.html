@@ -5,7 +5,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
     <title>
-        製品登録
+        製品マスタ登録
     </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
@@ -13,14 +13,16 @@
 <body>
 
 <div th:replace=
-     "~{fragments/header :: header('製品登録')}">
+     "~{fragments/header :: header('製品マスタ登録')}">
 </div>
 
 <main class="page-container">
 
     <div class="page-toolbar">
+
         <p class="page-toolbar-description">
-            ギター製品仕様を登録します。
+            共通仕様と販売バリエーションを入力し、
+            Product、BodyMaster、NeckMasterを一括登録します。
         </p>
 
         <div class="page-toolbar-actions">
@@ -29,78 +31,143 @@
                 製品一覧へ戻る
             </a>
         </div>
+
     </div>
 
     <form th:action="@{/products/create}"
+          th:object="${request}"
           method="post"
+          id="productVariationForm"
           class="form-container">
 
         <section class="form-section">
 
             <div class="form-section-heading">
+
                 <div>
                     <p class="form-section-caption">
-                        Product Master
+                        Product Family
                     </p>
 
                     <h2 class="form-section-title">
-                        基本情報
+                        製品共通情報
                     </h2>
                 </div>
 
                 <p class="form-section-description">
-                    製品の基本仕様を入力してください。
+                    すべてのバリエーションで共通となる
+                    製品仕様を入力してください。
                 </p>
+
             </div>
 
             <div class="form-grid">
 
                 <div class="form-group">
-                    <label class="form-label"
-                           for="modelNo">
-                        モデル番号
+
+                    <label for="internalModelCode"
+                           class="form-label">
+                        MES内部モデルコード
+
+                        <span class="form-required">
+                            必須
+                        </span>
                     </label>
 
                     <input type="text"
-                           id="modelNo"
-                           name="modelNo"
-                           class="form-input">
+                           id="internalModelCode"
+                           th:field="*{internalModelCode}"
+                           class="form-input"
+                           placeholder="H2-TL"
+                           maxlength="50"
+                           required>
+
+                    <p class="form-help">
+                        半角英数字とハイフンで入力してください。
+                        同じ製品ファミリーのバリエーションを
+                        MES上でまとめるために使用します。
+                    </p>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"
-                           for="productName">
+
+                    <label for="productName"
+                           class="form-label">
                         製品名
+
+                        <span class="form-required">
+                            必須
+                        </span>
                     </label>
 
                     <input type="text"
                            id="productName"
-                           name="productName"
-                           class="form-input">
+                           th:field="*{productName}"
+                           class="form-input"
+                           placeholder="Made in Japan Hybrid II Telecaster"
+                           required>
+
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"
-                           for="color">
-                        カラー
-                    </label>
 
-                    <input type="text"
-                           id="color"
-                           name="color"
-                           class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"
-                           for="pickupLayout">
+                    <label for="pickupLayout"
+                           class="form-label">
                         PU構成
+
+                        <span class="form-required">
+                            必須
+                        </span>
                     </label>
 
                     <input type="text"
                            id="pickupLayout"
-                           name="pickupLayout"
-                           class="form-input">
+                           th:field="*{pickupLayout}"
+                           class="form-input"
+                           placeholder="SS"
+                           required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fretCount"
+                           class="form-label">
+                        フレット数
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="number"
+                           id="fretCount"
+                           th:field="*{fretCount}"
+                           class="form-input"
+                           min="1"
+                           required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="scale"
+                           class="form-label">
+                        スケール
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="scale"
+                           th:field="*{scale}"
+                           class="form-input"
+                           placeholder="648mm"
+                           required>
+
                 </div>
 
             </div>
@@ -110,57 +177,64 @@
         <section class="form-section">
 
             <div class="form-section-heading">
+
                 <div>
                     <p class="form-section-caption">
-                        Material Specification
+                        Body Specification
                     </p>
 
                     <h2 class="form-section-title">
-                        材料構成
+                        ボディ共通仕様
                     </h2>
                 </div>
 
                 <p class="form-section-description">
-                    ボディ・ネック・指板の仕様を入力してください。
+                    カラー以外の共通ボディ仕様を
+                    入力してください。
                 </p>
+
             </div>
 
             <div class="form-grid">
 
                 <div class="form-group">
-                    <label class="form-label"
-                           for="bodyMaterial">
+
+                    <label for="bodyType"
+                           class="form-label">
+                        ボディタイプ
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="bodyType"
+                           th:field="*{bodyType}"
+                           class="form-input"
+                           placeholder="Telecaster"
+                           required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="bodyMaterial"
+                           class="form-label">
                         ボディ材
+
+                        <span class="form-required">
+                            必須
+                        </span>
                     </label>
 
                     <input type="text"
                            id="bodyMaterial"
-                           name="bodyMaterial"
-                           class="form-input">
-                </div>
+                           th:field="*{bodyMaterial}"
+                           class="form-input"
+                           placeholder="Alder"
+                           required>
 
-                <div class="form-group">
-                    <label class="form-label"
-                           for="neckMaterial">
-                        ネック材
-                    </label>
-
-                    <input type="text"
-                           id="neckMaterial"
-                           name="neckMaterial"
-                           class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"
-                           for="fingerboardMaterial">
-                        指板材
-                    </label>
-
-                    <input type="text"
-                           id="fingerboardMaterial"
-                           name="fingerboardMaterial"
-                           class="form-input">
                 </div>
 
             </div>
@@ -170,46 +244,270 @@
         <section class="form-section">
 
             <div class="form-section-heading">
+
                 <div>
                     <p class="form-section-caption">
                         Neck Specification
                     </p>
 
                     <h2 class="form-section-title">
-                        ネック仕様
+                        ネック共通仕様
                     </h2>
                 </div>
 
                 <p class="form-section-description">
-                    フレット数とスケールを入力してください。
+                    指板材以外の共通ネック仕様を
+                    入力してください。
                 </p>
+
             </div>
 
             <div class="form-grid">
 
                 <div class="form-group">
-                    <label class="form-label"
-                           for="fretCount">
-                        フレット数
-                    </label>
 
-                    <input type="number"
-                           id="fretCount"
-                           name="fretCount"
-                           class="form-input">
-                </div>
+                    <label for="neckType"
+                           class="form-label">
+                        ネックタイプ
 
-                <div class="form-group">
-                    <label class="form-label"
-                           for="scale">
-                        スケール
+                        <span class="form-required">
+                            必須
+                        </span>
                     </label>
 
                     <input type="text"
-                           id="scale"
-                           name="scale"
-                           class="form-input">
+                           id="neckType"
+                           th:field="*{neckType}"
+                           class="form-input"
+                           placeholder="Telecaster"
+                           required>
+
                 </div>
+
+                <div class="form-group">
+
+                    <label for="neckMaterial"
+                           class="form-label">
+                        ネック材
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="neckMaterial"
+                           th:field="*{neckMaterial}"
+                           class="form-input"
+                           placeholder="Maple"
+                           required>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading variation-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Product Variations
+                    </p>
+
+                    <h2 class="form-section-title">
+                        製品バリエーション
+                    </h2>
+                </div>
+
+                <div class="variation-heading-actions">
+
+                    <span class="variation-count">
+                        登録予定：
+                        <strong id="variationCount">
+                            1
+                        </strong>
+                        件
+                    </span>
+
+                    <button type="button"
+                            id="addVariationButton"
+                            class="btn btn-secondary">
+                        バリエーションを追加
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="information-message">
+                <p>
+                    公式モデル番号、カラー、指板材を
+                    販売バリエーションごとに入力してください。
+                    存在しない組み合わせは追加しないでください。
+                </p>
+            </div>
+
+            <div id="variationList"
+                 class="variation-list">
+
+                <div class="variation-card"
+                     th:each="variation, status : *{variations}"
+                     th:attr="data-variation-index=${status.index}">
+
+                    <div class="variation-card-heading">
+
+                        <h3 class="variation-card-title">
+                            バリエーション
+                            <span class="variation-number"
+                                  th:text="${status.index + 1}">
+                            </span>
+                        </h3>
+
+                        <button type="button"
+                                class="btn btn-outline variation-remove-button">
+                            この行を削除
+                        </button>
+
+                    </div>
+
+                    <div class="variation-field-grid">
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   th:for="${'variationModelNo'
+                                       + status.index}">
+                                公式モデル番号
+
+                                <span class="form-required">
+                                    必須
+                                </span>
+                            </label>
+
+                            <input type="text"
+                                   th:id="${'variationModelNo'
+                                       + status.index}"
+                                   th:field=
+                                   "*{variations[__${status.index}__].modelNo}"
+                                   class="form-input variation-model-no"
+                                   inputmode="numeric"
+                                   placeholder="5660100300"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   th:for="${'variationColor'
+                                       + status.index}">
+                                カラー
+
+                                <span class="form-required">
+                                    必須
+                                </span>
+                            </label>
+
+                            <input type="text"
+                                   th:id="${'variationColor'
+                                       + status.index}"
+                                   th:field=
+                                   "*{variations[__${status.index}__].color}"
+                                   class="form-input variation-color"
+                                   placeholder="3-Color Sunburst"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label"
+                                   th:for="${'variationFingerboard'
+                                       + status.index}">
+                                指板材
+
+                                <span class="form-required">
+                                    必須
+                                </span>
+                            </label>
+
+                            <input type="text"
+                                   th:id="${'variationFingerboard'
+                                       + status.index}"
+                                   th:field=
+                                   "*{variations[__${status.index}__].fingerboardMaterial}"
+                                   class="form-input variation-fingerboard"
+                                   placeholder="Rosewood"
+                                   required>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Registration Preview
+                    </p>
+
+                    <h2 class="form-section-title">
+                        登録内容確認
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    入力した製品バリエーションを確認してください。
+                </p>
+
+            </div>
+
+            <div id="variationPreviewEmpty"
+                 class="empty-state">
+                <p>
+                    バリエーション情報を入力すると、
+                    ここに登録予定内容が表示されます。
+                </p>
+            </div>
+
+            <div id="variationPreviewContainer"
+                 class="table-container"
+                 hidden>
+
+                <table class="data-table variation-preview-table">
+
+                    <thead>
+                        <tr>
+                            <th>
+                                No.
+                            </th>
+                            <th>
+                                公式モデル番号
+                            </th>
+                            <th>
+                                カラー
+                            </th>
+                            <th>
+                                指板材
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="variationPreviewBody">
+                    </tbody>
+
+                </table>
 
             </div>
 
@@ -224,7 +522,7 @@
 
             <button type="submit"
                     class="btn btn-primary">
-                製品を登録
+                製品マスタを一括登録
             </button>
 
         </div>
@@ -232,6 +530,512 @@
     </form>
 
 </main>
+
+<template id="variationTemplate">
+
+    <div class="variation-card"
+         data-variation-index="0">
+
+        <div class="variation-card-heading">
+
+            <h3 class="variation-card-title">
+                バリエーション
+                <span class="variation-number">
+                    1
+                </span>
+            </h3>
+
+            <button type="button"
+                    class="btn btn-outline variation-remove-button">
+                この行を削除
+            </button>
+
+        </div>
+
+        <div class="variation-field-grid">
+
+            <div class="form-group">
+
+                <label class="form-label"
+                       for="variationModelNo0">
+                    公式モデル番号
+
+                    <span class="form-required">
+                        必須
+                    </span>
+                </label>
+
+                <input type="text"
+                       id="variationModelNo0"
+                       name="variations[0].modelNo"
+                       class="form-input variation-model-no"
+                       inputmode="numeric"
+                       placeholder="5660100300"
+                       required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label"
+                       for="variationColor0">
+                    カラー
+
+                    <span class="form-required">
+                        必須
+                    </span>
+                </label>
+
+                <input type="text"
+                       id="variationColor0"
+                       name="variations[0].color"
+                       class="form-input variation-color"
+                       placeholder="3-Color Sunburst"
+                       required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label class="form-label"
+                       for="variationFingerboard0">
+                    指板材
+
+                    <span class="form-required">
+                        必須
+                    </span>
+                </label>
+
+                <input type="text"
+                       id="variationFingerboard0"
+                       name="variations[0].fingerboardMaterial"
+                       class="form-input variation-fingerboard"
+                       placeholder="Rosewood"
+                       required>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</template>
+
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const form =
+                document.getElementById(
+                    "productVariationForm"
+                );
+
+            const variationList =
+                document.getElementById(
+                    "variationList"
+                );
+
+            const variationTemplate =
+                document.getElementById(
+                    "variationTemplate"
+                );
+
+            const addVariationButton =
+                document.getElementById(
+                    "addVariationButton"
+                );
+
+            const variationCount =
+                document.getElementById(
+                    "variationCount"
+                );
+
+            const variationPreviewEmpty =
+                document.getElementById(
+                    "variationPreviewEmpty"
+                );
+
+            const variationPreviewContainer =
+                document.getElementById(
+                    "variationPreviewContainer"
+                );
+
+            const variationPreviewBody =
+                document.getElementById(
+                    "variationPreviewBody"
+                );
+
+            function getVariationCards() {
+                return Array.from(
+                    variationList.querySelectorAll(
+                        ".variation-card"
+                    )
+                );
+            }
+
+            function reindexVariations() {
+                const cards =
+                    getVariationCards();
+
+                cards.forEach(
+                    function (card, index) {
+                        card.setAttribute(
+                            "data-variation-index",
+                            String(index)
+                        );
+
+                        const number =
+                            card.querySelector(
+                                ".variation-number"
+                            );
+
+                        number.textContent =
+                            String(index + 1);
+
+                        const modelNoInput =
+                            card.querySelector(
+                                ".variation-model-no"
+                            );
+
+                        const colorInput =
+                            card.querySelector(
+                                ".variation-color"
+                            );
+
+                        const fingerboardInput =
+                            card.querySelector(
+                                ".variation-fingerboard"
+                            );
+
+                        updateInput(
+                            modelNoInput,
+                            "variationModelNo"
+                                + index,
+                            "variations["
+                                + index
+                                + "].modelNo"
+                        );
+
+                        updateInput(
+                            colorInput,
+                            "variationColor"
+                                + index,
+                            "variations["
+                                + index
+                                + "].color"
+                        );
+
+                        updateInput(
+                            fingerboardInput,
+                            "variationFingerboard"
+                                + index,
+                            "variations["
+                                + index
+                                + "].fingerboardMaterial"
+                        );
+                    }
+                );
+
+                variationCount.textContent =
+                    String(cards.length);
+
+                updateRemoveButtons();
+                updatePreview();
+            }
+
+            function updateInput(
+                    input,
+                    id,
+                    name) {
+
+                input.id = id;
+                input.name = name;
+
+                const label =
+                    input
+                        .closest(".form-group")
+                        .querySelector("label");
+
+                label.setAttribute(
+                    "for",
+                    id
+                );
+            }
+
+            function updateRemoveButtons() {
+                const cards =
+                    getVariationCards();
+
+                cards.forEach(
+                    function (card) {
+                        const removeButton =
+                            card.querySelector(
+                                ".variation-remove-button"
+                            );
+
+                        removeButton.disabled =
+                            cards.length <= 1;
+                    }
+                );
+            }
+
+            function addVariation() {
+                const fragment =
+                    variationTemplate
+                        .content
+                        .cloneNode(true);
+
+                variationList.appendChild(
+                    fragment
+                );
+
+                reindexVariations();
+
+                const cards =
+                    getVariationCards();
+
+                const addedCard =
+                    cards[cards.length - 1];
+
+                const firstInput =
+                    addedCard.querySelector(
+                        ".variation-model-no"
+                    );
+
+                firstInput.focus();
+            }
+
+            function removeVariation(event) {
+                const removeButton =
+                    event.target.closest(
+                        ".variation-remove-button"
+                    );
+
+                if (removeButton == null) {
+                    return;
+                }
+
+                const cards =
+                    getVariationCards();
+
+                if (cards.length <= 1) {
+                    return;
+                }
+
+                const card =
+                    removeButton.closest(
+                        ".variation-card"
+                    );
+
+                card.remove();
+
+                reindexVariations();
+            }
+
+            function updatePreview() {
+                const cards =
+                    getVariationCards();
+
+                variationPreviewBody.innerHTML =
+                    "";
+
+                let completedCount = 0;
+
+                cards.forEach(
+                    function (card, index) {
+                        const modelNo =
+                            card.querySelector(
+                                ".variation-model-no"
+                            ).value.trim();
+
+                        const color =
+                            card.querySelector(
+                                ".variation-color"
+                            ).value.trim();
+
+                        const fingerboard =
+                            card.querySelector(
+                                ".variation-fingerboard"
+                            ).value.trim();
+
+                        if (modelNo === ""
+                                && color === ""
+                                && fingerboard === "") {
+                            return;
+                        }
+
+                        completedCount++;
+
+                        const row =
+                            document.createElement(
+                                "tr"
+                            );
+
+                        appendPreviewCell(
+                            row,
+                            String(index + 1)
+                        );
+
+                        appendPreviewCell(
+                            row,
+                            modelNo === ""
+                                ? "未入力"
+                                : modelNo
+                        );
+
+                        appendPreviewCell(
+                            row,
+                            color === ""
+                                ? "未入力"
+                                : color
+                        );
+
+                        appendPreviewCell(
+                            row,
+                            fingerboard === ""
+                                ? "未入力"
+                                : fingerboard
+                        );
+
+                        variationPreviewBody
+                            .appendChild(row);
+                    }
+                );
+
+                const hasPreview =
+                    completedCount > 0;
+
+                variationPreviewEmpty.hidden =
+                    hasPreview;
+
+                variationPreviewContainer.hidden =
+                    !hasPreview;
+            }
+
+            function appendPreviewCell(
+                    row,
+                    text) {
+
+                const cell =
+                    document.createElement(
+                        "td"
+                    );
+
+                cell.textContent = text;
+
+                row.appendChild(cell);
+            }
+
+            function validateVariationDuplicates() {
+                const cards =
+                    getVariationCards();
+
+                const modelNumbers =
+                    new Set();
+
+                const combinations =
+                    new Set();
+
+                for (const card of cards) {
+                    const modelNo =
+                        card.querySelector(
+                            ".variation-model-no"
+                        ).value.trim();
+
+                    const color =
+                        card.querySelector(
+                            ".variation-color"
+                        ).value.trim();
+
+                    const fingerboard =
+                        card.querySelector(
+                            ".variation-fingerboard"
+                        ).value.trim();
+
+                    const modelNoKey =
+                        modelNo.toUpperCase();
+
+                    if (modelNumbers.has(
+                            modelNoKey)) {
+
+                        alert(
+                            "同じ公式モデル番号が"
+                            + "複数入力されています。"
+                        );
+
+                        card.querySelector(
+                            ".variation-model-no"
+                        ).focus();
+
+                        return false;
+                    }
+
+                    modelNumbers.add(
+                        modelNoKey
+                    );
+
+                    const combinationKey =
+                        color.toUpperCase()
+                        + "\u0000"
+                        + fingerboard.toUpperCase();
+
+                    if (combinations.has(
+                            combinationKey)) {
+
+                        alert(
+                            "同じカラーと指板材の"
+                            + "組み合わせが"
+                            + "複数入力されています。"
+                        );
+
+                        card.querySelector(
+                            ".variation-color"
+                        ).focus();
+
+                        return false;
+                    }
+
+                    combinations.add(
+                        combinationKey
+                    );
+                }
+
+                return true;
+            }
+
+            addVariationButton
+                .addEventListener(
+                    "click",
+                    addVariation
+                );
+
+            variationList
+                .addEventListener(
+                    "click",
+                    removeVariation
+                );
+
+            variationList
+                .addEventListener(
+                    "input",
+                    updatePreview
+                );
+
+            form.addEventListener(
+                "submit",
+                function (event) {
+                    reindexVariations();
+
+                    if (!validateVariationDuplicates()) {
+                        event.preventDefault();
+                    }
+                }
+            );
+
+            reindexVariations();
+        }
+    );
+</script>
 
 </body>
 </html>

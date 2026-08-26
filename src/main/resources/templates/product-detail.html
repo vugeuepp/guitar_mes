@@ -20,7 +20,7 @@
 
     <div class="page-toolbar">
         <p class="page-toolbar-description">
-            製品仕様と関連するギターを確認できます。
+            製品仕様、関連マスタ、製造中のギターを確認できます。
         </p>
 
         <div class="page-toolbar-actions">
@@ -45,12 +45,13 @@
             </div>
         </div>
 
-        <div class="detail-grid">
+        <div class="detail-grid detail-grid-2col">
 
             <div class="detail-item">
                 <div class="detail-label">
-                    モデル番号
+                    公式モデル番号
                 </div>
+
                 <div class="detail-value"
                      th:text="${product.modelNo}">
                 </div>
@@ -58,8 +59,22 @@
 
             <div class="detail-item">
                 <div class="detail-label">
+                    MES内部モデルコード
+                </div>
+
+                <div class="detail-value"
+                     th:text="${#strings.isEmpty(
+                         product.internalModelCode)
+                         ? '-'
+                         : product.internalModelCode}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
                     製品名
                 </div>
+
                 <div class="detail-value"
                      th:text="${product.productName}">
                 </div>
@@ -69,6 +84,7 @@
                 <div class="detail-label">
                     カラー
                 </div>
+
                 <div class="detail-value"
                      th:text="${product.color}">
                 </div>
@@ -76,26 +92,9 @@
 
             <div class="detail-item">
                 <div class="detail-label">
-                    ボディ材
-                </div>
-                <div class="detail-value"
-                     th:text="${product.bodyMaterial}">
-                </div>
-            </div>
-
-            <div class="detail-item">
-                <div class="detail-label">
-                    ネック材
-                </div>
-                <div class="detail-value"
-                     th:text="${product.neckMaterial}">
-                </div>
-            </div>
-
-            <div class="detail-item">
-                <div class="detail-label">
                     指板材
                 </div>
+
                 <div class="detail-value"
                      th:text="${product.fingerboardMaterial}">
                 </div>
@@ -105,8 +104,179 @@
                 <div class="detail-label">
                     PU構成
                 </div>
+
                 <div class="detail-value"
                      th:text="${product.pickupLayout}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Body Master
+                </p>
+
+                <h2 class="detail-section-title">
+                    ボディマスタ情報
+                </h2>
+            </div>
+        </div>
+
+        <div th:if="${product.bodyMaster != null}"
+             class="detail-grid detail-grid-2col">
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディマスタID
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.id}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデルコード
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.modelCode}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル名
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.modelName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディタイプ
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.bodyType}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディ材
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.material}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    カラー
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.bodyMaster.color}">
+                </div>
+            </div>
+
+        </div>
+
+        <div th:if="${product.bodyMaster == null}"
+             class="empty-state">
+            <p>
+                この製品にはボディマスタが関連付けられていません。
+            </p>
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Neck Master
+                </p>
+
+                <h2 class="detail-section-title">
+                    ネックマスタ情報
+                </h2>
+            </div>
+        </div>
+
+        <div th:if="${product.neckMaster != null}"
+             class="detail-grid detail-grid-2col">
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネックマスタID
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster.id}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデルコード
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster.modelCode}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル名
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster.modelName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネックタイプ
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster.neckType}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネック材
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster.neckMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    指板材
+                </div>
+
+                <div class="detail-value"
+                     th:text="${product.neckMaster
+                         .fingerboardMaterial}">
                 </div>
             </div>
 
@@ -114,8 +284,9 @@
                 <div class="detail-label">
                     フレット数
                 </div>
+
                 <div class="detail-value"
-                     th:text="${product.fretCount}">
+                     th:text="${product.neckMaster.fretCount}">
                 </div>
             </div>
 
@@ -123,11 +294,19 @@
                 <div class="detail-label">
                     スケール
                 </div>
+
                 <div class="detail-value"
-                     th:text="${product.scale}">
+                     th:text="${product.neckMaster.scale}">
                 </div>
             </div>
 
+        </div>
+
+        <div th:if="${product.neckMaster == null}"
+             class="empty-state">
+            <p>
+                この製品にはネックマスタが関連付けられていません。
+            </p>
         </div>
 
     </section>
@@ -148,6 +327,7 @@
             <div class="detail-section-count">
                 <span th:text="${#lists.size(guitars)}">
                 </span>
+
                 <span>
                     件
                 </span>
@@ -167,45 +347,52 @@
             <table class="data-table">
 
                 <thead>
-                <tr>
-                    <th>
-                        ID
-                    </th>
-                    <th>
-                        シリアル番号
-                    </th>
-                    <th>
-                        現在工程
-                    </th>
-                    <th>
-                        詳細
-                    </th>
-                </tr>
+                    <tr>
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            シリアル番号
+                        </th>
+
+                        <th>
+                            現在工程
+                        </th>
+
+                        <th>
+                            詳細
+                        </th>
+                    </tr>
                 </thead>
 
                 <tbody>
-                <tr th:each="guitar : ${guitars}">
 
-                    <td th:text="${guitar.id}">
-                    </td>
+                    <tr th:each="guitar : ${guitars}">
 
-                    <td>
-                        <span class="guitar-serial-number"
-                              th:text="${guitar.serialNo}">
-                        </span>
-                    </td>
+                        <td th:text="${guitar.id}">
+                        </td>
 
-                    <td th:text="${guitar.currentProcess}">
-                    </td>
+                        <td>
+                            <span class="guitar-serial-number"
+                                  th:text="${guitar.serialNo}">
+                            </span>
+                        </td>
 
-                    <td class="table-action-cell">
-                        <a class="btn btn-detail"
-                           th:href="@{/guitars/{id}/view(id=${guitar.id})}">
-                            詳細
-                        </a>
-                    </td>
+                        <td th:text="${guitar.currentProcess}">
+                        </td>
 
-                </tr>
+                        <td class="table-action-cell">
+                            <a class="btn btn-detail"
+                               th:href=
+                               "@{/guitars/{id}/view(
+                                   id=${guitar.id})}">
+                                詳細
+                            </a>
+                        </td>
+
+                    </tr>
+
                 </tbody>
 
             </table>
