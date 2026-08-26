@@ -1,102 +1,227 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>製品詳細</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        製品詳細
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
-
 </head>
-
 <body>
 
 <div th:replace=
- "~{fragments/header :: header('製品詳細')}">
+     "~{fragments/header :: header('製品詳細')}">
 </div>
 
-<table border="1">
+<main class="page-container">
 
-<tr>
-    <th>モデル番号</th>
-    <td th:text="${product.modelNo}"></td>
-</tr>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            製品仕様と関連するギターを確認できます。
+        </p>
 
-<tr>
-    <th>製品名</th>
-    <td th:text="${product.productName}"></td>
-</tr>
-
-<tr>
-    <th>カラー</th>
-    <td th:text="${product.color}"></td>
-</tr>
-
-<tr>
-    <th>ボディ材</th>
-    <td th:text="${product.bodyMaterial}"></td>
-</tr>
-
-<tr>
-    <th>ネック材</th>
-    <td th:text="${product.neckMaterial}"></td>
-</tr>
-
-<tr>
-    <th>指板材</th>
-    <td th:text="${product.fingerboardMaterial}"></td>
-</tr>
-
-<tr>
-    <th>PU構成</th>
-    <td th:text="${product.pickupLayout}"></td>
-</tr>
-
-<tr>
-    <th>フレット数</th>
-    <td th:text="${product.fretCount}"></td>
-</tr>
-
-<tr>
-    <th>スケール</th>
-    <td th:text="${product.scale}"></td>
-</tr>
-
-</table>
-
-<h2>関連ギター</h2>
-
-<div th:if="${#lists.isEmpty(guitars)}">
-    <p>この製品で製造中のギターはありません。</p>
-</div>
-
-<table border="1"
-       th:if="${!#lists.isEmpty(guitars)}">
-
-    <tr>
-        <th>ID</th>
-        <th>シリアル番号</th>
-        <th>現在工程</th>
-        <th>詳細</th>
-    </tr>
-
-    <tr th:each="guitar : ${guitars}">
-        <td th:text="${guitar.id}"></td>
-        <td th:text="${guitar.serialNo}"></td>
-        <td th:text="${guitar.currentProcess}"></td>
-
-        <td>
-            <a th:href="@{/guitars/{id}/view(id=${guitar.id})}">
-                詳細
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/products/view}">
+                製品一覧へ戻る
             </a>
-        </td>
-    </tr>
+        </div>
+    </div>
 
-</table>
+    <section class="detail-section">
 
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Product Information
+                </p>
+
+                <h2 class="detail-section-title"
+                    th:text="${product.modelNo}">
+                </h2>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル番号
+                </div>
+                <div class="detail-value"
+                     th:text="${product.modelNo}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    製品名
+                </div>
+                <div class="detail-value"
+                     th:text="${product.productName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    カラー
+                </div>
+                <div class="detail-value"
+                     th:text="${product.color}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディ材
+                </div>
+                <div class="detail-value"
+                     th:text="${product.bodyMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネック材
+                </div>
+                <div class="detail-value"
+                     th:text="${product.neckMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    指板材
+                </div>
+                <div class="detail-value"
+                     th:text="${product.fingerboardMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    PU構成
+                </div>
+                <div class="detail-value"
+                     th:text="${product.pickupLayout}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    フレット数
+                </div>
+                <div class="detail-value"
+                     th:text="${product.fretCount}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    スケール
+                </div>
+                <div class="detail-value"
+                     th:text="${product.scale}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Related Guitars
+                </p>
+
+                <h2 class="detail-section-title">
+                    関連ギター
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(guitars)}">
+                </span>
+                <span>
+                    件
+                </span>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(guitars)}"
+             class="empty-state">
+            <p>
+                この製品で製造中のギターはありません。
+            </p>
+        </div>
+
+        <div th:if="${not #lists.isEmpty(guitars)}"
+             class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                <tr>
+                    <th>
+                        ID
+                    </th>
+                    <th>
+                        シリアル番号
+                    </th>
+                    <th>
+                        現在工程
+                    </th>
+                    <th>
+                        詳細
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="guitar : ${guitars}">
+
+                    <td th:text="${guitar.id}">
+                    </td>
+
+                    <td>
+                        <span class="guitar-serial-number"
+                              th:text="${guitar.serialNo}">
+                        </span>
+                    </td>
+
+                    <td th:text="${guitar.currentProcess}">
+                    </td>
+
+                    <td class="table-action-cell">
+                        <a class="btn btn-detail"
+                           th:href="@{/guitars/{id}/view(id=${guitar.id})}">
+                            詳細
+                        </a>
+                    </td>
+
+                </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/products/view}">
+            製品一覧へ戻る
+        </a>
+    </div>
+
+</main>
 
 </body>
 </html>

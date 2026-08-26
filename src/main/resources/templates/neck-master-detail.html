@@ -2,8 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>ネックマスタ詳細</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ネックマスタ詳細
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
@@ -13,44 +16,112 @@
      "~{fragments/header :: header('ネックマスタ詳細')}">
 </div>
 
-<table border="1">
+<main class="page-container">
 
-    <tr>
-        <th>モデルコード</th>
-        <td th:text="${neckMaster.modelCode}"></td>
-    </tr>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ネックマスタの仕様情報を確認できます。
+        </p>
 
-    <tr>
-        <th>モデル名</th>
-        <td th:text="${neckMaster.modelName}"></td>
-    </tr>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/neck-masters/view}">
+                ネックマスタ一覧へ戻る
+            </a>
+        </div>
+    </div>
 
-    <tr>
-        <th>ネックタイプ</th>
-        <td th:text="${neckMaster.neckType}"></td>
-    </tr>
+    <section class="detail-section">
 
-    <tr>
-        <th>ネック材</th>
-        <td th:text="${neckMaster.neckMaterial}"></td>
-    </tr>
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Neck Master Information
+                </p>
 
-    <tr>
-        <th>指板材</th>
-        <td th:text="${neckMaster.fingerboardMaterial}"></td>
-    </tr>
+                <h2 class="detail-section-title"
+                    th:text="${neckMaster.modelCode}">
+                </h2>
+            </div>
+        </div>
 
-    <tr>
-        <th>フレット数</th>
-        <td th:text="${neckMaster.fretCount}"></td>
-    </tr>
+        <div class="detail-grid">
 
-    <tr>
-        <th>スケール</th>
-        <td th:text="${neckMaster.scale}"></td>
-    </tr>
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデルコード
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.modelCode}">
+                </div>
+            </div>
 
-</table>
+            <div class="detail-item">
+                <div class="detail-label">
+                    モデル名
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.modelName}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネックタイプ
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.neckType}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネック材
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.neckMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    指板材
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.fingerboardMaterial}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    フレット数
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.fretCount}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    スケール
+                </div>
+                <div class="detail-value"
+                     th:text="${neckMaster.scale}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/neck-masters/view}">
+            ネックマスタ一覧へ戻る
+        </a>
+    </div>
+
+</main>
 
 </body>
 </html>

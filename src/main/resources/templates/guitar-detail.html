@@ -1,225 +1,453 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-	<meta charset="UTF-8">
-	<title>ギター詳細</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ギター詳細
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
 <body>
-	<div th:replace="~{fragments/header :: header('ギター詳細')}">
-	</div>
 
-	<h2>基本情報</h2>
+<div th:replace=
+     "~{fragments/header :: header('ギター詳細')}">
+</div>
 
-	<table border="1">
+<main class="page-container">
 
-	    <tr>
-	        <th>シリアル番号</th>
-	        <td th:text="${guitar.serialNo}"></td>
-	    </tr>
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ギター個体情報、工程状況、使用部品を確認できます。
+        </p>
 
-	    <tr>
-	        <th>製品名</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.productName
-	            : guitar.product.modelName
-	        }">
-	        </td>
-	    </tr>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/guitars/view}">
+                ギター一覧へ戻る
+            </a>
+        </div>
+    </div>
 
-	    <tr>
-	        <th>現在工程</th>
-	        <td th:text="${guitar.currentProcess}"></td>
-	    </tr>
+    <section class="detail-section">
 
-	</table>
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Guitar Information
+                </p>
 
-	<h2>製品情報</h2>
+                <h2 class="detail-section-title"
+                    th:text="${guitar.serialNo}">
+                </h2>
+            </div>
+        </div>
 
-	<table border="1">
+        <div class="detail-grid">
 
-	    <tr>
-	        <th>カラー</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.color
-	            : '-'
-	        }"></td>
-	    </tr>
+            <div class="detail-item">
+                <div class="detail-label">
+                    シリアル番号
+                </div>
 
-	    <tr>
-	        <th>ボディ材</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.bodyMaterial
-	            : '-'
-	        }"></td>
-	    </tr>
+                <div class="detail-value"
+                     th:text="${guitar.serialNo}">
+                </div>
+            </div>
 
-	    <tr>
-	        <th>ネック材</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.neckMaterial
-	            : '-'
-	        }"></td>
-	    </tr>
+            <div class="detail-item">
+                <div class="detail-label">
+                    製品名
+                </div>
 
-	    <tr>
-	        <th>指板材</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.fingerboardMaterial
-	            : '-'
-	        }"></td>
-	    </tr>
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.productName
+                         : '-'}">
+                </div>
+            </div>
 
-	    <tr>
-	        <th>PU構成</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.pickupLayout
-	            : '-'
-	        }"></td>
-	    </tr>
+            <div class="detail-item">
+                <div class="detail-label">
+                    現在工程
+                </div>
 
-	    <tr>
-	        <th>フレット数</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.fretCount
-	            : '-'
-	        }"></td>
-	    </tr>
+                <div class="detail-value"
+                     th:text="${guitar.currentProcess}">
+                </div>
+            </div>
 
-	    <tr>
-	        <th>スケール</th>
-	        <td th:text="${
-	            guitar.product != null
-	            ? guitar.product.scale
-	            : '-'
-	        }"></td>
-	    </tr>
+        </div>
 
-	</table>
-	
-	<br>
-	
-	<h2>工程状況</h2>
-	<table border="1">
-	    <tr>
-	        <th>工程名</th>
-	        <th>状態</th>
-	        <th>作業者</th>
-	        <th>開始時刻</th>
-	        <th>終了時刻</th>
-	        <th>作業時間(分)</th>
-	        <th>操作</th>
-	    </tr>
+    </section>
 
-	    <tr th:each="processStatus : ${processStatuses}">
-	        <td th:text="${processStatus.processName}"></td>
-	        <td th:text="${processStatus.status}"></td>
-	        <td th:text="${processStatus.workerName}"></td>
+    <section class="detail-section">
 
-			<td th:text="${processStatus.startTimeText}"></td>
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Product Specification
+                </p>
 
-			<td th:text="${processStatus.endTimeText}"></td>
+                <h2 class="detail-section-title">
+                    製品情報
+                </h2>
+            </div>
+        </div>
 
-			<td th:text="${processStatus.workMinutesText}"></td>
-			<td>
-			    <!-- 実施中工程なら終了ボタン -->
-			    <form th:if="${processStatus.status == '実施中'}"
-			          th:action="@{/processes/end}"
-			          method="post">
+        <div class="detail-grid">
 
-			        <input type="hidden"
-			               name="historyId"
-			               th:value="${processStatus.historyId}">
+            <div class="detail-item">
+                <div class="detail-label">
+                    カラー
+                </div>
 
-			        <button type="submit">
-			            工程終了
-			        </button>
-			    </form>
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.color
+                         : '-'}">
+                </div>
+            </div>
 
-			    <!-- 次工程が通常工程なら工程開始ボタン -->
-			    <form th:if="${processStatus.status == '未実施'
-			                  and nextProcess != null
-			                  and processStatus.processName == nextProcess.processName
-			                  and !needAssembly
-			                  and !hasRunningProcess}"
-			          th:action="@{/processes/start/view}"
-			          method="get">
+            <div class="detail-item">
+                <div class="detail-label">
+                    ボディ材
+                </div>
 
-			        <input type="hidden"
-			               name="guitarId"
-			               th:value="${guitar.id}">
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.bodyMaterial
+                         : '-'}">
+                </div>
+            </div>
 
-			        <button type="submit">
-			            工程開始
-			        </button>
-			    </form>
+            <div class="detail-item">
+                <div class="detail-label">
+                    ネック材
+                </div>
 
-			    <!-- 次工程がネック取付ならネック取付登録ボタン -->
-			    <form th:if="${processStatus.status == '未実施'
-			                  and nextProcess != null
-			                  and processStatus.processName == nextProcess.processName
-			                  and needAssembly
-			                  and !hasRunningProcess}"
-			          th:action="@{/assemblies/new}"
-			          method="get">
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.neckMaterial
+                         : '-'}">
+                </div>
+            </div>
 
-			        <input type="hidden"
-			               name="guitarId"
-			               th:value="${guitar.id}">
+            <div class="detail-item">
+                <div class="detail-label">
+                    指板材
+                </div>
 
-			        <button type="submit">
-			            ネック取付登録
-			        </button>
-			    </form>
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.fingerboardMaterial
+                         : '-'}">
+                </div>
+            </div>
 
-			    <!-- 操作なし -->
-			    <span th:if="${processStatus.status == '完了'
-			                  or (processStatus.status == '未実施'
-			                      and nextProcess == null)
-			                  or (processStatus.status == '未実施'
-			                      and nextProcess != null
-			                      and processStatus.processName != nextProcess.processName)}">
-			        -
-			    </span>
-			</td>
-	    </tr>
-	</table>
-	
-	<h2>使用部品</h2>
-	<div th:if="${assembly != null}">
-	    <p>ネック取付登録済み</p>
-	    <table border="1">
-	        <tr>
-	            <th>ネック</th>
-	            <th>ボディ</th>
-	            <th>作業者</th>
-	            <th>取付日時</th>
-	        </tr>
-	        <tr>
-	            <td th:text="${assembly.neckSerial}"></td>
-	            <td th:text="${assembly.bodySerial}"></td>
-	            <td th:text="${assembly.workerName}"></td>
-	            <td th:text="${assembly.assemblyDateText}"></td>
-	        </tr>
-	    </table>
-	</div>
-	<div th:if="${assembly == null}">
-	    <p>まだネック取付登録されていません。</p>
-	</div>
-	
-	<h2>工程管理</h2>
-	    <a th:href="@{/guitars/{id}/history(id=${guitar.id})}">
-	        工程履歴を見る
-	    </a>
-	</p>
+            <div class="detail-item">
+                <div class="detail-label">
+                    PU構成
+                </div>
 
-	<br>
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.pickupLayout
+                         : '-'}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    フレット数
+                </div>
+
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.fretCount
+                         : '-'}">
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">
+                    スケール
+                </div>
+
+                <div class="detail-value"
+                     th:text="${guitar.product != null
+                         ? guitar.product.scale
+                         : '-'}">
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Process Status
+                </p>
+
+                <h2 class="detail-section-title">
+                    工程状況
+                </h2>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(processStatuses)}"
+             class="empty-state">
+            <p>
+                工程情報はありません。
+            </p>
+        </div>
+
+        <div th:if="${not #lists.isEmpty(processStatuses)}"
+             class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>
+                            工程名
+                        </th>
+                        <th>
+                            状態
+                        </th>
+                        <th>
+                            作業者
+                        </th>
+                        <th>
+                            開始時刻
+                        </th>
+                        <th>
+                            終了時刻
+                        </th>
+                        <th>
+                            作業時間(分)
+                        </th>
+                        <th>
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr th:each="processStatus : ${processStatuses}">
+
+                        <td th:text="${processStatus.processName}">
+                        </td>
+
+                        <td th:text="${processStatus.status}">
+                        </td>
+
+                        <td th:text="${processStatus.workerName}">
+                        </td>
+
+                        <td th:text="${processStatus.startTimeText}">
+                        </td>
+
+                        <td th:text="${processStatus.endTimeText}">
+                        </td>
+
+                        <td th:text="${processStatus.workMinutesText}">
+                        </td>
+
+                        <td class="table-action-cell">
+
+                            <form th:if="${processStatus.status == '実施中'}"
+                                  th:action="@{/processes/end}"
+                                  method="post">
+
+                                <input type="hidden"
+                                       name="historyId"
+                                       th:value="${processStatus.historyId}">
+
+                                <button type="submit"
+                                        class="btn btn-process-end">
+                                    工程終了
+                                </button>
+
+                            </form>
+
+                            <form th:if="${processStatus.status == '未実施'
+                                          and nextProcess != null
+                                          and processStatus.processName
+                                              == nextProcess.processName
+                                          and needAssembly != true
+                                          and hasRunningProcess != true}"
+                                  th:action="@{/processes/start/view}"
+                                  method="get">
+
+                                <input type="hidden"
+                                       name="guitarId"
+                                       th:value="${guitar.id}">
+
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    工程開始
+                                </button>
+
+                            </form>
+
+                            <form th:if="${processStatus.status == '未実施'
+                                          and nextProcess != null
+                                          and processStatus.processName
+                                              == nextProcess.processName
+                                          and needAssembly == true
+                                          and hasRunningProcess != true}"
+                                  th:action="@{/assemblies/new}"
+                                  method="get">
+
+                                <input type="hidden"
+                                       name="guitarId"
+                                       th:value="${guitar.id}">
+
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    ネック取付登録
+                                </button>
+
+                            </form>
+
+                            <span th:if="${processStatus.status == '完了'
+                                          or (
+                                              processStatus.status == '未実施'
+                                              and nextProcess == null
+                                          )
+                                          or (
+                                              processStatus.status == '未実施'
+                                              and nextProcess != null
+                                              and processStatus.processName
+                                                  != nextProcess.processName
+                                          )}">
+                                -
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Components
+                </p>
+
+                <h2 class="detail-section-title">
+                    使用部品
+                </h2>
+            </div>
+        </div>
+
+        <div th:if="${assembly != null}">
+
+            <div class="information-message">
+                <p>
+                    ネック取付登録済み
+                </p>
+            </div>
+
+            <div class="table-container">
+
+                <table class="data-table">
+
+                    <thead>
+                        <tr>
+                            <th>
+                                ネック
+                            </th>
+                            <th>
+                                ボディ
+                            </th>
+                            <th>
+                                作業者
+                            </th>
+                            <th>
+                                取付日時
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td th:text="${assembly.neckSerial}">
+                            </td>
+
+                            <td th:text="${assembly.bodySerial}">
+                            </td>
+
+                            <td th:text="${assembly.workerName}">
+                            </td>
+
+                            <td th:text="${assembly.assemblyDateText}">
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <div th:if="${assembly == null}"
+             class="empty-state">
+            <p>
+                まだネック取付登録されていません。
+            </p>
+        </div>
+
+    </section>
+
+    <section class="detail-section">
+
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
+                    Process Management
+                </p>
+
+                <h2 class="detail-section-title">
+                    工程管理
+                </h2>
+            </div>
+        </div>
+
+        <a class="btn btn-detail"
+           th:href="@{/guitars/{id}/history(
+               id=${guitar.id})}">
+            工程履歴を見る
+        </a>
+
+    </section>
+
+    <div class="detail-footer-actions">
+        <a class="btn btn-outline"
+           th:href="@{/guitars/view}">
+            ギター一覧へ戻る
+        </a>
+    </div>
+
+</main>
+
 </body>
 </html>

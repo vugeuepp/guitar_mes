@@ -1,117 +1,245 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>工程終了</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        工程終了
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
-<h1>工程終了</h1>
+<div th:replace=
+     "~{fragments/header :: header('工程終了')}">
+</div>
 
-<!-- ギター指定あり：実施中工程あり -->
-<div th:if="${runningHistory != null}">
+<main class="page-container">
 
-    <h2>対象ギターの実施中工程</h2>
+    <div class="page-toolbar">
 
-    <table border="1">
-        <tr>
-            <th>履歴ID</th>
-            <th>工程ID</th>
-            <th>作業者</th>
-            <th>開始時刻</th>
-            <th>終了</th>
-        </tr>
+        <p class="page-toolbar-description">
+            実施中の工程を終了します。
+        </p>
 
-        <tr>
-            <td th:text="${runningHistory.id}"></td>
-            <td th:text="${runningHistory.processId}"></td>
-            <td th:text="${runningHistory.workerName}"></td>
-            <td th:text="${runningHistory.startTime}"></td>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/guitars/view}">
+                ギター一覧へ戻る
+            </a>
 
-            <td>
-                <form th:action="@{/processes/end}"
-                      method="post">
+            <a class="btn btn-outline"
+               th:href="@{/}">
+                Home
+            </a>
+        </div>
 
-                    <input type="hidden"
-                           name="historyId"
-                           th:value="${runningHistory.id}">
+    </div>
 
-                    <button type="submit">
+    <!-- ギター指定あり：実施中工程あり -->
+    <section th:if="${runningHistory != null}"
+             class="detail-section">
+
+        <div class="detail-section-heading">
+
+            <div>
+                <p class="detail-section-caption">
+                    Running Process
+                </p>
+
+                <h2 class="detail-section-title">
+                    対象ギターの実施中工程
+                </h2>
+            </div>
+
+        </div>
+
+        <div class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                <tr>
+                    <th>
+                        履歴ID
+                    </th>
+                    <th>
+                        工程ID
+                    </th>
+                    <th>
+                        作業者
+                    </th>
+                    <th>
+                        開始時刻
+                    </th>
+                    <th>
                         終了
-                    </button>
+                    </th>
+                </tr>
+                </thead>
 
-                </form>
-            </td>
-        </tr>
-    </table>
+                <tbody>
 
-</div>
+                <tr>
 
-<!-- ギター指定あり：実施中工程なし -->
-<div th:if="${guitarSpecified == true
-            and runningHistory == null}">
+                    <td th:text="${runningHistory.id}">
+                    </td>
 
-    <p>
-        このギターには現在実施中の工程がありません。
-    </p>
+                    <td th:text="${runningHistory.processId}">
+                    </td>
 
-</div>
+                    <td th:text="${runningHistory.workerName}">
+                    </td>
 
-<!-- ギター指定なし：全実施中工程 -->
-<div th:if="${guitarSpecified == false}">
+                    <td th:text="${runningHistory.startTime}">
+                    </td>
 
-    <h2>実施中工程一覧</h2>
+                    <td class="table-action-cell">
 
-    <table border="1">
-        <tr>
-            <th>履歴ID</th>
-            <th>工程ID</th>
-            <th>作業者</th>
-            <th>開始時刻</th>
-            <th>終了</th>
-        </tr>
+                        <form th:action="@{/processes/end}"
+                              method="post">
 
-        <tr th:each="history : ${histories}">
-            <td th:text="${history.id}"></td>
-            <td th:text="${history.processId}"></td>
-            <td th:text="${history.workerName}"></td>
-            <td th:text="${history.startTime}"></td>
+                            <input type="hidden"
+                                   name="historyId"
+                                   th:value="${runningHistory.id}">
 
-            <td>
-                <form th:action="@{/processes/end}"
-                      method="post">
+                            <button type="submit"
+                                    class="btn btn-process-end">
+                                工程終了
+                            </button>
 
-                    <input type="hidden"
-                           name="historyId"
-                           th:value="${history.id}">
+                        </form>
 
-                    <button type="submit">
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <!-- ギター指定あり：実施中工程なし -->
+    <div th:if="${guitarSpecified == true
+                 and runningHistory == null}"
+         class="empty-state">
+
+        <p>
+            このギターには現在実施中の工程がありません。
+        </p>
+
+    </div>
+
+    <!-- ギター指定なし：全実施中工程 -->
+    <section th:if="${guitarSpecified == false}"
+             class="detail-section">
+
+        <div class="detail-section-heading">
+
+            <div>
+                <p class="detail-section-caption">
+                    Running Processes
+                </p>
+
+                <h2 class="detail-section-title">
+                    実施中工程一覧
+                </h2>
+            </div>
+
+            <div class="detail-section-count">
+                <span th:text="${#lists.size(histories)}">
+                </span>
+                <span>
+                    件
+                </span>
+            </div>
+
+        </div>
+
+        <div th:if="${#lists.isEmpty(histories)}"
+             class="empty-state">
+
+            <p>
+                現在実施中の工程はありません。
+            </p>
+
+        </div>
+
+        <div th:if="${not #lists.isEmpty(histories)}"
+             class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+                <tr>
+                    <th>
+                        履歴ID
+                    </th>
+                    <th>
+                        工程ID
+                    </th>
+                    <th>
+                        作業者
+                    </th>
+                    <th>
+                        開始時刻
+                    </th>
+                    <th>
                         終了
-                    </button>
+                    </th>
+                </tr>
+                </thead>
 
-                </form>
-            </td>
-        </tr>
-    </table>
+                <tbody>
 
-</div>
+                <tr th:each="history : ${histories}">
 
-<br>
+                    <td th:text="${history.id}">
+                    </td>
 
-<a th:href="@{/guitars/view}">
-    ギター一覧へ戻る
-</a>
+                    <td th:text="${history.processId}">
+                    </td>
 
-<br>
+                    <td th:text="${history.workerName}">
+                    </td>
 
-<a th:href="@{/}">
-    Home
-</a>
+                    <td th:text="${history.startTime}">
+                    </td>
+
+                    <td class="table-action-cell">
+
+                        <form th:action="@{/processes/end}"
+                              method="post">
+
+                            <input type="hidden"
+                                   name="historyId"
+                                   th:value="${history.id}">
+
+                            <button type="submit"
+                                    class="btn btn-process-end">
+                                工程終了
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
 
 </body>
 </html>

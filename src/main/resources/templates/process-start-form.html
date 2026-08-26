@@ -1,129 +1,245 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
-    <title>ギター工程開始</title>
-
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        ギター工程開始
+    </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
 </head>
-
 <body>
 
 <div th:replace=
      "~{fragments/header :: header('ギター工程開始')}">
 </div>
 
-<form th:action="@{/processes/start}"
-      method="post">
+<main class="page-container">
 
-    <div>
-        <label>
-            ギター
-        </label>
+    <div class="page-toolbar">
 
-        <!-- ギター指定あり -->
-        <div th:if="${selectedGuitar != null}">
+        <p class="page-toolbar-description">
+            ギター工程の開始登録を行います。
+        </p>
 
-            <span th:text="${selectedGuitar.serialNo
-                    + ' ('
-                    + selectedGuitar.product.productName
-                    + ' / '
-                    + selectedGuitar.product.color
-                    + ')'}">
-            </span>
-
-            <input type="hidden"
-                   name="guitarId"
-                   th:value="${selectedGuitar.id}">
-
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/guitars/view}">
+                ギター一覧へ戻る
+            </a>
         </div>
 
-        <!-- ギター指定なし -->
-        <div th:if="${selectedGuitar == null}">
-
-            <select name="guitarId"
-                    required>
-
-                <option value="">
-                    選択してください
-                </option>
-
-                <option th:each="guitar : ${guitars}"
-                        th:value="${guitar.id}"
-                        th:text="${guitar.serialNo
-                            + ' ('
-                            + guitar.product.productName
-                            + ' / '
-                            + guitar.product.color
-                            + ')'}">
-                </option>
-
-            </select>
-
-        </div>
     </div>
 
-    <div>
-        <label>
-            工程
-        </label>
+    <form th:action="@{/processes/start}"
+          method="post"
+          class="form-container">
 
-        <!-- ギター指定あり：次工程を固定表示 -->
-        <div th:if="${nextProcess != null}">
+        <section class="form-section">
 
-            <span th:text="${nextProcess.processName}">
-            </span>
+            <div class="form-section-heading">
 
-            <input type="hidden"
-                   name="processId"
-                   th:value="${nextProcess.id}">
+                <div>
+                    <p class="form-section-caption">
+                        Target Guitar
+                    </p>
+
+                    <h2 class="form-section-title">
+                        対象ギター
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    工程開始対象のギターを確認または選択します。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        ギター
+                    </label>
+
+                    <div th:if="${selectedGuitar != null}"
+                         class="selected-product-info">
+
+                        <strong class="selected-product-value"
+                                th:text="${selectedGuitar.serialNo
+                                    + ' ('
+                                    + selectedGuitar.product.productName
+                                    + ' / '
+                                    + selectedGuitar.product.color
+                                    + ')'}">
+                        </strong>
+
+                        <input type="hidden"
+                               name="guitarId"
+                               th:value="${selectedGuitar.id}">
+
+                    </div>
+
+                    <div th:if="${selectedGuitar == null}">
+
+                        <select name="guitarId"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                選択してください
+                            </option>
+
+                            <option th:each="guitar : ${guitars}"
+                                    th:value="${guitar.id}"
+                                    th:text="${guitar.serialNo
+                                        + ' ('
+                                        + guitar.product.productName
+                                        + ' / '
+                                        + guitar.product.color
+                                        + ')'}">
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Process
+                    </p>
+
+                    <h2 class="form-section-title">
+                        対象工程
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    開始する工程を確認または選択します。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label class="form-label">
+                        工程
+                    </label>
+
+                    <div th:if="${nextProcess != null}"
+                         class="selected-product-info">
+
+                        <strong class="selected-product-value"
+                                th:text="${nextProcess.processName}">
+                        </strong>
+
+                        <input type="hidden"
+                               name="processId"
+                               th:value="${nextProcess.id}">
+
+                    </div>
+
+                    <div th:if="${nextProcess == null}">
+
+                        <select name="processId"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                選択してください
+                            </option>
+
+                            <option th:each="process : ${processes}"
+                                    th:value="${process.id}"
+                                    th:text="${process.processName}">
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+                    <p class="form-section-caption">
+                        Worker Information
+                    </p>
+
+                    <h2 class="form-section-title">
+                        作業者情報
+                    </h2>
+                </div>
+
+                <p class="form-section-description">
+                    工程を開始する作業者を入力してください。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="workerName"
+                           class="form-label">
+                        作業者
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="workerName"
+                           name="workerName"
+                           class="form-input"
+                           required>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/guitars/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                工程開始
+            </button>
 
         </div>
 
-        <!-- ギター指定なし：工程を選択 -->
-        <div th:if="${nextProcess == null}">
+    </form>
 
-            <select name="processId"
-                    required>
+</main>
 
-                <option value="">
-                    選択してください
-                </option>
-
-                <option th:each="process : ${processes}"
-                        th:value="${process.id}"
-                        th:text="${process.processName}">
-                </option>
-
-            </select>
-
-        </div>
-    </div>
-
-    <div>
-        <label for="workerName">
-            作業者
-        </label>
-
-        <input type="text"
-               id="workerName"
-               name="workerName"
-               required>
-    </div>
-
-    <button type="submit"
-            class="process-button process-start-button">
-        工程開始
-    </button>
-
-</form>
-
-<br>
-
-<a th:href="@{/guitars/view}">
-    ギター一覧へ戻る
-</a>
 </body>
 </html>
