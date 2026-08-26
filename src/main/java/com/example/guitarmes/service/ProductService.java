@@ -16,6 +16,13 @@ import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.master.BodyMaterialType;
+import com.example.guitarmes.master.FingerboardMaterialType;
+import com.example.guitarmes.master.FretCountType;
+import com.example.guitarmes.master.InstrumentType;
+import com.example.guitarmes.master.NeckMaterialType;
+import com.example.guitarmes.master.ProductSeries;
+import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.NeckMasterRepository;
 import com.example.guitarmes.repository.ProductRepository;
@@ -31,14 +38,19 @@ public class ProductService {
 
     private final NeckMasterRepository neckMasterRepository;
 
+    private final InternalModelCodeService internalModelCodeService;
+
     public ProductService(
             ProductRepository productRepository,
             BodyMasterRepository bodyMasterRepository,
-            NeckMasterRepository neckMasterRepository) {
+            NeckMasterRepository neckMasterRepository,
+            InternalModelCodeService internalModelCodeService) {
 
         this.productRepository = productRepository;
         this.bodyMasterRepository = bodyMasterRepository;
         this.neckMasterRepository = neckMasterRepository;
+        this.internalModelCodeService =
+                internalModelCodeService;
     }
 
     public List<Product> getProducts() {
@@ -175,48 +187,122 @@ public class ProductService {
                     "製品登録情報が指定されていません。");
         }
 
-        String internalModelCode =
+        ProductSeries productSeries =
+                parseEnum(
+                        request.getProductSeries(),
+                        ProductSeries.class,
+                        "製品シリーズ");
+
+        InstrumentType instrumentType =
+                parseEnum(
+                        request.getInstrumentType(),
+                        InstrumentType.class,
+                        "楽器タイプ");
+
+        validateAutomaticGenerationTarget(
+                productSeries,
+                instrumentType);
+
+        String generatedInternalModelCode =
+                internalModelCodeService
+                        .generateInternalModelCode(
+                                productSeries,
+                                instrumentType);
+
+        String submittedInternalModelCode =
                 normalizeInternalModelCode(
                         request.getInternalModelCode());
+
+        if (!generatedInternalModelCode.equalsIgnoreCase(
+                submittedInternalModelCode)) {
+
+            throw new BusinessException(
+                    "MES内部モデルコードが"
+                    + "選択された製品シリーズと"
+                    + "楽器タイプから生成される値と"
+                    + "一致しません。"
+                    + "生成されるコードは「"
+                    + generatedInternalModelCode
+                    + "」です。");
+        }
 
         String productName =
                 normalizeRequired(
                         request.getProductName(),
                         "製品名");
 
-        String bodyType =
+        String expectedBodyType =
+                normalizeRequired(
+                        instrumentType.getBodyType(),
+                        "楽器タイプのボディタイプ");
+
+        String submittedBodyType =
                 normalizeRequired(
                         request.getBodyType(),
                         "ボディタイプ");
 
-        String bodyMaterial =
-                normalizeRequired(
-                        request.getBodyMaterial(),
-                        "ボディ材");
+        if (!expectedBodyType.equalsIgnoreCase(
+                submittedBodyType)) {
 
-        String neckType =
+            throw new BusinessException(
+                    "ボディタイプが"
+                    + "選択された楽器タイプと"
+                    + "一致しません。"
+                    + "正しいボディタイプは「"
+                    + expectedBodyType
+                    + "」です。");
+        }
+
+        String expectedNeckType =
+                normalizeRequired(
+                        instrumentType.getNeckType(),
+                        "楽器タイプのネックタイプ");
+
+        String submittedNeckType =
                 normalizeRequired(
                         request.getNeckType(),
                         "ネックタイプ");
 
-        String neckMaterial =
-                normalizeRequired(
+        if (!expectedNeckType.equalsIgnoreCase(
+                submittedNeckType)) {
+
+            throw new BusinessException(
+                    "ネックタイプが"
+                    + "選択された楽器タイプと"
+                    + "一致しません。"
+                    + "正しいネックタイプは「"
+                    + expectedNeckType
+                    + "」です。");
+        }
+
+        BodyMaterialType bodyMaterialType =
+                parseEnum(
+                        request.getBodyMaterial(),
+                        BodyMaterialType.class,
+                        "ボディ材");
+
+        NeckMaterialType neckMaterialType =
+                parseEnum(
                         request.getNeckMaterial(),
+                        NeckMaterialType.class,
                         "ネック材");
+
+        FretCountType fretCountType =
+                parseEnum(
+                        request.getFretCount(),
+                        FretCountType.class,
+                        "フレット数");
+
+        ScaleLengthType scaleLengthType =
+                parseEnum(
+                        request.getScale(),
+                        ScaleLengthType.class,
+                        "スケール");
 
         String pickupLayout =
                 normalizeRequired(
                         request.getPickupLayout(),
                         "PU構成");
-
-        Integer fretCount =
-                validateFretCount(
-                        request.getFretCount());
-
-        String scale =
-                normalizeRequired(
-                        request.getScale(),
-                        "スケール");
 
         List<ProductVariationRequest>
                 requestVariations =
@@ -235,16 +321,38 @@ public class ProductService {
                         requestVariations);
 
         return new NormalizedProductRequest(
-                internalModelCode,
+                productSeries,
+                instrumentType,
+                generatedInternalModelCode,
                 productName,
-                bodyType,
-                bodyMaterial,
-                neckType,
-                neckMaterial,
+                expectedBodyType,
+                bodyMaterialType.getLabel(),
+                expectedNeckType,
+                neckMaterialType.getLabel(),
                 pickupLayout,
-                fretCount,
-                scale,
+                fretCountType.getCount(),
+                toScaleStorageValue(
+                        scaleLengthType),
                 variations);
+    }
+
+    private void validateAutomaticGenerationTarget(
+            ProductSeries productSeries,
+            InstrumentType instrumentType) {
+
+        if (productSeries == ProductSeries.OTHER) {
+            throw new BusinessException(
+                    "その他の製品シリーズでは"
+                    + "MES内部モデルコードを"
+                    + "自動生成できません。");
+        }
+
+        if (instrumentType == InstrumentType.OTHER) {
+            throw new BusinessException(
+                    "その他の楽器タイプでは"
+                    + "MES内部モデルコードを"
+                    + "自動生成できません。");
+        }
     }
 
     private List<NormalizedVariation>
@@ -291,13 +399,18 @@ public class ProductService {
                             + displayNumber
                             + "のカラー");
 
-            String fingerboardMaterial =
-                    normalizeRequired(
+            FingerboardMaterialType
+                    fingerboardMaterialType =
+                    parseEnum(
                             variation
                                     .getFingerboardMaterial(),
+                            FingerboardMaterialType.class,
                             "バリエーション"
                             + displayNumber
                             + "の指板材");
+
+            String fingerboardMaterial =
+                    fingerboardMaterialType.getLabel();
 
             String normalizedModelNo =
                     modelNo.toUpperCase(
@@ -625,6 +738,61 @@ public class ProductService {
         return fretCount;
     }
 
+    private String toScaleStorageValue(
+            ScaleLengthType scaleLengthType) {
+
+        return scaleLengthType.getMillimeters()
+                + "mm";
+    }
+
+    private <E extends Enum<E>> E parseEnum(
+            String value,
+            Class<E> enumType,
+            String fieldName) {
+
+        String normalized =
+                normalizeRequired(
+                        value,
+                        fieldName);
+
+        try {
+            return Enum.valueOf(
+                    enumType,
+                    normalized.toUpperCase(
+                            Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new BusinessException(
+                    fieldName
+                    + "に不正な値が指定されています。");
+        }
+    }
+
+    private FretCountType parseEnum(
+            Integer value,
+            Class<FretCountType> enumType,
+            String fieldName) {
+
+        if (value == null) {
+            throw new BusinessException(
+                    fieldName
+                    + "を選択してください。");
+        }
+
+        for (FretCountType fretCountType
+                : enumType.getEnumConstants()) {
+
+            if (fretCountType.getCount()
+                    == value) {
+
+                return fretCountType;
+            }
+        }
+
+        throw new BusinessException(
+                fieldName
+                + "に不正な値が指定されています。");
+    }
+
     private String buildSpecificationKey(
             String color,
             String fingerboardMaterial) {
@@ -653,6 +821,8 @@ public class ProductService {
     }
 
     private record NormalizedProductRequest(
+            ProductSeries productSeries,
+            InstrumentType instrumentType,
             String internalModelCode,
             String productName,
             String bodyType,

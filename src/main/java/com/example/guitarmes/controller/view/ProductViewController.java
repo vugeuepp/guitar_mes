@@ -12,6 +12,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
+import com.example.guitarmes.master.BodyMaterialType;
+import com.example.guitarmes.master.FingerboardMaterialType;
+import com.example.guitarmes.master.FretCountType;
+import com.example.guitarmes.master.InstrumentType;
+import com.example.guitarmes.master.NeckMaterialType;
+import com.example.guitarmes.master.ProductSeries;
+import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProductService;
 
@@ -62,6 +69,8 @@ public class ProductViewController {
                 "request",
                 request);
 
+        addProductFormOptions(model);
+
         return "product-form";
     }
 
@@ -90,5 +99,37 @@ public class ProductViewController {
                 guitarService.getGuitarsByProductId(id));
 
         return "product-detail";
+    }
+
+    private void addProductFormOptions(
+            Model model) {
+
+        model.addAttribute(
+                "productSeriesList",
+                ProductSeries.values());
+
+        model.addAttribute(
+                "instrumentTypeList",
+                InstrumentType.values());
+
+        model.addAttribute(
+                "bodyMaterialTypeList",
+                BodyMaterialType.values());
+
+        model.addAttribute(
+                "neckMaterialTypeList",
+                NeckMaterialType.values());
+
+        model.addAttribute(
+                "fingerboardMaterialTypeList",
+                FingerboardMaterialType.values());
+
+        model.addAttribute(
+                "fretCountTypeList",
+                FretCountType.values());
+
+        model.addAttribute(
+                "scaleLengthTypeList",
+                ScaleLengthType.values());
     }
 }

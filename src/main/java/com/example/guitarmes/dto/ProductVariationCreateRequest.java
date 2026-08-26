@@ -5,6 +5,10 @@ import java.util.List;
 
 public class ProductVariationCreateRequest {
 
+    private String productSeries;
+
+    private String instrumentType;
+
     private String internalModelCode;
 
     private String productName;
@@ -27,6 +31,26 @@ public class ProductVariationCreateRequest {
             new ArrayList<>();
 
     public ProductVariationCreateRequest() {
+    }
+
+    public String getProductSeries() {
+        return productSeries;
+    }
+
+    public void setProductSeries(
+            String productSeries) {
+
+        this.productSeries = productSeries;
+    }
+
+    public String getInstrumentType() {
+        return instrumentType;
+    }
+
+    public void setInstrumentType(
+            String instrumentType) {
+
+        this.instrumentType = instrumentType;
     }
 
     public String getInternalModelCode() {
