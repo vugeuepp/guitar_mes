@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        製品シリーズマスタ一覧
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('製品シリーズマスタ一覧')}">
+</div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            内部モデルコードの生成に使用する
+            製品シリーズを管理します。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-primary"
+               th:href="@{/product-series/new}">
+                製品シリーズ登録
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="information-message">
+
+        <p>
+            シリーズコードは、楽器タイプのコードと組み合わせて
+            MES内部モデルコードを生成するために使用します。
+        </p>
+
+    </div>
+
+    <div th:if="${#lists.isEmpty(productSeriesMasters)}"
+         class="empty-state">
+
+        <p>
+            登録されている製品シリーズはありません。
+        </p>
+
+        <a class="btn btn-primary"
+           th:href="@{/product-series/new}">
+            最初の製品シリーズを登録
+        </a>
+
+    </div>
+
+    <div th:unless="${#lists.isEmpty(productSeriesMasters)}"
+         class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>シリーズコード</th>
+                    <th>シリーズ名</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr th:each="series :
+                        ${productSeriesMasters}">
+
+                    <td th:text="${series.id}">
+                    </td>
+
+                    <td>
+                        <strong th:text="${series.seriesCode}">
+                        </strong>
+                    </td>
+
+                    <td th:text="${series.seriesName}">
+                    </td>
+
+                    <td>
+
+                        <span th:if="${series.active}"
+                              class="status-badge status-available">
+                            有効
+                        </span>
+
+                        <span th:unless="${series.active}"
+                              class="status-badge status-unknown">
+                            無効
+                        </span>
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
+</body>
+</html>

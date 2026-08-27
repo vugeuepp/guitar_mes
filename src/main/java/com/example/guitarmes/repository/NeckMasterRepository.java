@@ -27,6 +27,15 @@ public interface NeckMasterRepository
                     String scale);
 
     Optional<NeckMaster>
+            findFirstByProductFamilyCodeIgnoreCaseAndNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
+                    String productFamilyCode,
+                    String neckType,
+                    String neckMaterial,
+                    String fingerboardMaterial,
+                    Integer fretCount,
+                    String scale);
+
+    Optional<NeckMaster>
             findTopByModelCodeStartingWithOrderByIdDesc(
                     String modelCodePrefix);
 

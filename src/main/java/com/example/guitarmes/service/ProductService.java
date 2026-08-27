@@ -56,10 +56,8 @@ public class ProductService {
             BodyMasterRepository bodyMasterRepository,
             NeckMasterRepository neckMasterRepository,
             GuitarRepository guitarRepository,
-            ProductionOrderRepository
-                    productionOrderRepository,
-            InternalModelCodeService
-                    internalModelCodeService) {
+            ProductionOrderRepository productionOrderRepository,
+            InternalModelCodeService internalModelCodeService) {
 
         this.productRepository =
                 productRepository;
@@ -94,12 +92,6 @@ public class ProductService {
                                 "指定された製品が存在しません。"));
     }
 
-    /*
-     * Product編集画面に表示する初期値を作成する。
-     *
-     * DBに保存されているラベル値やインチ値を、
-     * 編集フォームで使用するEnum名へ変換する。
-     */
     public ProductUpdateRequest getProductUpdateRequest(
             Long id) {
 
@@ -168,14 +160,6 @@ public class ProductService {
         return request;
     }
 
-    /*
-     * Product編集画面から受け取った値を検証し、
-     * Productと関連Masterを更新する。
-     *
-     * 共有中のBodyMasterとNeckMasterは直接更新しない。
-     * 変更後の物理仕様に一致するMasterを検索し、
-     * 見つからない場合だけ新しいMasterを生成する。
-     */
     @Transactional
     public Product updateProduct(
             Long id,
@@ -244,12 +228,6 @@ public class ProductService {
                 product);
     }
 
-    /*
-     * 従来の単一Product登録処理。
-     *
-     * Product登録画面をバリエーション登録方式へ
-     * 移行するまで既存機能を維持する。
-     */
     @Transactional
     public Product createProduct(
             String modelNo,
@@ -292,10 +270,6 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    /*
-     * Product、BodyMaster、NeckMasterを
-     * バリエーション単位で一括登録する。
-     */
     @Transactional
     public List<Product> createProductVariations(
             ProductVariationCreateRequest request) {
@@ -355,12 +329,6 @@ public class ProductService {
                         keyword.trim());
     }
 
-    /*
-     * 製造開始済み、またはGuitar発行済みのProductに
-     * 制限対象項目の変更がないか確認する。
-     *
-     * 製品名だけの変更と変更なし保存は許可する。
-     */
     private void validateProductReferenceRestriction(
             Product product,
             NormalizedProductUpdate request) {
@@ -402,12 +370,6 @@ public class ProductService {
         }
     }
 
-    /*
-     * ProductionOrderで製造が開始済み、
-     * または完成実績が存在するか判定する。
-     *
-     * 旧データのnullも考慮する。
-     */
     private boolean isProductionStarted(
             ProductionOrder productionOrder) {
 
@@ -436,12 +398,6 @@ public class ProductService {
                 && quantity > 0;
     }
 
-    /*
-     * 製造開始後に変更を禁止する項目が、
-     * 現在値から変更されているか確認する。
-     *
-     * Product名は制限対象に含めない。
-     */
     private boolean hasRestrictedProductChanges(
             Product product,
             NormalizedProductUpdate request) {
@@ -706,7 +662,8 @@ public class ProductService {
             NormalizedProductUpdate request) {
 
         return bodyMasterRepository
-                .findFirstByBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
+                .findFirstByProductFamilyCodeIgnoreCaseAndBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
+                        request.internalModelCode(),
                         request.bodyType(),
                         request.bodyMaterial(),
                         request.color())
@@ -729,6 +686,9 @@ public class ProductService {
                 request.productName()
                 + " Body");
 
+        bodyMaster.setProductFamilyCode(
+                request.internalModelCode());
+
         bodyMaster.setBodyType(
                 request.bodyType());
 
@@ -746,7 +706,8 @@ public class ProductService {
             NormalizedProductUpdate request) {
 
         return neckMasterRepository
-                .findFirstByNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
+                .findFirstByProductFamilyCodeIgnoreCaseAndNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
+                        request.internalModelCode(),
                         request.neckType(),
                         request.neckMaterial(),
                         request.fingerboardMaterial(),
@@ -776,6 +737,9 @@ public class ProductService {
                         request.fingerboardMaterial(),
                         request.fretCount(),
                         request.scale());
+
+        neckMaster.setProductFamilyCode(
+                request.internalModelCode());
 
         return neckMasterRepository.save(
                 neckMaster);
@@ -1098,27 +1062,21 @@ public class ProductService {
             NormalizedProductRequest request,
             NormalizedVariation variation) {
 
-        String modelName =
-                request.productName()
-                + " Body";
-
         return bodyMasterRepository
-                .findFirstByModelNameIgnoreCaseAndBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
-                        modelName,
+                .findFirstByProductFamilyCodeIgnoreCaseAndBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
+                        request.internalModelCode(),
                         request.bodyType(),
                         request.bodyMaterial(),
                         variation.color())
                 .orElseGet(() ->
                         createBodyMaster(
                                 request,
-                                variation,
-                                modelName));
+                                variation));
     }
 
     private BodyMaster createBodyMaster(
             NormalizedProductRequest request,
-            NormalizedVariation variation,
-            String modelName) {
+            NormalizedVariation variation) {
 
         BodyMaster bodyMaster =
                 new BodyMaster();
@@ -1128,7 +1086,11 @@ public class ProductService {
                         request.internalModelCode()));
 
         bodyMaster.setModelName(
-                modelName);
+                request.productName()
+                + " Body");
+
+        bodyMaster.setProductFamilyCode(
+                request.internalModelCode());
 
         bodyMaster.setBodyType(
                 request.bodyType());
@@ -1147,15 +1109,9 @@ public class ProductService {
             NormalizedProductRequest request,
             NormalizedVariation variation) {
 
-        String modelName =
-                request.productName()
-                + " Neck / "
-                + variation.fingerboardMaterial()
-                + " Fingerboard";
-
         return neckMasterRepository
-                .findFirstByModelNameIgnoreCaseAndNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
-                        modelName,
+                .findFirstByProductFamilyCodeIgnoreCaseAndNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
+                        request.internalModelCode(),
                         request.neckType(),
                         request.neckMaterial(),
                         variation.fingerboardMaterial(),
@@ -1164,14 +1120,18 @@ public class ProductService {
                 .orElseGet(() ->
                         createNeckMaster(
                                 request,
-                                variation,
-                                modelName));
+                                variation));
     }
 
     private NeckMaster createNeckMaster(
             NormalizedProductRequest request,
-            NormalizedVariation variation,
-            String modelName) {
+            NormalizedVariation variation) {
+
+        String modelName =
+                request.productName()
+                + " Neck / "
+                + variation.fingerboardMaterial()
+                + " Fingerboard";
 
         NeckMaster neckMaster =
                 new NeckMaster(
@@ -1184,17 +1144,13 @@ public class ProductService {
                         request.fretCount(),
                         request.scale());
 
+        neckMaster.setProductFamilyCode(
+                request.internalModelCode());
+
         return neckMasterRepository.save(
                 neckMaster);
     }
 
-    /*
-     * 内部モデルコードとEnumのコードを照合し、
-     * ProductSeriesとInstrumentTypeを復元する。
-     *
-     * ProductSeriesのコードにはハイフンが含まれるため、
-     * splitによる単純分割は使用しない。
-     */
     private ResolvedProductClassification
             resolveProductClassification(
                     String internalModelCode) {

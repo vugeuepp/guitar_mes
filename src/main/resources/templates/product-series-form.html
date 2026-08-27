@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        製品シリーズマスタ登録
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('製品シリーズマスタ登録')}">
+</div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            Product登録で使用する製品シリーズを
+            新しく追加します。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/product-series/view}">
+                製品シリーズ一覧へ戻る
+            </a>
+
+        </div>
+
+    </div>
+
+    <form th:action="@{/product-series/create}"
+          th:object="${request}"
+          method="post"
+          class="form-container">
+
+        <div th:if="${errorMessage}"
+             class="error-message"
+             role="alert"
+             aria-live="polite">
+
+            <div class="error-message-title">
+                入力内容を確認してください
+            </div>
+
+            <p class="error-message-text"
+               th:text="${errorMessage}">
+            </p>
+
+        </div>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Product Series Master
+                    </p>
+
+                    <h2 class="form-section-title">
+                        シリーズ基本情報
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    内部モデルコードの生成に使用する
+                    シリーズコードと表示名を入力してください。
+                </p>
+
+            </div>
+
+            <div class="information-message">
+
+                <p>
+                    登録したシリーズコードは、
+                    楽器タイプのコードと組み合わせて
+                    MES内部モデルコードを生成します。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="seriesCode"
+                           class="form-label">
+                        シリーズコード
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="seriesCode"
+                           th:field="*{seriesCode}"
+                           class="form-input"
+                           placeholder="MIJ-HER70"
+                           maxlength="50"
+                           autocomplete="off"
+                           required>
+
+                    <p class="form-help">
+                        半角英数字とハイフンで入力してください。
+                        英字は保存時に大文字へ統一されます。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="seriesName"
+                           class="form-label">
+                        シリーズ名
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="seriesName"
+                           th:field="*{seriesName}"
+                           class="form-input"
+                           placeholder="Made in Japan Heritage 70s"
+                           maxlength="150"
+                           autocomplete="off"
+                           required>
+
+                    <p class="form-help">
+                        Product登録画面の選択肢として表示する
+                        正式なシリーズ名を入力してください。
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Registration Preview
+                    </p>
+
+                    <h2 class="form-section-title">
+                        内部モデルコード生成例
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    シリーズコードが内部モデルコードで
+                    どのように使用されるか確認できます。
+                </p>
+
+            </div>
+
+            <div class="detail-grid detail-grid-2col">
+
+                <div class="detail-item">
+
+                    <div class="detail-label">
+                        シリーズコード
+                    </div>
+
+                    <div class="detail-value"
+                         id="seriesCodePreview">
+                        未入力
+                    </div>
+
+                </div>
+
+                <div class="detail-item">
+
+                    <div class="detail-label">
+                        Stratocasterとの組み合わせ例
+                    </div>
+
+                    <div class="detail-value"
+                         id="internalModelCodePreview">
+                        未入力
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/product-series/view}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                製品シリーズを登録
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
+
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const seriesCodeInput =
+                document.getElementById(
+                    "seriesCode"
+                );
+
+            const seriesCodePreview =
+                document.getElementById(
+                    "seriesCodePreview"
+                );
+
+            const internalModelCodePreview =
+                document.getElementById(
+                    "internalModelCodePreview"
+                );
+
+            function normalizePreviewCode(
+                    value) {
+
+                return value
+                    .trim()
+                    .toUpperCase()
+                    .replace(
+                        /\s+/g,
+                        "-"
+                    );
+            }
+
+            function updatePreview() {
+                const seriesCode =
+                    normalizePreviewCode(
+                        seriesCodeInput.value
+                    );
+
+                if (seriesCode === "") {
+                    seriesCodePreview.textContent =
+                        "未入力";
+
+                    internalModelCodePreview.textContent =
+                        "未入力";
+
+                    return;
+                }
+
+                seriesCodePreview.textContent =
+                    seriesCode;
+
+                internalModelCodePreview.textContent =
+                    seriesCode
+                    + "-ST";
+            }
+
+            seriesCodeInput.addEventListener(
+                "input",
+                updatePreview
+            );
+
+            updatePreview();
+        }
+    );
+</script>
+
+</body>
+</html>

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <th:block th:fragment="menu">
 
     <nav id="topNav"
@@ -51,14 +50,12 @@
                         class="top-nav-link top-nav-dropdown-button"
                         aria-haspopup="true"
                         aria-label="マスタ管理メニュー">
-
                     マスタ管理
 
                     <span class="dropdown-arrow"
                           aria-hidden="true">
                         ▼
                     </span>
-
                 </button>
 
                 <div class="top-nav-dropdown-menu">
@@ -69,6 +66,10 @@
 
                     <a th:href="@{/products/view}">
                         製品マスタ一覧
+                    </a>
+
+                    <a th:href="@{/product-series/view}">
+                        製品シリーズマスタ一覧
                     </a>
 
                     <a th:href="@{/body-masters/view}">
@@ -88,5 +89,4 @@
     </nav>
 
 </th:block>
-
 </html>
