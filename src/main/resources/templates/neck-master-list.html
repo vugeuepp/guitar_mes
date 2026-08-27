@@ -33,7 +33,9 @@
     <div th:if="${#lists.isEmpty(neckMasters)}"
          class="empty-state">
 
-        <p>登録されているネックマスタはありません。</p>
+        <p>
+            登録されているネックマスタはありません。
+        </p>
 
     </div>
 
@@ -55,58 +57,60 @@
             </colgroup>
 
             <thead>
-            <tr>
-                <th>ID</th>
-                <th>モデルコード</th>
-                <th>モデル名</th>
-                <th>ネックタイプ</th>
-                <th>ネック材</th>
-                <th>指板材</th>
-                <th>フレット数</th>
-                <th>スケール</th>
-                <th>詳細</th>
-            </tr>
+                <tr>
+                    <th>ID</th>
+                    <th>モデルコード</th>
+                    <th>モデル名</th>
+                    <th>ネックタイプ</th>
+                    <th>ネック材</th>
+                    <th>指板材</th>
+                    <th>フレット数</th>
+                    <th>スケール</th>
+                    <th>詳細</th>
+                </tr>
             </thead>
 
             <tbody>
 
-            <tr th:each="neckMaster : ${neckMasters}">
+                <tr th:each="neckMaster : ${neckMasters}">
 
-                <td th:text="${neckMaster.id}">
-                </td>
+                    <td th:text="${neckMaster.id}">
+                    </td>
 
-                <td th:text="${neckMaster.modelCode}">
-                </td>
+                    <td th:text="${neckMaster.modelCode}">
+                    </td>
 
-                <td class="neck-master-name"
-                    th:text="${neckMaster.modelName}">
-                </td>
+                    <td class="neck-master-name"
+                        th:text="${neckMaster.modelName}">
+                    </td>
 
-                <td th:text="${neckMaster.neckType}">
-                </td>
+                    <td th:text="${neckMaster.neckType}">
+                    </td>
 
-                <td th:text="${neckMaster.neckMaterial}">
-                </td>
+                    <td th:text="${neckMaster.neckMaterial}">
+                    </td>
 
-                <td th:text="${neckMaster.fingerboardMaterial}">
-                </td>
+                    <td th:text="${neckMaster.fingerboardMaterial}">
+                    </td>
 
-                <td th:text="${neckMaster.fretCount}">
-                </td>
+                    <td th:text="${neckMaster.fretCount}">
+                    </td>
 
-                <td th:text="${neckMaster.scale}">
-                </td>
+                    <td th:text="${#strings.isEmpty(neckMaster.scale)
+                                  ? '-'
+                                  : neckMaster.scale + 'インチ'}">
+                    </td>
 
-                <td class="list-action-cell">
+                    <td class="list-action-cell">
 
-                    <a class="btn btn-detail"
-                       th:href="@{/neck-masters/{id}/view(id=${neckMaster.id})}">
-                        詳細
-                    </a>
+                        <a class="btn btn-detail"
+                           th:href="@{/neck-masters/{id}/view(id=${neckMaster.id})}">
+                            詳細
+                        </a>
 
-                </td>
+                    </td>
 
-            </tr>
+                </tr>
 
             </tbody>
 

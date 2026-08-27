@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        製品マスタ編集
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace=
+     "~{fragments/header :: header('製品マスタ編集')}">
+</div>
+
+<main class="page-container">
+
+    <div class="page-toolbar">
+
+        <p class="page-toolbar-description">
+            製品仕様と販売バリエーションを編集します。
+            仕様変更時は、条件に一致するボディマスタと
+            ネックマスタへ関連を付け替えます。
+        </p>
+
+        <div class="page-toolbar-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/products/{id}/view(id=${productId})}">
+                製品詳細へ戻る
+            </a>
+
+        </div>
+
+    </div>
+
+	<form th:action="@{/products/{id}/edit(id=${productId})}"
+	      th:object="${request}"
+	      method="post"
+	      id="productEditForm"
+	      class="form-container">
+
+	    <div th:if="${errorMessage}"
+	         class="error-message"
+	         role="alert"
+	         aria-live="polite">
+
+	        <div class="error-message-title">
+	            入力内容を確認してください
+	        </div>
+
+	        <p class="error-message-text"
+	           th:text="${errorMessage}">
+	        </p>
+
+	    </div>
+
+	    <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Product Family
+                    </p>
+
+                    <h2 class="form-section-title">
+                        製品共通情報
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    製品シリーズ、楽器タイプ、製品名などの
+                    共通情報を編集してください。
+                </p>
+
+            </div>
+
+            <div class="information-message">
+
+                <p>
+                    製品シリーズまたは楽器タイプを変更すると、
+                    MES内部モデルコード、ボディタイプ、
+                    ネックタイプが自動的に再設定されます。
+                    製品名には候補が補填されますが、
+                    補填後に手動で修正できます。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="productSeries"
+                           class="form-label">
+                        製品シリーズ
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="productSeries"
+                            th:field="*{productSeries}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="series : ${productSeriesList}"
+                                th:value="${series.name()}"
+                                th:text="${series.label}"
+                                th:attr="data-code=${series.code}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        MES内部モデルコードと製品名候補の生成に使用する
+                        製品シリーズを選択してください。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="instrumentType"
+                           class="form-label">
+                        楽器タイプ
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="instrumentType"
+                            th:field="*{instrumentType}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="type : ${instrumentTypeList}"
+                                th:value="${type.name()}"
+                                th:text="${type.label}"
+                                th:attr="
+                                    data-code=${type.code},
+                                    data-body-type=${type.bodyType},
+                                    data-neck-type=${type.neckType}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        MES内部モデルコード、製品名候補、
+                        ボディタイプ、ネックタイプの決定に使用します。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="internalModelCode"
+                           class="form-label">
+                        MES内部モデルコード
+
+                        <span class="form-required">
+                            自動設定
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="internalModelCode"
+                           th:field="*{internalModelCode}"
+                           class="form-input"
+                           placeholder="製品シリーズと楽器タイプから自動生成"
+                           maxlength="50"
+                           readonly
+                           required>
+
+                    <p class="form-help"
+                       id="internalModelCodeHelp">
+                        現在登録されているMES内部モデルコードです。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="productName"
+                           class="form-label">
+                        製品名
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="productName"
+                           th:field="*{productName}"
+                           class="form-input"
+                           placeholder="製品名"
+                           required>
+
+                    <p class="form-help"
+                       id="productNameHelp">
+                        現在登録されている製品名です。
+                        必要に応じて手動で修正できます。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="pickupLayout"
+                           class="form-label">
+                        PU構成
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="pickupLayout"
+                           th:field="*{pickupLayout}"
+                           class="form-input"
+                           placeholder="SSS"
+                           required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fretCount"
+                           class="form-label">
+                        フレット数
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="fretCount"
+                            th:field="*{fretCount}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="fretType : ${fretCountTypeList}"
+                                th:value="${fretType.count}"
+                                th:text="${fretType.displayName}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        登録可能なフレット数から選択してください。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="scale"
+                           class="form-label">
+                        スケール
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="scale"
+                            th:field="*{scale}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="scaleType : ${scaleLengthTypeList}"
+                                th:value="${scaleType.name()}"
+                                th:text="${scaleType.displayName}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        画面ではインチとミリ換算値を表示し、
+                        DBにはインチ値を保存します。
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Body Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        ボディ仕様
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    変更後の仕様に一致するボディマスタを検索し、
+                    存在しない場合は新しいマスタを生成します。
+                </p>
+
+            </div>
+
+            <div class="information-message">
+
+                <p>
+                    現在関連付けられている共有ボディマスタを
+                    直接変更することはありません。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="bodyType"
+                           class="form-label">
+                        ボディタイプ
+
+                        <span class="form-required">
+                            自動設定
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="bodyType"
+                           th:field="*{bodyType}"
+                           class="form-input"
+                           placeholder="楽器タイプから自動設定"
+                           readonly
+                           required>
+
+                    <p class="form-help"
+                       id="bodyTypeHelp">
+                        現在登録されているボディタイプです。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="bodyMaterial"
+                           class="form-label">
+                        ボディ材
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="bodyMaterial"
+                            th:field="*{bodyMaterial}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="material : ${bodyMaterialTypeList}"
+                                th:value="${material.name()}"
+                                th:text="${material.label}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        BodyMaterialTypeに登録されている
+                        ボディ材から選択してください。
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Neck Specification
+                    </p>
+
+                    <h2 class="form-section-title">
+                        ネック仕様
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    変更後の仕様に一致するネックマスタを検索し、
+                    存在しない場合は新しいマスタを生成します。
+                </p>
+
+            </div>
+
+            <div class="information-message">
+
+                <p>
+                    現在関連付けられている共有ネックマスタを
+                    直接変更することはありません。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="neckType"
+                           class="form-label">
+                        ネックタイプ
+
+                        <span class="form-required">
+                            自動設定
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="neckType"
+                           th:field="*{neckType}"
+                           class="form-input"
+                           placeholder="楽器タイプから自動設定"
+                           readonly
+                           required>
+
+                    <p class="form-help"
+                       id="neckTypeHelp">
+                        現在登録されているネックタイプです。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="neckMaterial"
+                           class="form-label">
+                        ネック材
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="neckMaterial"
+                            th:field="*{neckMaterial}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="material : ${neckMaterialTypeList}"
+                                th:value="${material.name()}"
+                                th:text="${material.label}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        NeckMaterialTypeに登録されている
+                        ネック材から選択してください。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fingerboardMaterial"
+                           class="form-label">
+                        指板材
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <select id="fingerboardMaterial"
+                            th:field="*{fingerboardMaterial}"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            選択してください
+                        </option>
+
+                        <option th:each="material :
+                                ${fingerboardMaterialTypeList}"
+                                th:value="${material.name()}"
+                                th:text="${material.label}">
+                        </option>
+
+                    </select>
+
+                    <p class="form-help">
+                        FingerboardMaterialTypeに登録されている
+                        指板材から選択してください。
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="form-section">
+
+            <div class="form-section-heading">
+
+                <div>
+
+                    <p class="form-section-caption">
+                        Product Variation
+                    </p>
+
+                    <h2 class="form-section-title">
+                        販売バリエーション
+                    </h2>
+
+                </div>
+
+                <p class="form-section-description">
+                    このProduct固有の公式モデル番号と
+                    カラーを編集してください。
+                </p>
+
+            </div>
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="modelNo"
+                           class="form-label">
+                        公式モデル番号
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="modelNo"
+                           th:field="*{modelNo}"
+                           class="form-input"
+                           inputmode="numeric"
+                           placeholder="5660100300"
+                           required>
+
+                    <p class="form-help">
+                        他のProductで使用されていない
+                        公式モデル番号を入力してください。
+                    </p>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="color"
+                           class="form-label">
+                        カラー
+
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+
+                    <input type="text"
+                           id="color"
+                           th:field="*{color}"
+                           class="form-input"
+                           placeholder="3-Color Sunburst"
+                           required>
+
+                    <p class="form-help">
+                        内部モデルコード、カラー、指板材の
+                        組み合わせが他のProductと重複しないように
+                        入力してください。
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="form-actions">
+
+            <a class="btn btn-outline"
+               th:href="@{/products/{id}/view(id=${productId})}">
+                キャンセル
+            </a>
+
+            <button type="submit"
+                    class="btn btn-primary">
+                変更内容を保存
+            </button>
+
+        </div>
+
+    </form>
+
+</main>
+
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const productSeriesSelect =
+                document.getElementById(
+                    "productSeries"
+                );
+
+            const instrumentTypeSelect =
+                document.getElementById(
+                    "instrumentType"
+                );
+
+            const internalModelCodeInput =
+                document.getElementById(
+                    "internalModelCode"
+                );
+
+            const productNameInput =
+                document.getElementById(
+                    "productName"
+                );
+
+            const bodyTypeInput =
+                document.getElementById(
+                    "bodyType"
+                );
+
+            const neckTypeInput =
+                document.getElementById(
+                    "neckType"
+                );
+
+            const internalModelCodeHelp =
+                document.getElementById(
+                    "internalModelCodeHelp"
+                );
+
+            const productNameHelp =
+                document.getElementById(
+                    "productNameHelp"
+                );
+
+            const bodyTypeHelp =
+                document.getElementById(
+                    "bodyTypeHelp"
+                );
+
+            const neckTypeHelp =
+                document.getElementById(
+                    "neckTypeHelp"
+                );
+
+            function getSelectedOption(
+                    selectElement) {
+
+                if (selectElement == null
+                        || selectElement.selectedIndex < 0) {
+
+                    return null;
+                }
+
+                return selectElement.options[
+                    selectElement.selectedIndex
+                ];
+            }
+
+            function updateAutomaticProductValues() {
+                const selectedSeries =
+                    getSelectedOption(
+                        productSeriesSelect
+                    );
+
+                const selectedInstrument =
+                    getSelectedOption(
+                        instrumentTypeSelect
+                    );
+
+                const productSeriesValue =
+                    productSeriesSelect.value;
+
+                const instrumentTypeValue =
+                    instrumentTypeSelect.value;
+
+                const seriesCode =
+                    selectedSeries == null
+                        ? ""
+                        : selectedSeries.dataset.code || "";
+
+                const instrumentCode =
+                    selectedInstrument == null
+                        ? ""
+                        : selectedInstrument.dataset.code || "";
+
+                const bodyType =
+                    selectedInstrument == null
+                        ? ""
+                        : selectedInstrument.dataset.bodyType || "";
+
+                const neckType =
+                    selectedInstrument == null
+                        ? ""
+                        : selectedInstrument.dataset.neckType || "";
+
+                const seriesLabel =
+                    productSeriesValue === ""
+                            || selectedSeries == null
+                        ? ""
+                        : selectedSeries.textContent.trim();
+
+                const instrumentLabel =
+                    instrumentTypeValue === ""
+                            || selectedInstrument == null
+                        ? ""
+                        : selectedInstrument.textContent.trim();
+
+                const canGenerateCode =
+                    productSeriesValue !== ""
+                    && instrumentTypeValue !== ""
+                    && productSeriesValue !== "OTHER"
+                    && instrumentTypeValue !== "OTHER"
+                    && seriesCode !== ""
+                    && instrumentCode !== "";
+
+                if (canGenerateCode) {
+                    internalModelCodeInput.value =
+                        seriesCode
+                        + "-"
+                        + instrumentCode;
+
+                    internalModelCodeHelp.textContent =
+                        "製品シリーズ「"
+                        + seriesLabel
+                        + "」と楽器タイプ「"
+                        + instrumentLabel
+                        + "」から自動生成されています。";
+                } else {
+                    internalModelCodeInput.value =
+                        "";
+
+                    if (productSeriesValue === "OTHER"
+                            || instrumentTypeValue === "OTHER") {
+
+                        internalModelCodeHelp.textContent =
+                            "「その他」ではMES内部モデルコードを"
+                            + "自動生成できません。"
+                            + "登録可能な製品シリーズと"
+                            + "楽器タイプを選択してください。";
+                    } else {
+                        internalModelCodeHelp.textContent =
+                            "製品シリーズと楽器タイプを選択すると、"
+                            + "MES内部モデルコードが自動生成されます。";
+                    }
+                }
+
+                const canGenerateProductName =
+                    productSeriesValue !== ""
+                    && instrumentTypeValue !== ""
+                    && productSeriesValue !== "OTHER"
+                    && instrumentTypeValue !== "OTHER"
+                    && seriesLabel !== ""
+                    && instrumentLabel !== "";
+
+                if (canGenerateProductName) {
+                    productNameInput.value =
+                        seriesLabel
+                        + " "
+                        + instrumentLabel;
+
+                    productNameHelp.textContent =
+                        "製品シリーズ「"
+                        + seriesLabel
+                        + "」と楽器タイプ「"
+                        + instrumentLabel
+                        + "」から候補を補填しました。"
+                        + "必要に応じて手動で修正できます。";
+                } else {
+                    productNameHelp.textContent =
+                        "製品名を手動で入力してください。";
+                }
+
+                if (instrumentTypeValue !== ""
+                        && bodyType !== "") {
+
+                    bodyTypeInput.value =
+                        bodyType;
+
+                    bodyTypeHelp.textContent =
+                        "楽器タイプ「"
+                        + instrumentLabel
+                        + "」から自動設定されています。";
+                } else {
+                    bodyTypeInput.value =
+                        "";
+
+                    bodyTypeHelp.textContent =
+                        "楽器タイプを選択すると、"
+                        + "対応するボディタイプが自動設定されます。";
+                }
+
+                if (instrumentTypeValue !== ""
+                        && neckType !== "") {
+
+                    neckTypeInput.value =
+                        neckType;
+
+                    neckTypeHelp.textContent =
+                        "楽器タイプ「"
+                        + instrumentLabel
+                        + "」から自動設定されています。";
+                } else {
+                    neckTypeInput.value =
+                        "";
+
+                    neckTypeHelp.textContent =
+                        "楽器タイプを選択すると、"
+                        + "対応するネックタイプが自動設定されます。";
+                }
+            }
+
+            productSeriesSelect.addEventListener(
+                "change",
+                updateAutomaticProductValues
+            );
+
+            instrumentTypeSelect.addEventListener(
+                "change",
+                updateAutomaticProductValues
+            );
+        }
+    );
+</script>
+
+</body>
+</html>

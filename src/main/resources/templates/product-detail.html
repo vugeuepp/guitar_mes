@@ -19,22 +19,33 @@
 <main class="page-container">
 
     <div class="page-toolbar">
+
         <p class="page-toolbar-description">
             製品仕様、関連マスタ、製造中のギターを確認できます。
         </p>
 
-        <div class="page-toolbar-actions">
-            <a class="btn btn-outline"
-               th:href="@{/products/view}">
-                製品一覧へ戻る
-            </a>
-        </div>
+		<div class="page-toolbar-actions">
+
+		    <a class="btn btn-secondary"
+		       th:href="@{/products/{id}/edit(id=${product.id})}">
+		        編集
+		    </a>
+
+		    <a class="btn btn-outline"
+		       th:href="@{/products/view}">
+		        製品一覧へ戻る
+		    </a>
+
+		</div>
+
     </div>
 
     <section class="detail-section">
 
         <div class="detail-section-heading">
+
             <div>
+
                 <p class="detail-section-caption">
                     Product Information
                 </p>
@@ -42,12 +53,15 @@
                 <h2 class="detail-section-title"
                     th:text="${product.modelNo}">
                 </h2>
+
             </div>
+
         </div>
 
         <div class="detail-grid detail-grid-2col">
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     公式モデル番号
                 </div>
@@ -55,9 +69,11 @@
                 <div class="detail-value"
                      th:text="${product.modelNo}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     MES内部モデルコード
                 </div>
@@ -68,9 +84,11 @@
                          ? '-'
                          : product.internalModelCode}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     製品名
                 </div>
@@ -78,9 +96,11 @@
                 <div class="detail-value"
                      th:text="${product.productName}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     カラー
                 </div>
@@ -88,9 +108,11 @@
                 <div class="detail-value"
                      th:text="${product.color}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     指板材
                 </div>
@@ -98,9 +120,11 @@
                 <div class="detail-value"
                      th:text="${product.fingerboardMaterial}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     PU構成
                 </div>
@@ -108,6 +132,7 @@
                 <div class="detail-value"
                      th:text="${product.pickupLayout}">
                 </div>
+
             </div>
 
         </div>
@@ -117,7 +142,9 @@
     <section class="detail-section">
 
         <div class="detail-section-heading">
+
             <div>
+
                 <p class="detail-section-caption">
                     Body Master
                 </p>
@@ -125,13 +152,16 @@
                 <h2 class="detail-section-title">
                     ボディマスタ情報
                 </h2>
+
             </div>
+
         </div>
 
         <div th:if="${product.bodyMaster != null}"
              class="detail-grid detail-grid-2col">
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ボディマスタID
                 </div>
@@ -139,9 +169,11 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.id}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデルコード
                 </div>
@@ -149,9 +181,11 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.modelCode}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデル名
                 </div>
@@ -159,9 +193,11 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.modelName}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ボディタイプ
                 </div>
@@ -169,9 +205,11 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.bodyType}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ボディ材
                 </div>
@@ -179,9 +217,11 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.material}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     カラー
                 </div>
@@ -189,15 +229,18 @@
                 <div class="detail-value"
                      th:text="${product.bodyMaster.color}">
                 </div>
+
             </div>
 
         </div>
 
         <div th:if="${product.bodyMaster == null}"
              class="empty-state">
+
             <p>
                 この製品にはボディマスタが関連付けられていません。
             </p>
+
         </div>
 
     </section>
@@ -205,7 +248,9 @@
     <section class="detail-section">
 
         <div class="detail-section-heading">
+
             <div>
+
                 <p class="detail-section-caption">
                     Neck Master
                 </p>
@@ -213,13 +258,16 @@
                 <h2 class="detail-section-title">
                     ネックマスタ情報
                 </h2>
+
             </div>
+
         </div>
 
         <div th:if="${product.neckMaster != null}"
              class="detail-grid detail-grid-2col">
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ネックマスタID
                 </div>
@@ -227,9 +275,11 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.id}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデルコード
                 </div>
@@ -237,9 +287,11 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.modelCode}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデル名
                 </div>
@@ -247,9 +299,11 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.modelName}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ネックタイプ
                 </div>
@@ -257,9 +311,11 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.neckType}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ネック材
                 </div>
@@ -267,20 +323,23 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.neckMaterial}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     指板材
                 </div>
 
                 <div class="detail-value"
-                     th:text="${product.neckMaster
-                         .fingerboardMaterial}">
+                     th:text="${product.neckMaster.fingerboardMaterial}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     フレット数
                 </div>
@@ -288,25 +347,32 @@
                 <div class="detail-value"
                      th:text="${product.neckMaster.fretCount}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     スケール
                 </div>
 
                 <div class="detail-value"
-                     th:text="${product.neckMaster.scale}">
+                     th:text="${#strings.isEmpty(product.neckMaster.scale)
+                                ? '-'
+                                : product.neckMaster.scale + 'インチ'}">
                 </div>
+
             </div>
 
         </div>
 
         <div th:if="${product.neckMaster == null}"
              class="empty-state">
+
             <p>
                 この製品にはネックマスタが関連付けられていません。
             </p>
+
         </div>
 
     </section>
@@ -314,7 +380,9 @@
     <section class="detail-section">
 
         <div class="detail-section-heading">
+
             <div>
+
                 <p class="detail-section-caption">
                     Related Guitars
                 </p>
@@ -322,23 +390,29 @@
                 <h2 class="detail-section-title">
                     関連ギター
                 </h2>
+
             </div>
 
             <div class="detail-section-count">
+
                 <span th:text="${#lists.size(guitars)}">
                 </span>
 
                 <span>
                     件
                 </span>
+
             </div>
+
         </div>
 
         <div th:if="${#lists.isEmpty(guitars)}"
              class="empty-state">
+
             <p>
                 この製品で製造中のギターはありません。
             </p>
+
         </div>
 
         <div th:if="${not #lists.isEmpty(guitars)}"
@@ -348,21 +422,10 @@
 
                 <thead>
                     <tr>
-                        <th>
-                            ID
-                        </th>
-
-                        <th>
-                            シリアル番号
-                        </th>
-
-                        <th>
-                            現在工程
-                        </th>
-
-                        <th>
-                            詳細
-                        </th>
+                        <th>ID</th>
+                        <th>シリアル番号</th>
+                        <th>現在工程</th>
+                        <th>詳細</th>
                     </tr>
                 </thead>
 
@@ -383,12 +446,12 @@
                         </td>
 
                         <td class="table-action-cell">
+
                             <a class="btn btn-detail"
-                               th:href=
-                               "@{/guitars/{id}/view(
-                                   id=${guitar.id})}">
+                               th:href="@{/guitars/{id}/view(id=${guitar.id})}">
                                 詳細
                             </a>
+
                         </td>
 
                     </tr>
@@ -402,10 +465,12 @@
     </section>
 
     <div class="detail-footer-actions">
+
         <a class="btn btn-outline"
            th:href="@{/products/view}">
             製品一覧へ戻る
         </a>
+
     </div>
 
 </main>

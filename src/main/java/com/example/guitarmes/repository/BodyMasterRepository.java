@@ -17,6 +17,12 @@ public interface BodyMasterRepository
                     String color);
 
     Optional<BodyMaster>
+            findFirstByBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
+                    String bodyType,
+                    String material,
+                    String color);
+
+    Optional<BodyMaster>
             findTopByModelCodeStartingWithOrderByIdDesc(
                     String modelCodePrefix);
 

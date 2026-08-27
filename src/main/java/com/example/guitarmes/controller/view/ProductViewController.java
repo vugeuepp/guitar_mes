@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
+import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.master.BodyMaterialType;
 import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
@@ -99,6 +101,56 @@ public class ProductViewController {
                 guitarService.getGuitarsByProductId(id));
 
         return "product-detail";
+    }
+
+    @GetMapping("/products/{id}/edit")
+    public String editProductForm(
+            @PathVariable Long id,
+            Model model) {
+
+        model.addAttribute(
+                "request",
+                productService.getProductUpdateRequest(
+                        id));
+
+        model.addAttribute(
+                "productId",
+                id);
+
+        addProductFormOptions(model);
+
+        return "product-edit-form";
+    }
+
+    @PostMapping("/products/{id}/edit")
+    public String updateProduct(
+            @PathVariable Long id,
+            @ModelAttribute("request")
+            ProductUpdateRequest request,
+            Model model) {
+
+        try {
+            productService.updateProduct(
+                    id,
+                    request);
+
+            return "redirect:/products/"
+                    + id
+                    + "/view";
+
+        } catch (BusinessException exception) {
+            model.addAttribute(
+                    "productId",
+                    id);
+
+            model.addAttribute(
+                    "errorMessage",
+                    exception.getMessage());
+
+            addProductFormOptions(model);
+
+            return "product-edit-form";
+        }
     }
 
     private void addProductFormOptions(
