@@ -19,11 +19,22 @@ public interface ProductRepository
     boolean existsByModelNoIgnoreCase(
             String modelNo);
 
+    boolean existsByModelNoIgnoreCaseAndIdNot(
+            String modelNo,
+            Long id);
+
     boolean
             existsByInternalModelCodeIgnoreCaseAndColorIgnoreCaseAndFingerboardMaterialIgnoreCase(
                     String internalModelCode,
                     String color,
                     String fingerboardMaterial);
+
+    boolean
+            existsByInternalModelCodeIgnoreCaseAndColorIgnoreCaseAndFingerboardMaterialIgnoreCaseAndIdNot(
+                    String internalModelCode,
+                    String color,
+                    String fingerboardMaterial,
+                    Long id);
 
     List<Product>
             findByInternalModelCodeIgnoreCaseOrderByColorAscFingerboardMaterialAsc(

@@ -20,4 +20,7 @@ public interface ProductionOrderRepository
     List<ProductionOrder>
             findByStatusOrderByIdDesc(
                     String status);
+
+    List<ProductionOrder> findByProductId(
+            Long productId);
 }

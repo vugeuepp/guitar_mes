@@ -7,19 +7,36 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.guitarmes.dto.ErrorResponse;
 
-@RestControllerAdvice
+@RestControllerAdvice(
+        basePackages =
+                "com.example.guitarmes.controller.api")
 public class GlobalExceptionHandler {
-	@ExceptionHandler(BusinessException.class)
-	public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
-		ErrorResponse response = new ErrorResponse(ex.getMessage());
-		
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-	}
-	
-	@ExceptionHandler(NotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleNotFoundExcepiton(NotFoundException ex) {
-		ErrorResponse response = new ErrorResponse(ex.getMessage());
-		
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-	}
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse>
+            handleBusinessException(
+                    BusinessException exception) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        exception.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse>
+            handleNotFoundException(
+                    NotFoundException exception) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        exception.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
 }

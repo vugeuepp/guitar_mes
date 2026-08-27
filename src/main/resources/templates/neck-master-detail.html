@@ -19,22 +19,28 @@
 <main class="page-container">
 
     <div class="page-toolbar">
+
         <p class="page-toolbar-description">
             ネックマスタの仕様情報を確認できます。
         </p>
 
         <div class="page-toolbar-actions">
+
             <a class="btn btn-outline"
                th:href="@{/neck-masters/view}">
                 ネックマスタ一覧へ戻る
             </a>
+
         </div>
+
     </div>
 
     <section class="detail-section">
 
         <div class="detail-section-heading">
+
             <div>
+
                 <p class="detail-section-caption">
                     Neck Master Information
                 </p>
@@ -42,72 +48,97 @@
                 <h2 class="detail-section-title"
                     th:text="${neckMaster.modelCode}">
                 </h2>
+
             </div>
+
         </div>
 
         <div class="detail-grid">
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデルコード
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.modelCode}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     モデル名
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.modelName}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ネックタイプ
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.neckType}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     ネック材
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.neckMaterial}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     指板材
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.fingerboardMaterial}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     フレット数
                 </div>
+
                 <div class="detail-value"
                      th:text="${neckMaster.fretCount}">
                 </div>
+
             </div>
 
             <div class="detail-item">
+
                 <div class="detail-label">
                     スケール
                 </div>
+
                 <div class="detail-value"
-                     th:text="${neckMaster.scale}">
+                     th:text="${#strings.isEmpty(neckMaster.scale)
+                                ? '-'
+                                : neckMaster.scale + 'インチ'}">
                 </div>
+
             </div>
 
         </div>
@@ -115,10 +146,12 @@
     </section>
 
     <div class="detail-footer-actions">
+
         <a class="btn btn-outline"
            th:href="@{/neck-masters/view}">
             ネックマスタ一覧へ戻る
         </a>
+
     </div>
 
 </main>

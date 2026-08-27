@@ -4,16 +4,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
 import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.master.BodyMaterialType;
@@ -24,8 +27,10 @@ import com.example.guitarmes.master.NeckMaterialType;
 import com.example.guitarmes.master.ProductSeries;
 import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.repository.BodyMasterRepository;
+import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.NeckMasterRepository;
 import com.example.guitarmes.repository.ProductRepository;
+import com.example.guitarmes.repository.ProductionOrderRepository;
 
 @Service
 public class ProductService {
@@ -38,17 +43,39 @@ public class ProductService {
 
     private final NeckMasterRepository neckMasterRepository;
 
-    private final InternalModelCodeService internalModelCodeService;
+    private final GuitarRepository guitarRepository;
+
+    private final ProductionOrderRepository
+            productionOrderRepository;
+
+    private final InternalModelCodeService
+            internalModelCodeService;
 
     public ProductService(
             ProductRepository productRepository,
             BodyMasterRepository bodyMasterRepository,
             NeckMasterRepository neckMasterRepository,
-            InternalModelCodeService internalModelCodeService) {
+            GuitarRepository guitarRepository,
+            ProductionOrderRepository
+                    productionOrderRepository,
+            InternalModelCodeService
+                    internalModelCodeService) {
 
-        this.productRepository = productRepository;
-        this.bodyMasterRepository = bodyMasterRepository;
-        this.neckMasterRepository = neckMasterRepository;
+        this.productRepository =
+                productRepository;
+
+        this.bodyMasterRepository =
+                bodyMasterRepository;
+
+        this.neckMasterRepository =
+                neckMasterRepository;
+
+        this.guitarRepository =
+                guitarRepository;
+
+        this.productionOrderRepository =
+                productionOrderRepository;
+
         this.internalModelCodeService =
                 internalModelCodeService;
     }
@@ -65,6 +92,156 @@ public class ProductService {
                 .orElseThrow(() ->
                         new NotFoundException(
                                 "指定された製品が存在しません。"));
+    }
+
+    /*
+     * Product編集画面に表示する初期値を作成する。
+     *
+     * DBに保存されているラベル値やインチ値を、
+     * 編集フォームで使用するEnum名へ変換する。
+     */
+    public ProductUpdateRequest getProductUpdateRequest(
+            Long id) {
+
+        Product product =
+                getProductById(id);
+
+        ResolvedProductClassification classification =
+                resolveProductClassification(
+                        product.getInternalModelCode());
+
+        ProductUpdateRequest request =
+                new ProductUpdateRequest();
+
+        if (classification != null) {
+            request.setProductSeries(
+                    classification
+                            .productSeries()
+                            .name());
+
+            request.setInstrumentType(
+                    classification
+                            .instrumentType()
+                            .name());
+        }
+
+        request.setInternalModelCode(
+                product.getInternalModelCode());
+
+        request.setProductName(
+                product.getProductName());
+
+        request.setBodyType(
+                resolveBodyType(product));
+
+        request.setBodyMaterial(
+                resolveBodyMaterialTypeName(
+                        product.getBodyMaterial()));
+
+        request.setNeckType(
+                resolveNeckType(product));
+
+        request.setNeckMaterial(
+                resolveNeckMaterialTypeName(
+                        product.getNeckMaterial()));
+
+        request.setPickupLayout(
+                product.getPickupLayout());
+
+        request.setFretCount(
+                product.getFretCount());
+
+        request.setScale(
+                resolveScaleLengthTypeName(
+                        product.getScale()));
+
+        request.setModelNo(
+                product.getModelNo());
+
+        request.setColor(
+                product.getColor());
+
+        request.setFingerboardMaterial(
+                resolveFingerboardMaterialTypeName(
+                        product.getFingerboardMaterial()));
+
+        return request;
+    }
+
+    /*
+     * Product編集画面から受け取った値を検証し、
+     * Productと関連Masterを更新する。
+     *
+     * 共有中のBodyMasterとNeckMasterは直接更新しない。
+     * 変更後の物理仕様に一致するMasterを検索し、
+     * 見つからない場合だけ新しいMasterを生成する。
+     */
+    @Transactional
+    public Product updateProduct(
+            Long id,
+            ProductUpdateRequest request) {
+
+        Product product =
+                getProductById(id);
+
+        NormalizedProductUpdate normalized =
+                normalizeAndValidateUpdateRequest(
+                        request);
+
+        validateProductReferenceRestriction(
+                product,
+                normalized);
+
+        validateProductUpdateDuplicates(
+                id,
+                normalized);
+
+        BodyMaster bodyMaster =
+                findOrCreateBodyMasterForUpdate(
+                        normalized);
+
+        NeckMaster neckMaster =
+                findOrCreateNeckMasterForUpdate(
+                        normalized);
+
+        product.setModelNo(
+                normalized.modelNo());
+
+        product.setInternalModelCode(
+                normalized.internalModelCode());
+
+        product.setProductName(
+                normalized.productName());
+
+        product.setColor(
+                normalized.color());
+
+        product.setBodyMaterial(
+                normalized.bodyMaterial());
+
+        product.setNeckMaterial(
+                normalized.neckMaterial());
+
+        product.setFingerboardMaterial(
+                normalized.fingerboardMaterial());
+
+        product.setPickupLayout(
+                normalized.pickupLayout());
+
+        product.setFretCount(
+                normalized.fretCount());
+
+        product.setScale(
+                normalized.scale());
+
+        product.setBodyMaster(
+                bodyMaster);
+
+        product.setNeckMaster(
+                neckMaster);
+
+        return productRepository.save(
+                product);
     }
 
     /*
@@ -176,6 +353,432 @@ public class ProductService {
         return productRepository
                 .findByProductNameContaining(
                         keyword.trim());
+    }
+
+    /*
+     * 製造開始済み、またはGuitar発行済みのProductに
+     * 制限対象項目の変更がないか確認する。
+     *
+     * 製品名だけの変更と変更なし保存は許可する。
+     */
+    private void validateProductReferenceRestriction(
+            Product product,
+            NormalizedProductUpdate request) {
+
+        if (!hasRestrictedProductChanges(
+                product,
+                request)) {
+
+            return;
+        }
+
+        if (guitarRepository.existsByProductId(
+                product.getId())) {
+
+            throw new BusinessException(
+                    "製造個体が発行済みのため、"
+                    + "公式モデル番号や製造仕様を"
+                    + "変更できません。"
+                    + "製品名のみ変更できます。");
+        }
+
+        List<ProductionOrder> productionOrders =
+                productionOrderRepository
+                        .findByProductId(
+                                product.getId());
+
+        boolean productionStarted =
+                productionOrders
+                        .stream()
+                        .anyMatch(
+                                this::isProductionStarted);
+
+        if (productionStarted) {
+            throw new BusinessException(
+                    "製造開始済みの生産計画が存在するため、"
+                    + "公式モデル番号や製造仕様を"
+                    + "変更できません。"
+                    + "製品名のみ変更できます。");
+        }
+    }
+
+    /*
+     * ProductionOrderで製造が開始済み、
+     * または完成実績が存在するか判定する。
+     *
+     * 旧データのnullも考慮する。
+     */
+    private boolean isProductionStarted(
+            ProductionOrder productionOrder) {
+
+        if (productionOrder == null) {
+            return false;
+        }
+
+        Integer startedQuantity =
+                productionOrder
+                        .getStartedQuantity();
+
+        Integer completedQuantity =
+                productionOrder
+                        .getCompletedQuantity();
+
+        return hasPositiveQuantity(
+                startedQuantity)
+                || hasPositiveQuantity(
+                        completedQuantity);
+    }
+
+    private boolean hasPositiveQuantity(
+            Integer quantity) {
+
+        return quantity != null
+                && quantity > 0;
+    }
+
+    /*
+     * 製造開始後に変更を禁止する項目が、
+     * 現在値から変更されているか確認する。
+     *
+     * Product名は制限対象に含めない。
+     */
+    private boolean hasRestrictedProductChanges(
+            Product product,
+            NormalizedProductUpdate request) {
+
+        return !equalsIgnoreCase(
+                    product.getModelNo(),
+                    request.modelNo())
+                || !equalsIgnoreCase(
+                    product.getInternalModelCode(),
+                    request.internalModelCode())
+                || !equalsIgnoreCase(
+                    product.getColor(),
+                    request.color())
+                || !equalsIgnoreCase(
+                    product.getBodyMaterial(),
+                    request.bodyMaterial())
+                || !equalsIgnoreCase(
+                    product.getNeckMaterial(),
+                    request.neckMaterial())
+                || !equalsIgnoreCase(
+                    product.getFingerboardMaterial(),
+                    request.fingerboardMaterial())
+                || !equalsIgnoreCase(
+                    product.getPickupLayout(),
+                    request.pickupLayout())
+                || !Objects.equals(
+                    product.getFretCount(),
+                    request.fretCount())
+                || !equalsIgnoreCase(
+                    product.getScale(),
+                    request.scale())
+                || !equalsIgnoreCase(
+                    resolveBodyType(product),
+                    request.bodyType())
+                || !equalsIgnoreCase(
+                    resolveNeckType(product),
+                    request.neckType());
+    }
+
+    private boolean equalsIgnoreCase(
+            String currentValue,
+            String requestedValue) {
+
+        if (currentValue == null
+                && requestedValue == null) {
+
+            return true;
+        }
+
+        if (currentValue == null
+                || requestedValue == null) {
+
+            return false;
+        }
+
+        return currentValue
+                .trim()
+                .equalsIgnoreCase(
+                        requestedValue.trim());
+    }
+
+    private NormalizedProductUpdate
+            normalizeAndValidateUpdateRequest(
+                    ProductUpdateRequest request) {
+
+        if (request == null) {
+            throw new BusinessException(
+                    "製品更新情報が指定されていません。");
+        }
+
+        ProductSeries productSeries =
+                parseEnum(
+                        request.getProductSeries(),
+                        ProductSeries.class,
+                        "製品シリーズ");
+
+        InstrumentType instrumentType =
+                parseEnum(
+                        request.getInstrumentType(),
+                        InstrumentType.class,
+                        "楽器タイプ");
+
+        validateAutomaticGenerationTarget(
+                productSeries,
+                instrumentType);
+
+        String generatedInternalModelCode =
+                internalModelCodeService
+                        .generateInternalModelCode(
+                                productSeries,
+                                instrumentType);
+
+        String submittedInternalModelCode =
+                normalizeInternalModelCode(
+                        request.getInternalModelCode());
+
+        if (!generatedInternalModelCode.equalsIgnoreCase(
+                submittedInternalModelCode)) {
+
+            throw new BusinessException(
+                    "MES内部モデルコードが"
+                    + "選択された製品シリーズと"
+                    + "楽器タイプから生成される値と"
+                    + "一致しません。"
+                    + "生成されるコードは「"
+                    + generatedInternalModelCode
+                    + "」です。");
+        }
+
+        String productName =
+                normalizeRequired(
+                        request.getProductName(),
+                        "製品名");
+
+        String expectedBodyType =
+                normalizeRequired(
+                        instrumentType.getBodyType(),
+                        "楽器タイプのボディタイプ");
+
+        String submittedBodyType =
+                normalizeRequired(
+                        request.getBodyType(),
+                        "ボディタイプ");
+
+        if (!expectedBodyType.equalsIgnoreCase(
+                submittedBodyType)) {
+
+            throw new BusinessException(
+                    "ボディタイプが"
+                    + "選択された楽器タイプと"
+                    + "一致しません。"
+                    + "正しいボディタイプは「"
+                    + expectedBodyType
+                    + "」です。");
+        }
+
+        String expectedNeckType =
+                normalizeRequired(
+                        instrumentType.getNeckType(),
+                        "楽器タイプのネックタイプ");
+
+        String submittedNeckType =
+                normalizeRequired(
+                        request.getNeckType(),
+                        "ネックタイプ");
+
+        if (!expectedNeckType.equalsIgnoreCase(
+                submittedNeckType)) {
+
+            throw new BusinessException(
+                    "ネックタイプが"
+                    + "選択された楽器タイプと"
+                    + "一致しません。"
+                    + "正しいネックタイプは「"
+                    + expectedNeckType
+                    + "」です。");
+        }
+
+        BodyMaterialType bodyMaterialType =
+                parseEnum(
+                        request.getBodyMaterial(),
+                        BodyMaterialType.class,
+                        "ボディ材");
+
+        NeckMaterialType neckMaterialType =
+                parseEnum(
+                        request.getNeckMaterial(),
+                        NeckMaterialType.class,
+                        "ネック材");
+
+        FingerboardMaterialType
+                fingerboardMaterialType =
+                parseEnum(
+                        request.getFingerboardMaterial(),
+                        FingerboardMaterialType.class,
+                        "指板材");
+
+        FretCountType fretCountType =
+                parseEnum(
+                        request.getFretCount(),
+                        FretCountType.class,
+                        "フレット数");
+
+        ScaleLengthType scaleLengthType =
+                parseEnum(
+                        request.getScale(),
+                        ScaleLengthType.class,
+                        "スケール");
+
+        String modelNo =
+                normalizeRequired(
+                        request.getModelNo(),
+                        "公式モデル番号");
+
+        String color =
+                normalizeRequired(
+                        request.getColor(),
+                        "カラー");
+
+        String pickupLayout =
+                normalizeRequired(
+                        request.getPickupLayout(),
+                        "PU構成");
+
+        return new NormalizedProductUpdate(
+                productSeries,
+                instrumentType,
+                generatedInternalModelCode,
+                productName,
+                expectedBodyType,
+                bodyMaterialType.getLabel(),
+                expectedNeckType,
+                neckMaterialType.getLabel(),
+                pickupLayout,
+                fretCountType.getCount(),
+                toScaleStorageValue(
+                        scaleLengthType),
+                modelNo,
+                color,
+                fingerboardMaterialType.getLabel());
+    }
+
+    private void validateProductUpdateDuplicates(
+            Long productId,
+            NormalizedProductUpdate request) {
+
+        if (productRepository
+                .existsByModelNoIgnoreCaseAndIdNot(
+                        request.modelNo(),
+                        productId)) {
+
+            throw new BusinessException(
+                    "公式モデル番号「"
+                    + request.modelNo()
+                    + "」は既に別の製品で"
+                    + "使用されています。");
+        }
+
+        boolean specificationExists =
+                productRepository
+                        .existsByInternalModelCodeIgnoreCaseAndColorIgnoreCaseAndFingerboardMaterialIgnoreCaseAndIdNot(
+                                request.internalModelCode(),
+                                request.color(),
+                                request.fingerboardMaterial(),
+                                productId);
+
+        if (specificationExists) {
+            throw new BusinessException(
+                    "MES内部モデルコード「"
+                    + request.internalModelCode()
+                    + "」、カラー「"
+                    + request.color()
+                    + "」、指板材「"
+                    + request.fingerboardMaterial()
+                    + "」の製品は"
+                    + "既に別のProductとして"
+                    + "登録されています。");
+        }
+    }
+
+    private BodyMaster findOrCreateBodyMasterForUpdate(
+            NormalizedProductUpdate request) {
+
+        return bodyMasterRepository
+                .findFirstByBodyTypeIgnoreCaseAndMaterialIgnoreCaseAndColorIgnoreCase(
+                        request.bodyType(),
+                        request.bodyMaterial(),
+                        request.color())
+                .orElseGet(() ->
+                        createBodyMasterForUpdate(
+                                request));
+    }
+
+    private BodyMaster createBodyMasterForUpdate(
+            NormalizedProductUpdate request) {
+
+        BodyMaster bodyMaster =
+                new BodyMaster();
+
+        bodyMaster.setModelCode(
+                generateBodyMasterCode(
+                        request.internalModelCode()));
+
+        bodyMaster.setModelName(
+                request.productName()
+                + " Body");
+
+        bodyMaster.setBodyType(
+                request.bodyType());
+
+        bodyMaster.setMaterial(
+                request.bodyMaterial());
+
+        bodyMaster.setColor(
+                request.color());
+
+        return bodyMasterRepository.save(
+                bodyMaster);
+    }
+
+    private NeckMaster findOrCreateNeckMasterForUpdate(
+            NormalizedProductUpdate request) {
+
+        return neckMasterRepository
+                .findFirstByNeckTypeIgnoreCaseAndNeckMaterialIgnoreCaseAndFingerboardMaterialIgnoreCaseAndFretCountAndScaleIgnoreCase(
+                        request.neckType(),
+                        request.neckMaterial(),
+                        request.fingerboardMaterial(),
+                        request.fretCount(),
+                        request.scale())
+                .orElseGet(() ->
+                        createNeckMasterForUpdate(
+                                request));
+    }
+
+    private NeckMaster createNeckMasterForUpdate(
+            NormalizedProductUpdate request) {
+
+        String modelName =
+                request.productName()
+                + " Neck / "
+                + request.fingerboardMaterial()
+                + " Fingerboard";
+
+        NeckMaster neckMaster =
+                new NeckMaster(
+                        generateNeckMasterCode(
+                                request.internalModelCode()),
+                        modelName,
+                        request.neckType(),
+                        request.neckMaterial(),
+                        request.fingerboardMaterial(),
+                        request.fretCount(),
+                        request.scale());
+
+        return neckMasterRepository.save(
+                neckMaster);
     }
 
     private NormalizedProductRequest
@@ -585,6 +1188,184 @@ public class ProductService {
                 neckMaster);
     }
 
+    /*
+     * 内部モデルコードとEnumのコードを照合し、
+     * ProductSeriesとInstrumentTypeを復元する。
+     *
+     * ProductSeriesのコードにはハイフンが含まれるため、
+     * splitによる単純分割は使用しない。
+     */
+    private ResolvedProductClassification
+            resolveProductClassification(
+                    String internalModelCode) {
+
+        if (internalModelCode == null
+                || internalModelCode.isBlank()) {
+
+            return null;
+        }
+
+        String normalizedInternalModelCode =
+                internalModelCode.trim();
+
+        for (ProductSeries productSeries
+                : ProductSeries.values()) {
+
+            if (productSeries == ProductSeries.OTHER) {
+                continue;
+            }
+
+            for (InstrumentType instrumentType
+                    : InstrumentType.values()) {
+
+                if (instrumentType
+                        == InstrumentType.OTHER) {
+
+                    continue;
+                }
+
+                String candidate =
+                        productSeries.getCode()
+                        + "-"
+                        + instrumentType.getCode();
+
+                if (candidate.equalsIgnoreCase(
+                        normalizedInternalModelCode)) {
+
+                    return new ResolvedProductClassification(
+                            productSeries,
+                            instrumentType);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String resolveBodyType(
+            Product product) {
+
+        if (product.getBodyMaster() == null) {
+            return null;
+        }
+
+        return product
+                .getBodyMaster()
+                .getBodyType();
+    }
+
+    private String resolveNeckType(
+            Product product) {
+
+        if (product.getNeckMaster() == null) {
+            return null;
+        }
+
+        return product
+                .getNeckMaster()
+                .getNeckType();
+    }
+
+    private String resolveBodyMaterialTypeName(
+            String storedValue) {
+
+        if (storedValue == null
+                || storedValue.isBlank()) {
+
+            return null;
+        }
+
+        String normalizedValue =
+                storedValue.trim();
+
+        for (BodyMaterialType type
+                : BodyMaterialType.values()) {
+
+            if (type.getLabel().equalsIgnoreCase(
+                    normalizedValue)) {
+
+                return type.name();
+            }
+        }
+
+        return null;
+    }
+
+    private String resolveNeckMaterialTypeName(
+            String storedValue) {
+
+        if (storedValue == null
+                || storedValue.isBlank()) {
+
+            return null;
+        }
+
+        String normalizedValue =
+                storedValue.trim();
+
+        for (NeckMaterialType type
+                : NeckMaterialType.values()) {
+
+            if (type.getLabel().equalsIgnoreCase(
+                    normalizedValue)) {
+
+                return type.name();
+            }
+        }
+
+        return null;
+    }
+
+    private String resolveFingerboardMaterialTypeName(
+            String storedValue) {
+
+        if (storedValue == null
+                || storedValue.isBlank()) {
+
+            return null;
+        }
+
+        String normalizedValue =
+                storedValue.trim();
+
+        for (FingerboardMaterialType type
+                : FingerboardMaterialType.values()) {
+
+            if (type.getLabel().equalsIgnoreCase(
+                    normalizedValue)) {
+
+                return type.name();
+            }
+        }
+
+        return null;
+    }
+
+    private String resolveScaleLengthTypeName(
+            String storedValue) {
+
+        if (storedValue == null
+                || storedValue.isBlank()) {
+
+            return null;
+        }
+
+        String normalizedValue =
+                storedValue.trim();
+
+        for (ScaleLengthType type
+                : ScaleLengthType.values()) {
+
+            if (type.getValue().equalsIgnoreCase(
+                    normalizedValue)) {
+
+                return type.name();
+            }
+        }
+
+        return null;
+    }
+
     private String generateBodyMasterCode(
             String internalModelCode) {
 
@@ -741,8 +1522,7 @@ public class ProductService {
     private String toScaleStorageValue(
             ScaleLengthType scaleLengthType) {
 
-        return scaleLengthType.getMillimeters()
-                + "mm";
+        return scaleLengthType.getValue();
     }
 
     private <E extends Enum<E>> E parseEnum(
@@ -812,6 +1592,28 @@ public class ProductService {
     private interface CodeExistenceChecker {
 
         boolean exists(String modelCode);
+    }
+
+    private record ResolvedProductClassification(
+            ProductSeries productSeries,
+            InstrumentType instrumentType) {
+    }
+
+    private record NormalizedProductUpdate(
+            ProductSeries productSeries,
+            InstrumentType instrumentType,
+            String internalModelCode,
+            String productName,
+            String bodyType,
+            String bodyMaterial,
+            String neckType,
+            String neckMaterial,
+            String pickupLayout,
+            Integer fretCount,
+            String scale,
+            String modelNo,
+            String color,
+            String fingerboardMaterial) {
     }
 
     private record NormalizedVariation(
