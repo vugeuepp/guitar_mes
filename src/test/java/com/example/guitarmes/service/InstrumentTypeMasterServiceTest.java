@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.repository.InstrumentTypeMasterRepository;
+import com.example.guitarmes.repository.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class InstrumentTypeMasterServiceTest {
@@ -29,6 +30,9 @@ class InstrumentTypeMasterServiceTest {
     @Mock
     private InstrumentTypeMasterRepository
             instrumentTypeMasterRepository;
+
+    @Mock
+    private ProductRepository productRepository;
 
     private InstrumentTypeMasterService
             instrumentTypeMasterService;
@@ -38,7 +42,8 @@ class InstrumentTypeMasterServiceTest {
 
         instrumentTypeMasterService =
                 new InstrumentTypeMasterService(
-                        instrumentTypeMasterRepository);
+                        instrumentTypeMasterRepository,
+                        productRepository);
     }
 
     @Test
@@ -630,6 +635,82 @@ class InstrumentTypeMasterServiceTest {
 
         assertTrue(exception.getMessage().contains("無効"));
         assertTrue(exception.getMessage().contains("Duo-Sonic"));
+    }
+
+    @Test
+    @DisplayName("楽器タイプ名を更新できる")
+    void updateInstrumentTypeMaster_withNameChange_succeeds() {
+        InstrumentTypeMaster current = createInstrumentType("ST", "Stratocaster", true);
+        current.setId(1L);
+        InstrumentTypeMaster request = createRequest("CHANGED", "Stratocaster Guitar", "Stratocaster", "Stratocaster");
+        when(instrumentTypeMasterRepository.findById(1L)).thenReturn(Optional.of(current));
+        when(instrumentTypeMasterRepository.save(current)).thenReturn(current);
+        InstrumentTypeMaster result = instrumentTypeMasterService.updateInstrumentTypeMaster(1L, request);
+        assertEquals("ST", result.getInstrumentCode());
+        assertEquals("Stratocaster Guitar", result.getInstrumentName());
+    }
+
+    @Test
+    @DisplayName("未使用ならボディタイプとネックタイプを更新できる")
+    void updateInstrumentTypeMaster_whenUnused_updatesTypes() {
+        InstrumentTypeMaster current = createInstrumentType("DUO", "Duo-Sonic", true);
+        current.setId(2L);
+        InstrumentTypeMaster request = createRequest("OTHER", "Duo-Sonic", "Duo Body", "Duo Neck");
+        when(instrumentTypeMasterRepository.findById(2L)).thenReturn(Optional.of(current));
+        when(productRepository.existsByInternalModelCodeEndingWithIgnoreCase("-DUO")).thenReturn(false);
+        when(instrumentTypeMasterRepository.save(current)).thenReturn(current);
+        InstrumentTypeMaster result = instrumentTypeMasterService.updateInstrumentTypeMaster(2L, request);
+        assertEquals("DUO", result.getInstrumentCode());
+        assertEquals("Duo Body", result.getBodyType());
+        assertEquals("Duo Neck", result.getNeckType());
+    }
+
+    @Test
+    @DisplayName("使用中ならボディタイプ変更を拒否する")
+    void updateInstrumentTypeMaster_whenUsed_rejectsBodyTypeChange() {
+        InstrumentTypeMaster current = createInstrumentType("ST", "Stratocaster", true);
+        current.setId(1L);
+        InstrumentTypeMaster request = createRequest("ST", "Stratocaster", "Changed Body", "Stratocaster");
+        when(instrumentTypeMasterRepository.findById(1L)).thenReturn(Optional.of(current));
+        when(productRepository.existsByInternalModelCodeEndingWithIgnoreCase("-ST")).thenReturn(true);
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> instrumentTypeMasterService.updateInstrumentTypeMaster(1L, request));
+        assertTrue(exception.getMessage().contains("Productで使用中"));
+        verify(instrumentTypeMasterRepository, never()).save(current);
+    }
+
+    @Test
+    @DisplayName("使用中ならネックタイプ変更を拒否する")
+    void updateInstrumentTypeMaster_whenUsed_rejectsNeckTypeChange() {
+        InstrumentTypeMaster current = createInstrumentType("ST", "Stratocaster", true);
+        current.setId(1L);
+        InstrumentTypeMaster request = createRequest("ST", "Stratocaster", "Stratocaster", "Changed Neck");
+        when(instrumentTypeMasterRepository.findById(1L)).thenReturn(Optional.of(current));
+        when(productRepository.existsByInternalModelCodeEndingWithIgnoreCase("-ST")).thenReturn(true);
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> instrumentTypeMasterService.updateInstrumentTypeMaster(1L, request));
+        assertTrue(exception.getMessage().contains("Productで使用中"));
+    }
+
+    @Test
+    @DisplayName("楽器タイプの有効状態を切り替えられる")
+    void toggleInstrumentTypeMasterActive_togglesState() {
+        InstrumentTypeMaster current = createInstrumentType("ST", "Stratocaster", true);
+        current.setId(1L);
+        when(instrumentTypeMasterRepository.findById(1L)).thenReturn(Optional.of(current));
+        when(instrumentTypeMasterRepository.save(current)).thenReturn(current);
+        InstrumentTypeMaster result = instrumentTypeMasterService.toggleInstrumentTypeMasterActive(1L);
+        assertEquals(Boolean.FALSE, result.getActive());
+    }
+
+    @Test
+    @DisplayName("存在しないIDの更新を拒否する")
+    void updateInstrumentTypeMaster_withUnknownId_throws() {
+        when(instrumentTypeMasterRepository.findById(999L)).thenReturn(Optional.empty());
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> instrumentTypeMasterService.updateInstrumentTypeMaster(
+                        999L, createRequest("ST", "Stratocaster", "Stratocaster", "Stratocaster")));
+        assertTrue(exception.getMessage().contains("存在しません"));
     }
 
     private InstrumentTypeMaster createInstrumentType(

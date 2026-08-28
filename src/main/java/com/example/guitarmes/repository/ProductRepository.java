@@ -39,4 +39,7 @@ public interface ProductRepository
     List<Product>
             findByInternalModelCodeIgnoreCaseOrderByColorAscFingerboardMaterialAsc(
                     String internalModelCode);
+
+    boolean existsByInternalModelCodeEndingWithIgnoreCase(
+            String instrumentCodeSuffix);
 }

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楽器タイプマスタ編集</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('楽器タイプマスタ編集')}"></div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            楽器タイプの表示名と部材タイプを編集します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline" th:href="@{/instrument-types/view}">
+                楽器タイプ一覧へ戻る
+            </a>
+        </div>
+    </div>
+    <form th:action="@{/instrument-types/{id}/edit(id=${instrumentTypeId})}"
+          th:object="${request}" method="post" class="form-container">
+        <div th:if="${errorMessage}" class="error-message" role="alert">
+            <div class="error-message-title">入力内容を確認してください</div>
+            <p class="error-message-text" th:text="${errorMessage}"></p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Instrument Type Master</p>
+                    <h2 class="form-section-title">楽器タイプ基本情報</h2>
+                </div>
+                <p class="form-section-description">
+                    Productで使用中の場合、ボディタイプとネックタイプは変更できません。
+                </p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="instrumentCode" class="form-label">楽器タイプコード</label>
+                    <input type="text" id="instrumentCode"
+                           th:field="*{instrumentCode}" class="form-input" readonly>
+                    <p class="form-help">内部モデルコードに使用されるため変更できません。</p>
+                </div>
+                <div class="form-group">
+                    <label for="instrumentName" class="form-label">楽器タイプ名</label>
+                    <input type="text" id="instrumentName"
+                           th:field="*{instrumentName}" class="form-input"
+                           maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="bodyType" class="form-label">ボディタイプ</label>
+                    <input type="text" id="bodyType"
+                           th:field="*{bodyType}" class="form-input"
+                           maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="neckType" class="form-label">ネックタイプ</label>
+                    <input type="text" id="neckType"
+                           th:field="*{neckType}" class="form-input"
+                           maxlength="100" required>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline" th:href="@{/instrument-types/view}">キャンセル</a>
+            <button type="submit" class="btn btn-primary">変更内容を保存</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

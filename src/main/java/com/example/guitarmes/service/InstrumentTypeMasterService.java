@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.repository.InstrumentTypeMasterRepository;
+import com.example.guitarmes.repository.ProductRepository;
 
 @Service
 public class InstrumentTypeMasterService {
@@ -16,12 +17,16 @@ public class InstrumentTypeMasterService {
     private final InstrumentTypeMasterRepository
             instrumentTypeMasterRepository;
 
+    private final ProductRepository productRepository;
+
     public InstrumentTypeMasterService(
             InstrumentTypeMasterRepository
-                    instrumentTypeMasterRepository) {
+                    instrumentTypeMasterRepository,
+            ProductRepository productRepository) {
 
         this.instrumentTypeMasterRepository =
                 instrumentTypeMasterRepository;
+        this.productRepository = productRepository;
     }
 
     public List<InstrumentTypeMaster>
@@ -150,6 +155,93 @@ public class InstrumentTypeMasterService {
         }
 
         return requestedType;
+    }
+
+    public InstrumentTypeMaster
+            getInstrumentTypeMasterById(
+                    Long id) {
+
+        if (id == null) {
+            throw new BusinessException(
+                    "楽器タイプIDが指定されていません。");
+        }
+
+        return instrumentTypeMasterRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new BusinessException(
+                                "指定された楽器タイプが存在しません。"));
+    }
+
+    @Transactional
+    public InstrumentTypeMaster
+            updateInstrumentTypeMaster(
+                    Long id,
+                    InstrumentTypeMaster request) {
+
+        if (request == null) {
+            throw new BusinessException(
+                    "楽器タイプ情報が指定されていません。");
+        }
+
+        InstrumentTypeMaster current =
+                getInstrumentTypeMasterById(id);
+
+        String instrumentName = normalizeRequired(
+                request.getInstrumentName(),
+                "楽器タイプ名");
+        String bodyType = normalizeRequired(
+                request.getBodyType(),
+                "ボディタイプ");
+        String neckType = normalizeRequired(
+                request.getNeckType(),
+                "ネックタイプ");
+
+        validateLength(instrumentName, "楽器タイプ名", 100);
+        validateLength(bodyType, "ボディタイプ", 100);
+        validateLength(neckType, "ネックタイプ", 100);
+
+        boolean bodyTypeChanged =
+                !current.getBodyType()
+                        .equalsIgnoreCase(bodyType);
+        boolean neckTypeChanged =
+                !current.getNeckType()
+                        .equalsIgnoreCase(neckType);
+
+        if ((bodyTypeChanged || neckTypeChanged)
+                && isUsedByProduct(
+                        current.getInstrumentCode())) {
+            throw new BusinessException(
+                    "この楽器タイプはProductで使用中のため、"
+                    + "ボディタイプとネックタイプを変更できません。"
+                    + "楽器タイプ名のみ変更できます。");
+        }
+
+        current.setInstrumentName(instrumentName);
+        current.setBodyType(bodyType);
+        current.setNeckType(neckType);
+
+        return instrumentTypeMasterRepository.save(current);
+    }
+
+    @Transactional
+    public InstrumentTypeMaster
+            toggleInstrumentTypeMasterActive(
+                    Long id) {
+
+        InstrumentTypeMaster current =
+                getInstrumentTypeMasterById(id);
+        current.setActive(
+                !Boolean.TRUE.equals(current.getActive()));
+        return instrumentTypeMasterRepository.save(current);
+    }
+
+    private boolean isUsedByProduct(
+            String instrumentCode) {
+
+        return productRepository
+                .existsByInternalModelCodeEndingWithIgnoreCase(
+                        "-" + instrumentCode);
     }
 
     @Transactional

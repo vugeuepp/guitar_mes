@@ -54,6 +54,7 @@
                     <th>ボディタイプ</th>
                     <th>ネックタイプ</th>
                     <th>状態</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -80,6 +81,21 @@
                               class="status-badge status-unknown">
                             無効
                         </span>
+                    </td>
+                    <td>
+                        <div class="page-toolbar-actions">
+                            <a class="btn btn-outline"
+                               th:href="@{/instrument-types/{id}/edit(id=${instrumentType.id})}">
+                                編集
+                            </a>
+                            <form th:action="@{/instrument-types/{id}/toggle-active(id=${instrumentType.id})}"
+                                  method="post">
+                                <button type="submit"
+                                        class="btn btn-secondary"
+                                        th:text="${instrumentType.active ? '無効化' : '有効化'}">
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             </tbody>
