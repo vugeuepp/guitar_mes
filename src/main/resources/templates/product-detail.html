@@ -40,6 +40,48 @@
 
     </div>
 
+    <section class="detail-section product-image-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">Product Image</p>
+                <h2 class="detail-section-title">製品代表画像</h2>
+            </div>
+        </div>
+        <div th:if="${imageErrorMessage}"
+             class="error-message" role="alert">
+            <p class="error-message-text"
+               th:text="${imageErrorMessage}"></p>
+        </div>
+        <div class="product-image-layout">
+            <div class="product-image-preview">
+                <img th:if="${not #strings.isEmpty(product.imageFileName)}"
+                     th:src="@{/product-images/{fileName}(fileName=${product.imageFileName})}"
+                     th:alt="${product.productName}"
+                     class="product-detail-image">
+                <div th:if="${#strings.isEmpty(product.imageFileName)}"
+                     class="product-image-placeholder">
+                    画像未登録
+                </div>
+            </div>
+            <div class="product-image-actions">
+                <form th:action="@{/products/{id}/image(id=${product.id})}"
+                      method="post" enctype="multipart/form-data">
+                    <label for="imageFile" class="form-label">画像ファイル</label>
+                    <input type="file" id="imageFile" name="imageFile"
+                           class="form-input" accept="image/jpeg,image/png,image/webp" required>
+                    <p class="form-help">JPEG、PNG、WebP形式、5MB以下。</p>
+                    <button type="submit" class="btn btn-primary">
+                        <span th:text="${#strings.isEmpty(product.imageFileName) ? '画像を登録' : '画像を差し替え'}"></span>
+                    </button>
+                </form>
+                <form th:if="${not #strings.isEmpty(product.imageFileName)}"
+                      th:action="@{/products/{id}/image/delete(id=${product.id})}"
+                      method="post">
+                    <button type="submit" class="btn btn-outline">画像を削除</button>
+                </form>
+            </div>
+        </div>
+    </section>
     <section class="detail-section">
 
         <div class="detail-section-heading">

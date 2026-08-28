@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
@@ -23,6 +24,7 @@ import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.InstrumentTypeMasterService;
 import com.example.guitarmes.service.ProductSeriesMasterService;
 import com.example.guitarmes.service.ProductService;
+import com.example.guitarmes.service.ProductImageService;
 
 @Controller
 public class ProductViewController {
@@ -36,6 +38,7 @@ public class ProductViewController {
 
     private final InstrumentTypeMasterService
             instrumentTypeMasterService;
+    private final ProductImageService productImageService;
 
     public ProductViewController(
             ProductService productService,
@@ -43,7 +46,8 @@ public class ProductViewController {
             ProductSeriesMasterService
                     productSeriesMasterService,
             InstrumentTypeMasterService
-                    instrumentTypeMasterService) {
+                    instrumentTypeMasterService,
+            ProductImageService productImageService) {
 
         this.productService = productService;
         this.guitarService = guitarService;
@@ -51,6 +55,7 @@ public class ProductViewController {
                 productSeriesMasterService;
         this.instrumentTypeMasterService =
                 instrumentTypeMasterService;
+        this.productImageService = productImageService;
     }
 
     @GetMapping("/products/view")
@@ -118,6 +123,39 @@ public class ProductViewController {
         return "product-detail";
     }
 
+    @PostMapping("/products/{id}/image")
+    public String uploadProductImage(
+            @PathVariable Long id,
+            @RequestParam("imageFile")
+            MultipartFile imageFile,
+            Model model) {
+
+        try {
+            productImageService.saveProductImage(
+                    id,
+                    imageFile);
+            return "redirect:/products/"
+                    + id
+                    + "/view";
+        } catch (BusinessException exception) {
+            addProductDetailAttributes(id, model);
+            model.addAttribute(
+                    "imageErrorMessage",
+                    exception.getMessage());
+            return "product-detail";
+        }
+    }
+
+    @PostMapping("/products/{id}/image/delete")
+    public String deleteProductImage(
+            @PathVariable Long id) {
+
+        productImageService.deleteProductImage(id);
+        return "redirect:/products/"
+                + id
+                + "/view";
+    }
+
     @GetMapping("/products/{id}/edit")
     public String editProductForm(
             @PathVariable Long id,
@@ -175,6 +213,18 @@ public class ProductViewController {
 
             return "product-edit-form";
         }
+    }
+
+    private void addProductDetailAttributes(
+            Long id,
+            Model model) {
+
+        model.addAttribute(
+                "product",
+                productService.getProductById(id));
+        model.addAttribute(
+                "guitars",
+                guitarService.getGuitarsByProductId(id));
     }
 
     private void addNewProductFormOptions(

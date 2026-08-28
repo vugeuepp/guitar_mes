@@ -39,6 +39,11 @@ public class Product {
 
     private String scale;
 
+    @Column(
+            name = "image_file_name",
+            length = 255)
+    private String imageFileName;
+
     @ManyToOne
     @JoinColumn(name = "body_master_id")
     private BodyMaster bodyMaster;
@@ -213,6 +218,15 @@ public class Product {
             String scale) {
 
         this.scale = scale;
+    }
+
+    public String getImageFileName() {
+        return imageFileName;
+    }
+
+    public void setImageFileName(
+            String imageFileName) {
+        this.imageFileName = imageFileName;
     }
 
     public BodyMaster getBodyMaster() {
