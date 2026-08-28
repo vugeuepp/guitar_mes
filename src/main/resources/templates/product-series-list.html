@@ -70,6 +70,7 @@
                     <th>シリーズコード</th>
                     <th>シリーズ名</th>
                     <th>状態</th>
+                    <th>操作</th>
                 </tr>
             </thead>
 
@@ -101,6 +102,22 @@
                             無効
                         </span>
 
+                    </td>
+
+                    <td>
+                        <div class="page-toolbar-actions">
+                            <a class="btn btn-outline"
+                               th:href="@{/product-series/{id}/edit(id=${series.id})}">
+                                編集
+                            </a>
+                            <form th:action="@{/product-series/{id}/toggle-active(id=${series.id})}"
+                                  method="post">
+                                <button type="submit"
+                                        class="btn btn-secondary"
+                                        th:text="${series.active ? '無効化' : '有効化'}">
+                                </button>
+                            </form>
+                        </div>
                     </td>
 
                 </tr>

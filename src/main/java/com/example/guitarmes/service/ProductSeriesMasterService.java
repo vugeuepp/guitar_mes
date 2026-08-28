@@ -139,6 +139,57 @@ public class ProductSeriesMasterService {
         return requestedSeries;
     }
 
+    public ProductSeriesMaster
+            getProductSeriesMasterById(
+                    Long id) {
+
+        if (id == null) {
+            throw new BusinessException(
+                    "製品シリーズIDが指定されていません。");
+        }
+
+        return productSeriesMasterRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new BusinessException(
+                                "指定された製品シリーズが存在しません。"));
+    }
+
+    @Transactional
+    public ProductSeriesMaster
+            updateProductSeriesMaster(
+                    Long id,
+                    ProductSeriesMaster request) {
+
+        if (request == null) {
+            throw new BusinessException(
+                    "製品シリーズ情報が指定されていません。");
+        }
+
+        ProductSeriesMaster current =
+                getProductSeriesMasterById(id);
+        String seriesName =
+                normalizeRequired(
+                        request.getSeriesName(),
+                        "シリーズ名");
+        validateSeriesNameLength(seriesName);
+
+        current.setSeriesName(seriesName);
+        return productSeriesMasterRepository.save(current);
+    }
+
+    @Transactional
+    public ProductSeriesMaster
+            toggleProductSeriesMasterActive(
+                    Long id) {
+
+        ProductSeriesMaster current =
+                getProductSeriesMasterById(id);
+        current.setActive(
+                !Boolean.TRUE.equals(current.getActive()));
+        return productSeriesMasterRepository.save(current);
+    }
+
     @Transactional
     public ProductSeriesMaster
             createProductSeriesMaster(
@@ -158,6 +209,7 @@ public class ProductSeriesMasterService {
                 normalizeRequired(
                         request.getSeriesName(),
                         "シリーズ名");
+        validateSeriesNameLength(seriesName);
 
         if (productSeriesMasterRepository
                 .existsBySeriesCodeIgnoreCase(
@@ -236,6 +288,16 @@ public class ProductSeriesMasterService {
         }
 
         return normalized;
+    }
+
+    private void validateSeriesNameLength(
+            String seriesName) {
+
+        if (seriesName.length() > 150) {
+            throw new BusinessException(
+                    "シリーズ名は150文字以内で"
+                    + "入力してください。");
+        }
     }
 
     private String normalizeRequired(

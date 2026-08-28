@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.example.guitarmes.entity.ProductSeriesMaster;
@@ -68,4 +69,47 @@ public class ProductSeriesMasterViewController {
             return "product-series-form";
         }
     }
+    @GetMapping("/product-series/{id}/edit")
+    public String editProductSeriesForm(
+            @PathVariable Long id,
+            Model model) {
+
+        model.addAttribute(
+                "request",
+                productSeriesMasterService
+                        .getProductSeriesMasterById(id));
+        model.addAttribute("productSeriesId", id);
+        return "product-series-edit-form";
+    }
+
+    @PostMapping("/product-series/{id}/edit")
+    public String updateProductSeries(
+            @PathVariable Long id,
+            @ModelAttribute("request")
+            ProductSeriesMaster request,
+            Model model) {
+
+        try {
+            productSeriesMasterService
+                    .updateProductSeriesMaster(id, request);
+            return "redirect:/product-series/view";
+        } catch (BusinessException exception) {
+            request.setId(id);
+            model.addAttribute("productSeriesId", id);
+            model.addAttribute(
+                    "errorMessage",
+                    exception.getMessage());
+            return "product-series-edit-form";
+        }
+    }
+
+    @PostMapping("/product-series/{id}/toggle-active")
+    public String toggleProductSeriesActive(
+            @PathVariable Long id) {
+
+        productSeriesMasterService
+                .toggleProductSeriesMasterActive(id);
+        return "redirect:/product-series/view";
+    }
+
 }

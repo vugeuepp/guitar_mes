@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>製品シリーズマスタ編集</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('製品シリーズマスタ編集')}"></div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">製品シリーズの表示名を編集します。</p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline" th:href="@{/product-series/view}">製品シリーズ一覧へ戻る</a>
+        </div>
+    </div>
+    <form th:action="@{/product-series/{id}/edit(id=${productSeriesId})}"
+          th:object="${request}" method="post" class="form-container">
+        <div th:if="${errorMessage}" class="error-message" role="alert" aria-live="polite">
+            <div class="error-message-title">入力内容を確認してください</div>
+            <p class="error-message-text" th:text="${errorMessage}"></p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Product Series Master</p>
+                    <h2 class="form-section-title">シリーズ基本情報</h2>
+                </div>
+                <p class="form-section-description">シリーズコードは内部モデルコードに使用されるため変更できません。</p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="seriesCode" class="form-label">シリーズコード</label>
+                    <input type="text" id="seriesCode" th:field="*{seriesCode}"
+                           class="form-input" readonly>
+                    <p class="form-help">登録後のシリーズコードは変更できません。</p>
+                </div>
+                <div class="form-group">
+                    <label for="seriesName" class="form-label">シリーズ名</label>
+                    <input type="text" id="seriesName" th:field="*{seriesName}"
+                           class="form-input" maxlength="150" required>
+                    <p class="form-help">Product登録・編集画面に表示するシリーズ名です。</p>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline" th:href="@{/product-series/view}">キャンセル</a>
+            <button type="submit" class="btn btn-primary">変更内容を保存</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>
