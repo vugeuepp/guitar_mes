@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        楽器タイプマスタ登録
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace=
+     "~{fragments/header :: header('楽器タイプマスタ登録')}">
+</div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            Product登録で使用する楽器タイプを
+            新しく追加します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/instrument-types/view}">
+                楽器タイプ一覧へ戻る
+            </a>
+        </div>
+    </div>
+    <form th:action="@{/instrument-types/create}"
+          th:object="${request}"
+          method="post"
+          class="form-container">
+        <div th:if="${errorMessage}"
+             class="error-message"
+             role="alert"
+             aria-live="polite">
+            <div class="error-message-title">
+                入力内容を確認してください
+            </div>
+            <p class="error-message-text"
+               th:text="${errorMessage}">
+            </p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Instrument Type Master
+                    </p>
+                    <h2 class="form-section-title">
+                        楽器タイプ基本情報
+                    </h2>
+                </div>
+                <p class="form-section-description">
+                    内部モデルコードと部材タイプの決定に使用する
+                    楽器タイプ情報を入力してください。
+                </p>
+            </div>
+            <div class="information-message">
+                <p>
+                    楽器タイプコードは製品シリーズコードと組み合わせ、
+                    MES内部モデルコードを生成します。
+                </p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="instrumentCode"
+                           class="form-label">
+                        楽器タイプコード
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+                    <input type="text"
+                           id="instrumentCode"
+                           th:field="*{instrumentCode}"
+                           class="form-input"
+                           placeholder="DUO"
+                           maxlength="20"
+                           autocomplete="off"
+                           required>
+                    <p class="form-help">
+                        半角英数字とハイフンで入力してください。
+                        英字は保存時に大文字へ統一されます。
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="instrumentName"
+                           class="form-label">
+                        楽器タイプ名
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+                    <input type="text"
+                           id="instrumentName"
+                           th:field="*{instrumentName}"
+                           class="form-input"
+                           placeholder="Duo-Sonic"
+                           maxlength="100"
+                           autocomplete="off"
+                           required>
+                    <p class="form-help">
+                        Product登録画面の選択肢として表示する
+                        楽器タイプ名を入力してください。
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="bodyType"
+                           class="form-label">
+                        ボディタイプ
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+                    <input type="text"
+                           id="bodyType"
+                           th:field="*{bodyType}"
+                           class="form-input"
+                           placeholder="Duo-Sonic"
+                           maxlength="100"
+                           autocomplete="off"
+                           required>
+                    <p class="form-help">
+                        Product登録時に自動設定する
+                        ボディタイプを入力してください。
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="neckType"
+                           class="form-label">
+                        ネックタイプ
+                        <span class="form-required">
+                            必須
+                        </span>
+                    </label>
+                    <input type="text"
+                           id="neckType"
+                           th:field="*{neckType}"
+                           class="form-input"
+                           placeholder="Duo-Sonic"
+                           maxlength="100"
+                           autocomplete="off"
+                           required>
+                    <p class="form-help">
+                        Product登録時に自動設定する
+                        ネックタイプを入力してください。
+                    </p>
+                </div>
+            </div>
+        </section>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">
+                        Registration Preview
+                    </p>
+                    <h2 class="form-section-title">
+                        登録内容プレビュー
+                    </h2>
+                </div>
+                <p class="form-section-description">
+                    入力内容と内部モデルコードでの
+                    使用例を確認できます。
+                </p>
+            </div>
+            <div class="detail-grid detail-grid-2col">
+                <div class="detail-item">
+                    <div class="detail-label">
+                        楽器タイプコード
+                    </div>
+                    <div class="detail-value"
+                         id="instrumentCodePreview">
+                        未入力
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">
+                        MIJ-HER50との組み合わせ例
+                    </div>
+                    <div class="detail-value"
+                         id="internalModelCodePreview">
+                        未入力
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">
+                        ボディタイプ
+                    </div>
+                    <div class="detail-value"
+                         id="bodyTypePreview">
+                        未入力
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">
+                        ネックタイプ
+                    </div>
+                    <div class="detail-value"
+                         id="neckTypePreview">
+                        未入力
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline"
+               th:href="@{/instrument-types/view}">
+                キャンセル
+            </a>
+            <button type="submit"
+                    class="btn btn-primary">
+                楽器タイプを登録
+            </button>
+        </div>
+    </form>
+</main>
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const instrumentCodeInput =
+                document.getElementById(
+                    "instrumentCode"
+                );
+            const bodyTypeInput =
+                document.getElementById(
+                    "bodyType"
+                );
+            const neckTypeInput =
+                document.getElementById(
+                    "neckType"
+                );
+            const instrumentCodePreview =
+                document.getElementById(
+                    "instrumentCodePreview"
+                );
+            const internalModelCodePreview =
+                document.getElementById(
+                    "internalModelCodePreview"
+                );
+            const bodyTypePreview =
+                document.getElementById(
+                    "bodyTypePreview"
+                );
+            const neckTypePreview =
+                document.getElementById(
+                    "neckTypePreview"
+                );
+
+            function normalizePreviewCode(value) {
+                return value
+                    .trim()
+                    .toUpperCase()
+                    .replace(
+                        /\s+/g,
+                        "-"
+                    );
+            }
+
+            function displayValue(value) {
+                const normalizedValue =
+                    value.trim();
+                return normalizedValue === ""
+                    ? "未入力"
+                    : normalizedValue;
+            }
+
+            function updatePreview() {
+                const instrumentCode =
+                    normalizePreviewCode(
+                        instrumentCodeInput.value
+                    );
+
+                instrumentCodePreview.textContent =
+                    instrumentCode === ""
+                        ? "未入力"
+                        : instrumentCode;
+
+                internalModelCodePreview.textContent =
+                    instrumentCode === ""
+                        ? "未入力"
+                        : "MIJ-HER50-" + instrumentCode;
+
+                bodyTypePreview.textContent =
+                    displayValue(
+                        bodyTypeInput.value
+                    );
+
+                neckTypePreview.textContent =
+                    displayValue(
+                        neckTypeInput.value
+                    );
+            }
+
+            instrumentCodeInput.addEventListener(
+                "input",
+                updatePreview
+            );
+            bodyTypeInput.addEventListener(
+                "input",
+                updatePreview
+            );
+            neckTypeInput.addEventListener(
+                "input",
+                updatePreview
+            );
+
+            updatePreview();
+        }
+    );
+</script>
+</body>
+</html>

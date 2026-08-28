@@ -17,11 +17,11 @@ import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.master.BodyMaterialType;
 import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
-import com.example.guitarmes.master.InstrumentType;
 import com.example.guitarmes.master.NeckMaterialType;
-import com.example.guitarmes.master.ProductSeries;
 import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.service.GuitarService;
+import com.example.guitarmes.service.InstrumentTypeMasterService;
+import com.example.guitarmes.service.ProductSeriesMasterService;
 import com.example.guitarmes.service.ProductService;
 
 @Controller
@@ -31,12 +31,26 @@ public class ProductViewController {
 
     private final GuitarService guitarService;
 
+    private final ProductSeriesMasterService
+            productSeriesMasterService;
+
+    private final InstrumentTypeMasterService
+            instrumentTypeMasterService;
+
     public ProductViewController(
             ProductService productService,
-            GuitarService guitarService) {
+            GuitarService guitarService,
+            ProductSeriesMasterService
+                    productSeriesMasterService,
+            InstrumentTypeMasterService
+                    instrumentTypeMasterService) {
 
         this.productService = productService;
         this.guitarService = guitarService;
+        this.productSeriesMasterService =
+                productSeriesMasterService;
+        this.instrumentTypeMasterService =
+                instrumentTypeMasterService;
     }
 
     @GetMapping("/products/view")
@@ -71,7 +85,8 @@ public class ProductViewController {
                 "request",
                 request);
 
-        addProductFormOptions(model);
+        addNewProductFormOptions(
+                model);
 
         return "product-form";
     }
@@ -108,16 +123,21 @@ public class ProductViewController {
             @PathVariable Long id,
             Model model) {
 
+        ProductUpdateRequest request =
+                productService.getProductUpdateRequest(
+                        id);
+
         model.addAttribute(
                 "request",
-                productService.getProductUpdateRequest(
-                        id));
-
+                request);
         model.addAttribute(
                 "productId",
                 id);
 
-        addProductFormOptions(model);
+        addEditProductFormOptions(
+                model,
+                request.getProductSeries(),
+                request.getInstrumentType());
 
         return "product-edit-form";
     }
@@ -139,6 +159,7 @@ public class ProductViewController {
                     + "/view";
 
         } catch (BusinessException exception) {
+
             model.addAttribute(
                     "productId",
                     id);
@@ -147,22 +168,55 @@ public class ProductViewController {
                     "errorMessage",
                     exception.getMessage());
 
-            addProductFormOptions(model);
+            addEditProductFormOptions(
+                    model,
+                    request.getProductSeries(),
+                    request.getInstrumentType());
 
             return "product-edit-form";
         }
     }
 
-    private void addProductFormOptions(
+    private void addNewProductFormOptions(
             Model model) {
 
         model.addAttribute(
                 "productSeriesList",
-                ProductSeries.values());
+                productSeriesMasterService
+                        .getActiveProductSeriesMasters());
 
         model.addAttribute(
                 "instrumentTypeList",
-                InstrumentType.values());
+                instrumentTypeMasterService
+                        .getActiveInstrumentTypeMasters());
+
+        addCommonProductFormOptions(
+                model);
+    }
+
+    private void addEditProductFormOptions(
+            Model model,
+            String currentSeriesCode,
+            String currentInstrumentCode) {
+
+        model.addAttribute(
+                "productSeriesList",
+                productSeriesMasterService
+                        .getProductSeriesMastersForEdit(
+                                currentSeriesCode));
+
+        model.addAttribute(
+                "instrumentTypeList",
+                instrumentTypeMasterService
+                        .getInstrumentTypeMastersForEdit(
+                                currentInstrumentCode));
+
+        addCommonProductFormOptions(
+                model);
+    }
+
+    private void addCommonProductFormOptions(
+            Model model) {
 
         model.addAttribute(
                 "bodyMaterialTypeList",

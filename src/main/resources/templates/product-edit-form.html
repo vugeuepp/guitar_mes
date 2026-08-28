@@ -116,9 +116,11 @@
                         </option>
 
                         <option th:each="series : ${productSeriesList}"
-                                th:value="${series.name()}"
-                                th:text="${series.label}"
-                                th:attr="data-code=${series.code}">
+                                th:value="${series.seriesCode}"
+                                th:text="${series.seriesName
+                                    + (series.active ? '' : '（無効）')}"
+                                th:attr="data-code=${series.seriesCode},
+                                         data-active=${series.active}">
                         </option>
 
                     </select>
@@ -151,12 +153,14 @@
                         </option>
 
                         <option th:each="type : ${instrumentTypeList}"
-                                th:value="${type.name()}"
-                                th:text="${type.label}"
+                                th:value="${type.instrumentCode}"
+                                th:text="${type.instrumentName
+                                    + (type.active ? '' : '（無効）')}"
                                 th:attr="
-                                    data-code=${type.code},
+                                    data-code=${type.instrumentCode},
                                     data-body-type=${type.bodyType},
-                                    data-neck-type=${type.neckType}">
+                                    data-neck-type=${type.neckType},
+                                    data-active=${type.active}">
                         </option>
 
                     </select>
@@ -751,20 +755,20 @@
                     productSeriesValue === ""
                             || selectedSeries == null
                         ? ""
-                        : selectedSeries.textContent.trim();
+                        : selectedSeries.textContent
+                            .replace("（無効）", "")
+                            .trim();
 
                 const instrumentLabel =
                     instrumentTypeValue === ""
                             || selectedInstrument == null
                         ? ""
-                        : selectedInstrument.textContent.trim();
+                        : selectedInstrument.textContent.replace("（無効）", "").trim();
 
                 const canGenerateCode =
                     productSeriesValue !== ""
                     && instrumentTypeValue !== ""
-                    && productSeriesValue !== "OTHER"
-                    && instrumentTypeValue !== "OTHER"
-                    && seriesCode !== ""
+                                        && seriesCode !== ""
                     && instrumentCode !== "";
 
                 if (canGenerateCode) {
@@ -783,8 +787,7 @@
                     internalModelCodeInput.value =
                         "";
 
-                    if (productSeriesValue === "OTHER"
-                            || instrumentTypeValue === "OTHER") {
+                    if (false) {
 
                         internalModelCodeHelp.textContent =
                             "「その他」ではMES内部モデルコードを"
@@ -801,9 +804,7 @@
                 const canGenerateProductName =
                     productSeriesValue !== ""
                     && instrumentTypeValue !== ""
-                    && productSeriesValue !== "OTHER"
-                    && instrumentTypeValue !== "OTHER"
-                    && seriesLabel !== ""
+                                        && seriesLabel !== ""
                     && instrumentLabel !== "";
 
                 if (canGenerateProductName) {

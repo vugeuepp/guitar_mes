@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>
+        楽器タイプマスタ一覧
+    </title>
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace=
+     "~{fragments/header :: header('楽器タイプマスタ一覧')}">
+</div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            内部モデルコード、ボディタイプ、
+            ネックタイプの決定に使用する楽器タイプを管理します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-primary"
+               th:href="@{/instrument-types/new}">
+                楽器タイプ登録
+            </a>
+        </div>
+    </div>
+    <div class="information-message">
+        <p>
+            楽器タイプコードは、製品シリーズコードと組み合わせて
+            MES内部モデルコードを生成するために使用します。
+        </p>
+    </div>
+    <div th:if="${#lists.isEmpty(instrumentTypeMasters)}"
+         class="empty-state">
+        <p>
+            登録されている楽器タイプはありません。
+        </p>
+        <a class="btn btn-primary"
+           th:href="@{/instrument-types/new}">
+            最初の楽器タイプを登録
+        </a>
+    </div>
+    <div th:unless="${#lists.isEmpty(instrumentTypeMasters)}"
+         class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>楽器タイプコード</th>
+                    <th>楽器タイプ名</th>
+                    <th>ボディタイプ</th>
+                    <th>ネックタイプ</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="instrumentType :
+                        ${instrumentTypeMasters}">
+                    <td th:text="${instrumentType.id}">
+                    </td>
+                    <td>
+                        <strong th:text="${instrumentType.instrumentCode}">
+                        </strong>
+                    </td>
+                    <td th:text="${instrumentType.instrumentName}">
+                    </td>
+                    <td th:text="${instrumentType.bodyType}">
+                    </td>
+                    <td th:text="${instrumentType.neckType}">
+                    </td>
+                    <td>
+                        <span th:if="${instrumentType.active}"
+                              class="status-badge status-available">
+                            有効
+                        </span>
+                        <span th:unless="${instrumentType.active}"
+                              class="status-badge status-unknown">
+                            無効
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

@@ -1,5 +1,7 @@
 package com.example.guitarmes.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -38,6 +40,105 @@ public class ProductSeriesMasterService {
                 .findByActiveTrueOrderBySeriesNameAsc();
     }
 
+    public List<ProductSeriesMaster>
+            getProductSeriesMastersForEdit(
+                    String currentSeriesCode) {
+
+        List<ProductSeriesMaster> result =
+                new ArrayList<>(
+                        getActiveProductSeriesMasters());
+
+        if (currentSeriesCode == null
+                || currentSeriesCode.isBlank()) {
+            return result;
+        }
+
+        productSeriesMasterRepository
+                .findBySeriesCodeIgnoreCase(
+                        currentSeriesCode.trim())
+                .filter(series ->
+                        !Boolean.TRUE.equals(
+                                series.getActive()))
+                .filter(series ->
+                        result.stream().noneMatch(active ->
+                                active.getSeriesCode()
+                                        .equalsIgnoreCase(
+                                                series.getSeriesCode())))
+                .ifPresent(result::add);
+
+        result.sort(
+                Comparator.comparing(
+                        ProductSeriesMaster::getSeriesName,
+                        String.CASE_INSENSITIVE_ORDER));
+
+        return result;
+    }
+
+    public ProductSeriesMaster
+            getRequiredProductSeriesMaster(
+                    String seriesCode) {
+
+        String normalizedSeriesCode =
+                normalizeSeriesCode(
+                        seriesCode);
+
+        return productSeriesMasterRepository
+                .findBySeriesCodeIgnoreCase(
+                        normalizedSeriesCode)
+                .orElseThrow(() ->
+                        new BusinessException(
+                                "製品シリーズ「"
+                                + normalizedSeriesCode
+                                + "」は登録されていません。"));
+    }
+
+    public ProductSeriesMaster
+            getRequiredActiveProductSeriesMaster(
+                    String seriesCode) {
+
+        ProductSeriesMaster productSeriesMaster =
+                getRequiredProductSeriesMaster(
+                        seriesCode);
+
+        validateActive(
+                productSeriesMaster);
+
+        return productSeriesMaster;
+    }
+
+    public ProductSeriesMaster
+            getRequiredProductSeriesMasterForUpdate(
+                    String requestedSeriesCode,
+                    String currentSeriesCode) {
+
+        ProductSeriesMaster requestedSeries =
+                getRequiredProductSeriesMaster(
+                        requestedSeriesCode);
+
+        if (Boolean.TRUE.equals(
+                requestedSeries.getActive())) {
+            return requestedSeries;
+        }
+
+        String normalizedCurrentSeriesCode =
+                normalizeSeriesCode(
+                        currentSeriesCode);
+
+        if (!requestedSeries.getSeriesCode()
+                .equalsIgnoreCase(
+                        normalizedCurrentSeriesCode)) {
+
+            throw new BusinessException(
+                    "製品シリーズ「"
+                    + requestedSeries.getSeriesName()
+                    + "」は現在無効です。"
+                    + "別の有効な製品シリーズを"
+                    + "選択してください。");
+        }
+
+        return requestedSeries;
+    }
+
     @Transactional
     public ProductSeriesMaster
             createProductSeriesMaster(
@@ -73,15 +174,28 @@ public class ProductSeriesMasterService {
 
         productSeriesMaster.setSeriesCode(
                 seriesCode);
-
         productSeriesMaster.setSeriesName(
                 seriesName);
-
         productSeriesMaster.setActive(
                 true);
 
         return productSeriesMasterRepository.save(
                 productSeriesMaster);
+    }
+
+    private void validateActive(
+            ProductSeriesMaster productSeriesMaster) {
+
+        if (!Boolean.TRUE.equals(
+                productSeriesMaster.getActive())) {
+
+            throw new BusinessException(
+                    "製品シリーズ「"
+                    + productSeriesMaster.getSeriesName()
+                    + "」は現在無効です。"
+                    + "有効な製品シリーズを"
+                    + "選択してください。");
+        }
     }
 
     private String normalizeSeriesCode(

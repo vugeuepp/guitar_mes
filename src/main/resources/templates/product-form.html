@@ -81,11 +81,11 @@
                             選択してください
                         </option>
 
-                        <option th:each="series : ${productSeriesList}"
-                                th:value="${series.name()}"
-                                th:text="${series.label}"
-                                th:attr="data-code=${series.code}">
-                        </option>
+						<option th:each="series : ${productSeriesList}"
+						        th:value="${series.seriesCode}"
+						        th:text="${series.seriesName}"
+						        th:attr="data-code=${series.seriesCode}">
+						</option>
 
                     </select>
 
@@ -117,10 +117,10 @@
                         </option>
 
                         <option th:each="type : ${instrumentTypeList}"
-                                th:value="${type.name()}"
-                                th:text="${type.label}"
+                                th:value="${type.instrumentCode}"
+                                th:text="${type.instrumentName}"
                                 th:attr="
-                                    data-code=${type.code},
+                                    data-code=${type.instrumentCode},
                                     data-body-type=${type.bodyType},
                                     data-neck-type=${type.neckType}">
                         </option>
@@ -269,11 +269,10 @@
 
                     </select>
 
-                    <p class="form-help">
-                        画面ではインチとミリ換算値を表示します。
-                        保存時は既存データと互換性のある
-                        mm形式へ変換されます。
-                    </p>
+					<p class="form-help">
+					    画面ではインチとミリ換算値を表示し、
+					    DBにはインチ値を保存します。
+					</p>
 
                 </div>
 
@@ -956,13 +955,12 @@
                         ? ""
                         : selectedInstrument.textContent.trim();
 
-                const canGenerateCode =
-                    productSeriesValue !== ""
-                    && instrumentTypeValue !== ""
-                    && productSeriesValue !== "OTHER"
-                    && instrumentTypeValue !== "OTHER"
-                    && seriesCode !== ""
-                    && instrumentCode !== "";
+				const canGenerateCode =
+				    productSeriesValue !== ""
+				    && instrumentTypeValue !== ""
+				    && instrumentTypeValue !== "OTHER"
+				    && seriesCode !== ""
+				    && instrumentCode !== "";
 
                 if (canGenerateCode) {
                     internalModelCodeInput.value =
@@ -979,29 +977,17 @@
                 } else {
                     internalModelCodeInput.value =
                         "";
-
-                    if (productSeriesValue === "OTHER"
-                            || instrumentTypeValue === "OTHER") {
-
-                        internalModelCodeHelp.textContent =
-                            "「その他」ではMES内部モデルコードを"
-                            + "自動生成できません。"
-                            + "登録可能な製品シリーズと"
-                            + "楽器タイプを選択してください。";
-                    } else {
-                        internalModelCodeHelp.textContent =
-                            "製品シリーズと楽器タイプを選択すると、"
-                            + "MES内部モデルコードが自動生成されます。";
-                    }
+                    internalModelCodeHelp.textContent =
+                        "製品シリーズと楽器タイプを選択すると、"
+                        + "MES内部モデルコードが自動生成されます。";
                 }
 
-                const canGenerateProductName =
-                    productSeriesValue !== ""
-                    && instrumentTypeValue !== ""
-                    && productSeriesValue !== "OTHER"
-                    && instrumentTypeValue !== "OTHER"
-                    && seriesLabel !== ""
-                    && instrumentLabel !== "";
+				const canGenerateProductName =
+				    productSeriesValue !== ""
+				    && instrumentTypeValue !== ""
+				    && instrumentTypeValue !== "OTHER"
+				    && seriesLabel !== ""
+				    && instrumentLabel !== "";
 
                 if (canGenerateProductName) {
                     productNameInput.value =
@@ -1019,19 +1005,9 @@
                 } else {
                     productNameInput.value =
                         "";
-
-                    if (productSeriesValue === "OTHER"
-                            || instrumentTypeValue === "OTHER") {
-
-                        productNameHelp.textContent =
-                            "「その他」が選択されているため、"
-                            + "製品名を自動補填できません。"
-                            + "製品名を手動で入力してください。";
-                    } else {
-                        productNameHelp.textContent =
-                            "製品シリーズと楽器タイプを選択すると、"
-                            + "製品名の候補が自動補填されます。";
-                    }
+                    productNameHelp.textContent =
+                        "製品シリーズと楽器タイプを選択すると、"
+                        + "製品名の候補が自動補填されます。";
                 }
 
                 if (instrumentTypeValue !== ""
