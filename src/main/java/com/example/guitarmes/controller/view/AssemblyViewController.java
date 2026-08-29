@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.entity.Assembly;
-import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.product.Product;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderService;
 import com.example.guitarmes.service.AssemblyService;

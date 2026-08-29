@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.product;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,13 +10,11 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
 import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.entity.NeckMaster;
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.entity.ProductSeriesMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
@@ -30,7 +28,9 @@ import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.NeckMasterRepository;
-import com.example.guitarmes.repository.ProductRepository;
+import com.example.guitarmes.service.InstrumentTypeMasterService;
+import com.example.guitarmes.service.InternalModelCodeService;
+import com.example.guitarmes.service.ProductSeriesMasterService;
 
 @Service
 public class ProductService {

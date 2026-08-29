@@ -22,13 +22,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
 import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.entity.NeckMaster;
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.entity.ProductSeriesMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.master.BodyMaterialType;
@@ -36,12 +34,15 @@ import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
 import com.example.guitarmes.master.NeckMaterialType;
 import com.example.guitarmes.master.ScaleLengthType;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
+import com.example.guitarmes.product.ProductService;
+import com.example.guitarmes.product.ProductUpdateRequest;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.NeckMasterRepository;
-import com.example.guitarmes.repository.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {

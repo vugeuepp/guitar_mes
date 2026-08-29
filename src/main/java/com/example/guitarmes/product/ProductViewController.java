@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.product;
 
 import java.util.List;
 
@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.guitarmes.dto.ProductUpdateRequest;
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
 import com.example.guitarmes.exception.BusinessException;
@@ -23,7 +22,6 @@ import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.InstrumentTypeMasterService;
 import com.example.guitarmes.service.ProductSeriesMasterService;
-import com.example.guitarmes.service.ProductService;
 import com.example.guitarmes.service.ProductImageService;
 
 @Controller

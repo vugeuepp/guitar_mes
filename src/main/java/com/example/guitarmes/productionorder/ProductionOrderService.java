@@ -9,11 +9,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
 import com.example.guitarmes.repository.GuitarRepository;
-import com.example.guitarmes.repository.ProductRepository;
 
 @Service
 public class ProductionOrderService {

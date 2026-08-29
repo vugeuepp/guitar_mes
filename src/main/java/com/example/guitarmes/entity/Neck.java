@@ -2,6 +2,8 @@ package com.example.guitarmes.entity;
 
 import java.util.List;
 
+import com.example.guitarmes.product.Product;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

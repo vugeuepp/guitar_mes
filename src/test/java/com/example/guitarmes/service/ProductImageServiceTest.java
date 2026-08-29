@@ -26,10 +26,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
-import com.example.guitarmes.repository.ProductRepository;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductImageServiceTest {

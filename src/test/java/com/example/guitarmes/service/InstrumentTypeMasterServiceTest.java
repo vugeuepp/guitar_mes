@@ -21,8 +21,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.product.ProductRepository;
 import com.example.guitarmes.repository.InstrumentTypeMasterRepository;
-import com.example.guitarmes.repository.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class InstrumentTypeMasterServiceTest {

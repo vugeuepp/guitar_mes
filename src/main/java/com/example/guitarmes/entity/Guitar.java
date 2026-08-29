@@ -1,5 +1,6 @@
 package com.example.guitarmes.entity;
 
+import com.example.guitarmes.product.Product;
 import com.example.guitarmes.productionorder.ProductionOrder;
 
 import jakarta.persistence.Entity;

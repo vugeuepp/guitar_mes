@@ -2,7 +2,7 @@ package com.example.guitarmes.productionorder;
 
 import java.time.LocalDate;
 
-import com.example.guitarmes.entity.Product;
+import com.example.guitarmes.product.Product;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

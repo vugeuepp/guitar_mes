@@ -14,10 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
-import com.example.guitarmes.repository.ProductRepository;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
 
 @Service
 public class ProductImageService {
