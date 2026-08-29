@@ -1,7 +1,6 @@
 package com.example.guitarmes.productionorder;
 
-import static com.example.guitarmes.common.ProductionOrderStatusConstants.CANCELLED;
-import static com.example.guitarmes.common.ProductionOrderStatusConstants.PLANNED;
+import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
 
 import java.time.LocalDate;
 import java.util.List;

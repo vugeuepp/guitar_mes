@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.example.guitarmes.assembly.AssemblyResponse;
 import com.example.guitarmes.assembly.AssemblyService;
-import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.service.ProcessService;
+import com.example.guitarmes.process.ManufacturingProcess;
+import com.example.guitarmes.process.ProcessService;
 
 
 @Controller

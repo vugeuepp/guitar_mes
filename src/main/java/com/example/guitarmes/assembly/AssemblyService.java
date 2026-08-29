@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.guitarmes.body.Body;
 import com.example.guitarmes.body.BodyRepository;
 import com.example.guitarmes.common.DateTimeFormatterUtil;
-import com.example.guitarmes.common.ProductionOrderStatusConstants;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.guitar.Guitar;
@@ -20,6 +19,7 @@ import com.example.guitarmes.neck.Neck;
 import com.example.guitarmes.neck.NeckRepository;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
+import com.example.guitarmes.productionorder.ProductionOrderStatusConstants;
 
 @Service
 public class AssemblyService {
