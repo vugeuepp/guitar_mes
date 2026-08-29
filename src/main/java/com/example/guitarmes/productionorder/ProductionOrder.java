@@ -1,6 +1,8 @@
-package com.example.guitarmes.entity;
+package com.example.guitarmes.productionorder;
 
 import java.time.LocalDate;
+
+import com.example.guitarmes.entity.Product;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

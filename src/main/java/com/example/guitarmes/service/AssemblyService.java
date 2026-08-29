@@ -15,13 +15,13 @@ import com.example.guitarmes.entity.Assembly;
 import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.Neck;
-import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.repository.AssemblyRepository;
 import com.example.guitarmes.repository.BodyRepository;
 import com.example.guitarmes.repository.NeckRepository;
-import com.example.guitarmes.repository.ProductionOrderRepository;
 
 @Service
 public class AssemblyService {

@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.productionorder;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -7,12 +7,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.guitarmes.dto.ProductionOrderCreateRequest;
-import com.example.guitarmes.dto.ProductionOrderUpdateRequest;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProductService;
-import com.example.guitarmes.service.ProductionOrderService;
 
 @Controller
 public class ProductionOrderViewController {

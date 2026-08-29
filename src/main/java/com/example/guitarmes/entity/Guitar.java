@@ -1,5 +1,7 @@
 package com.example.guitarmes.entity;
 
+import com.example.guitarmes.productionorder.ProductionOrder;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

@@ -15,9 +15,9 @@ import com.example.guitarmes.common.ProcessConstants;
 import com.example.guitarmes.dto.GuitarProgressResponse;
 import com.example.guitarmes.dto.ProcessCountResponse;
 import com.example.guitarmes.entity.Guitar;
-import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.repository.GuitarRepository;
 
 @Service

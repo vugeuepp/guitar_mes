@@ -22,14 +22,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.dto.ProductionOrderUpdateRequest;
 import com.example.guitarmes.entity.Product;
-import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrderRepository;
+import com.example.guitarmes.productionorder.ProductionOrderService;
+import com.example.guitarmes.productionorder.ProductionOrderUpdateRequest;
 import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.ProductRepository;
-import com.example.guitarmes.repository.ProductionOrderRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductionOrderServiceTest {

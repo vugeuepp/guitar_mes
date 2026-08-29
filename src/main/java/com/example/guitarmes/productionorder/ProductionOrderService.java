@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.productionorder;
 
 import static com.example.guitarmes.common.ProductionOrderStatusConstants.CANCELLED;
 import static com.example.guitarmes.common.ProductionOrderStatusConstants.PLANNED;
@@ -9,14 +9,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.dto.ProductionOrderUpdateRequest;
 import com.example.guitarmes.entity.Product;
-import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.ProductRepository;
-import com.example.guitarmes.repository.ProductionOrderRepository;
 
 @Service
 public class ProductionOrderService {

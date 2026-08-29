@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.entity.Assembly;
 import com.example.guitarmes.entity.Product;
-import com.example.guitarmes.entity.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrderService;
 import com.example.guitarmes.service.AssemblyService;
 import com.example.guitarmes.service.BodyService;
 import com.example.guitarmes.service.NeckService;
-import com.example.guitarmes.service.ProductionOrderService;
 
 @Controller
 public class AssemblyViewController {

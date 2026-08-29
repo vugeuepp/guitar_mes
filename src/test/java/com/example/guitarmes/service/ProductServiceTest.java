@@ -30,18 +30,18 @@ import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.entity.Product;
 import com.example.guitarmes.entity.ProductSeriesMaster;
-import com.example.guitarmes.entity.ProductionOrder;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.master.BodyMaterialType;
 import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
 import com.example.guitarmes.master.NeckMaterialType;
 import com.example.guitarmes.master.ScaleLengthType;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.NeckMasterRepository;
 import com.example.guitarmes.repository.ProductRepository;
-import com.example.guitarmes.repository.ProductionOrderRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
