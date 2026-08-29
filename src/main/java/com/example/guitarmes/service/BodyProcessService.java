@@ -13,18 +13,18 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.body.Body;
+import com.example.guitarmes.body.BodyRepository;
 import com.example.guitarmes.common.DateTimeFormatterUtil;
 import com.example.guitarmes.common.ProcessResultConstants;
 import com.example.guitarmes.common.ProcessTargetConstants;
 import com.example.guitarmes.dto.BodyProcessHistoryResponse;
 import com.example.guitarmes.dto.ComponentProcessAverageTimeResponse;
-import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.entity.BodyProcessHistory;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.repository.BodyProcessHistoryRepository;
-import com.example.guitarmes.repository.BodyRepository;
 import com.example.guitarmes.repository.ManufacturingProcessRepository;
 
 @Service

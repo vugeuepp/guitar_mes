@@ -1,4 +1,4 @@
-package com.example.guitarmes.entity;
+package com.example.guitarmes.body;
 
 import com.example.guitarmes.master.body.BodyMaster;
 

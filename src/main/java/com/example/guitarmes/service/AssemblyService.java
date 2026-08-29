@@ -8,20 +8,20 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.body.Body;
+import com.example.guitarmes.body.BodyRepository;
 import com.example.guitarmes.common.DateTimeFormatterUtil;
 import com.example.guitarmes.common.ProductionOrderStatusConstants;
 import com.example.guitarmes.dto.AssemblyResponse;
 import com.example.guitarmes.entity.Assembly;
-import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.entity.Guitar;
-import com.example.guitarmes.entity.Neck;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.neck.Neck;
+import com.example.guitarmes.neck.NeckRepository;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.repository.AssemblyRepository;
-import com.example.guitarmes.repository.BodyRepository;
-import com.example.guitarmes.repository.NeckRepository;
 
 @Service
 public class AssemblyService {

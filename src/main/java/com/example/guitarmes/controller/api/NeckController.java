@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.guitarmes.dto.NeckCreateRequest;
-import com.example.guitarmes.entity.Neck;
-import com.example.guitarmes.service.NeckService;
+import com.example.guitarmes.neck.Neck;
+import com.example.guitarmes.neck.NeckCreateRequest;
+import com.example.guitarmes.neck.NeckService;
 
 @RestController
 @RequestMapping("/api/necks")

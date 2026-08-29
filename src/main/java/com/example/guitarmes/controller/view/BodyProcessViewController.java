@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.guitarmes.body.BodyService;
 import com.example.guitarmes.service.BodyProcessService;
-import com.example.guitarmes.service.BodyService;
 
 @Controller
 public class BodyProcessViewController {

@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.guitarmes.dto.BodyCreateRequest;
-import com.example.guitarmes.entity.Body;
-import com.example.guitarmes.service.BodyService;
+import com.example.guitarmes.body.Body;
+import com.example.guitarmes.body.BodyCreateRequest;
+import com.example.guitarmes.body.BodyService;
 
 @RestController
 @RequestMapping("/api/bodies")

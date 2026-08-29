@@ -19,13 +19,13 @@ import com.example.guitarmes.common.ProcessTargetConstants;
 import com.example.guitarmes.dto.ComponentProcessAverageTimeResponse;
 import com.example.guitarmes.dto.NeckProcessHistoryResponse;
 import com.example.guitarmes.entity.ManufacturingProcess;
-import com.example.guitarmes.entity.Neck;
 import com.example.guitarmes.entity.NeckProcessHistory;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.neck.Neck;
+import com.example.guitarmes.neck.NeckRepository;
 import com.example.guitarmes.repository.ManufacturingProcessRepository;
 import com.example.guitarmes.repository.NeckProcessHistoryRepository;
-import com.example.guitarmes.repository.NeckRepository;
 
 @Service
 public class NeckProcessService {

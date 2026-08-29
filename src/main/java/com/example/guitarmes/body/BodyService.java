@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.body;
 
 import static com.example.guitarmes.common.BodyProcessConstants.*;
 import static com.example.guitarmes.common.StatusConstants.*;
@@ -10,13 +10,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.example.guitarmes.dto.ComponentStatusCountResponse;
-import com.example.guitarmes.entity.Body;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.master.body.BodyMaster;
 import com.example.guitarmes.master.body.BodyMasterRepository;
 import com.example.guitarmes.product.Product;
-import com.example.guitarmes.repository.BodyRepository;
 
 @Service
 public class BodyService {

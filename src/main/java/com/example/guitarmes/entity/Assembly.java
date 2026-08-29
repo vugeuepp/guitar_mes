@@ -2,6 +2,9 @@ package com.example.guitarmes.entity;
 
 import java.time.LocalDateTime;
 
+import com.example.guitarmes.body.Body;
+import com.example.guitarmes.neck.Neck;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

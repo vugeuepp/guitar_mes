@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.neck;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.master.neck.NeckMasterService;
-import com.example.guitarmes.service.NeckService;
 
 @Controller
 public class NeckViewController {
