@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生産計画編集</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('生産計画編集')}"></div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            未着手の生産計画について、対象製品と計画内容を変更します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/{id}/view(id=${order.id})}">
+                詳細へ戻る
+            </a>
+        </div>
+    </div>
+    <form th:action="@{/production-orders/{id}/edit(id=${order.id})}"
+          th:object="${request}" method="post" class="form-container">
+        <div th:if="${errorMessage}" class="error-message" role="alert">
+            <div class="error-message-title">入力内容を確認してください</div>
+            <p class="error-message-text" th:text="${errorMessage}"></p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Production Order</p>
+                    <h2 class="form-section-title" th:text="${order.orderNo}"></h2>
+                </div>
+                <p class="form-section-description">
+                    生産指示番号、着手数、完成数、状態は変更できません。
+                </p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="productId" class="form-label">
+                        対象製品 <span class="form-required">必須</span>
+                    </label>
+                    <select id="productId" th:field="*{productId}"
+                            class="form-select" required>
+                        <option value="">選択してください</option>
+                        <option th:each="product : ${products}"
+                                th:value="${product.id}"
+                                th:text="${product.modelNo + ' / ' + product.productName + ' / ' + product.color + ' / ' + product.fingerboardMaterial}">
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="plannedQuantity" class="form-label">
+                        計画数 <span class="form-required">必須</span>
+                    </label>
+                    <div class="form-input-with-unit">
+                        <input type="number" id="plannedQuantity"
+                               th:field="*{plannedQuantity}" class="form-input"
+                               min="1" required>
+                        <span class="form-input-unit">台</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="plannedStartDate" class="form-label">開始予定日</label>
+                    <input type="date" id="plannedStartDate"
+                           th:field="*{plannedStartDate}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="dueDate" class="form-label">納期</label>
+                    <input type="date" id="dueDate"
+                           th:field="*{dueDate}" class="form-input">
+                    <p class="form-help">開始予定日以降の日付を指定してください。</p>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/{id}/view(id=${order.id})}">
+                キャンセル
+            </a>
+            <button type="submit" class="btn btn-primary">変更内容を保存</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

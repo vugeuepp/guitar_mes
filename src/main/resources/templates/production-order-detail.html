@@ -23,6 +23,19 @@
         </p>
 
         <div class="page-toolbar-actions">
+            <a th:if="${order.status == 'PLANNED' and order.startedQuantity == 0 and order.completedQuantity == 0}"
+               class="btn btn-secondary"
+               th:href="@{/production-orders/{id}/edit(id=${order.id})}">
+                編集
+            </a>
+            <form th:if="${order.status == 'PLANNED' and order.startedQuantity == 0 and order.completedQuantity == 0}"
+                  th:action="@{/production-orders/{id}/cancel(id=${order.id})}"
+                  method="post"
+                  onsubmit="return confirm('この生産計画を中止しますか？');">
+                <button type="submit" class="btn btn-outline">
+                    中止
+                </button>
+            </form>
             <a class="btn btn-outline"
                th:href="@{/production-orders/view}">
                 一覧へ戻る
@@ -30,6 +43,11 @@
         </div>
     </div>
 
+    <div th:if="${errorMessage}"
+         class="error-message"
+         role="alert">
+        <p class="error-message-text" th:text="${errorMessage}"></p>
+    </div>
     <section class="detail-section">
         <div class="detail-section-heading">
             <div>

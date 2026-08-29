@@ -16,6 +16,9 @@ public interface GuitarRepository
     boolean existsByProductId(
             Long productId);
 
+    boolean existsByProductionOrderId(
+            Long productionOrderId);
+
     Optional<Guitar>
             findTopBySerialNoStartingWithOrderBySerialNoDesc(
                     String prefix);
