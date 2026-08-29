@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.assembly;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,12 +8,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.body.BodyService;
-import com.example.guitarmes.entity.Assembly;
 import com.example.guitarmes.neck.NeckService;
 import com.example.guitarmes.product.Product;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderService;
-import com.example.guitarmes.service.AssemblyService;
 
 @Controller
 public class AssemblyViewController {

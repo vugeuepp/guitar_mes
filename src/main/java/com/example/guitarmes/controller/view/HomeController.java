@@ -4,10 +4,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.example.guitarmes.assembly.AssemblyService;
 import com.example.guitarmes.body.BodyService;
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.neck.NeckService;
-import com.example.guitarmes.service.AssemblyService;
 import com.example.guitarmes.service.ProcessService;
 
 @Controller

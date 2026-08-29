@@ -1,4 +1,4 @@
-package com.example.guitarmes.dto;
+package com.example.guitarmes.assembly;
 
 import java.time.LocalDateTime;
 

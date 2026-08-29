@@ -2,7 +2,7 @@ package com.example.guitarmes.neck;
 
 import java.util.List;
 
-import com.example.guitarmes.entity.Assembly;
+import com.example.guitarmes.assembly.Assembly;
 import com.example.guitarmes.master.neck.NeckMaster;
 import com.example.guitarmes.product.Product;
 

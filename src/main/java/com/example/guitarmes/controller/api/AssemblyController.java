@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.guitarmes.dto.AssemblyCreateRequest;
-import com.example.guitarmes.dto.AssemblyResponse;
-import com.example.guitarmes.entity.Assembly;
-import com.example.guitarmes.service.AssemblyService;
+import com.example.guitarmes.assembly.Assembly;
+import com.example.guitarmes.assembly.AssemblyCreateRequest;
+import com.example.guitarmes.assembly.AssemblyResponse;
+import com.example.guitarmes.assembly.AssemblyService;
 
 @RestController
 @RequestMapping("/api/assemblies")
