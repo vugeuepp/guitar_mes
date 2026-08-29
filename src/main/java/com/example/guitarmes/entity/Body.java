@@ -1,5 +1,7 @@
 package com.example.guitarmes.entity;
 
+import com.example.guitarmes.master.body.BodyMaster;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

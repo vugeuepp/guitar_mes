@@ -12,8 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
-import com.example.guitarmes.entity.BodyMaster;
-import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.master.BodyMaterialType;
@@ -21,15 +19,17 @@ import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
 import com.example.guitarmes.master.NeckMaterialType;
 import com.example.guitarmes.master.ScaleLengthType;
+import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.master.body.BodyMasterRepository;
 import com.example.guitarmes.master.instrumenttype.InstrumentTypeMaster;
 import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
+import com.example.guitarmes.master.neck.NeckMaster;
+import com.example.guitarmes.master.neck.NeckMasterRepository;
 import com.example.guitarmes.master.productseries.ProductSeriesMaster;
 import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
-import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.GuitarRepository;
-import com.example.guitarmes.repository.NeckMasterRepository;
 import com.example.guitarmes.service.InternalModelCodeService;
 
 @Service

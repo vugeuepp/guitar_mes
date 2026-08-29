@@ -1,4 +1,4 @@
-package com.example.guitarmes.dto;
+package com.example.guitarmes.master.neck;
 
 public class NeckMasterUpdateRequest {
 

@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 
 import com.example.guitarmes.dto.ComponentStatusCountResponse;
 import com.example.guitarmes.entity.Body;
-import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.master.body.BodyMasterRepository;
 import com.example.guitarmes.product.Product;
-import com.example.guitarmes.repository.BodyMasterRepository;
 import com.example.guitarmes.repository.BodyRepository;
 
 @Service

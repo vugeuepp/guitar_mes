@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.master.body;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.guitarmes.dto.BodyMasterUpdateRequest;
-import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.service.BodyMasterService;
 
 @Controller
 public class BodyMasterController {

@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.master.body;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -19,10 +19,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.dto.BodyMasterUpdateRequest;
-import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.repository.BodyMasterRepository;
+import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.master.body.BodyMasterRepository;
+import com.example.guitarmes.master.body.BodyMasterService;
+import com.example.guitarmes.master.body.BodyMasterUpdateRequest;
 
 @ExtendWith(MockitoExtension.class)
 class BodyMasterServiceTest {

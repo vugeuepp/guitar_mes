@@ -1,14 +1,11 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.master.neck;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.dto.NeckMasterUpdateRequest;
-import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.repository.NeckMasterRepository;
 
 @Service
 public class NeckMasterService {

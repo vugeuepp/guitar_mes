@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.guitarmes.service.BodyMasterService;
+import com.example.guitarmes.master.body.BodyMasterService;
 import com.example.guitarmes.service.BodyService;
 
 @Controller

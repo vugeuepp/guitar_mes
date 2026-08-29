@@ -1,10 +1,8 @@
-package com.example.guitarmes.repository;
+package com.example.guitarmes.master.neck;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.example.guitarmes.entity.NeckMaster;
 
 public interface NeckMasterRepository
         extends JpaRepository<NeckMaster, Long> {

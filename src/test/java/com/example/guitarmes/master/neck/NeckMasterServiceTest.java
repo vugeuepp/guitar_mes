@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.master.neck;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -19,10 +19,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.dto.NeckMasterUpdateRequest;
-import com.example.guitarmes.entity.NeckMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.repository.NeckMasterRepository;
+import com.example.guitarmes.master.neck.NeckMaster;
+import com.example.guitarmes.master.neck.NeckMasterRepository;
+import com.example.guitarmes.master.neck.NeckMasterService;
+import com.example.guitarmes.master.neck.NeckMasterUpdateRequest;
 
 @ExtendWith(MockitoExtension.class)
 class NeckMasterServiceTest {

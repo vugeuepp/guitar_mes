@@ -1,7 +1,7 @@
 package com.example.guitarmes.product;
 
-import com.example.guitarmes.entity.BodyMaster;
-import com.example.guitarmes.entity.NeckMaster;
+import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.master.neck.NeckMaster;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

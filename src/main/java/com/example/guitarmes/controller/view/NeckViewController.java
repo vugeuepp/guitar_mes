@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.guitarmes.service.NeckMasterService;
+import com.example.guitarmes.master.neck.NeckMasterService;
 import com.example.guitarmes.service.NeckService;
 
 @Controller

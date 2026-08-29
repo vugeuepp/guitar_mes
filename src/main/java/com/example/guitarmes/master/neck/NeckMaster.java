@@ -1,4 +1,4 @@
-package com.example.guitarmes.entity;
+package com.example.guitarmes.master.neck;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,14 +1,11 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.master.body;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.dto.BodyMasterUpdateRequest;
-import com.example.guitarmes.entity.BodyMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.repository.BodyMasterRepository;
 
 @Service
 public class BodyMasterService {
