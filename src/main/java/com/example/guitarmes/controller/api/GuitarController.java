@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.guitarmes.dto.GuitarUpdateRequest;
-import com.example.guitarmes.entity.Guitar;
-import com.example.guitarmes.service.GuitarService;
+import com.example.guitarmes.guitar.Guitar;
+import com.example.guitarmes.guitar.GuitarService;
+import com.example.guitarmes.guitar.GuitarUpdateRequest;
 
 @RestController
 @RequestMapping("/api/guitars")

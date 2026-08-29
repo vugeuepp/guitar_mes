@@ -1,4 +1,4 @@
-package com.example.guitarmes.dto;
+package com.example.guitarmes.guitar;
 
 public class GuitarUpdateRequest {
 	private String currentProcess;

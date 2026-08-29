@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.product.ProductService;
-import com.example.guitarmes.service.GuitarService;
 
 @Controller
 public class ProductionOrderViewController {

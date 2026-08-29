@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.guitar;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,7 +9,6 @@ import com.example.guitarmes.dto.AssemblyResponse;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.service.AssemblyService;
-import com.example.guitarmes.service.GuitarService;
 import com.example.guitarmes.service.ProcessService;
 
 

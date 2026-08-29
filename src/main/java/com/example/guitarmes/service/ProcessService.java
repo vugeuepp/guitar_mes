@@ -20,14 +20,14 @@ import com.example.guitarmes.common.ProductionOrderStatusConstants;
 import com.example.guitarmes.dto.ProcessAverageTimeResponse;
 import com.example.guitarmes.dto.ProcessHistoryResponse;
 import com.example.guitarmes.dto.ProcessStatusResponse;
-import com.example.guitarmes.entity.Guitar;
 import com.example.guitarmes.entity.ManufacturingProcess;
 import com.example.guitarmes.entity.ProcessHistory;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.guitar.Guitar;
+import com.example.guitarmes.guitar.GuitarRepository;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
-import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.repository.ManufacturingProcessRepository;
 import com.example.guitarmes.repository.ProcessHistoryRepository;
 

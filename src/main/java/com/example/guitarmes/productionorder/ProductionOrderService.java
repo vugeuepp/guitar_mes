@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.guitar.GuitarRepository;
 import com.example.guitarmes.product.Product;
 import com.example.guitarmes.product.ProductRepository;
-import com.example.guitarmes.repository.GuitarRepository;
 
 @Service
 public class ProductionOrderService {

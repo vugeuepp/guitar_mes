@@ -1,4 +1,4 @@
-package com.example.guitarmes.entity;
+package com.example.guitarmes.guitar;
 
 import com.example.guitarmes.product.Product;
 import com.example.guitarmes.productionorder.ProductionOrder;

@@ -14,6 +14,7 @@ import com.example.guitarmes.dto.ProductVariationCreateRequest;
 import com.example.guitarmes.dto.ProductVariationRequest;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.guitar.GuitarRepository;
 import com.example.guitarmes.master.BodyMaterialType;
 import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
@@ -29,7 +30,6 @@ import com.example.guitarmes.master.productseries.ProductSeriesMaster;
 import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
-import com.example.guitarmes.repository.GuitarRepository;
 import com.example.guitarmes.service.InternalModelCodeService;
 
 @Service
