@@ -19,9 +19,9 @@ import com.example.guitarmes.master.FingerboardMaterialType;
 import com.example.guitarmes.master.FretCountType;
 import com.example.guitarmes.master.NeckMaterialType;
 import com.example.guitarmes.master.ScaleLengthType;
+import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
+import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.service.GuitarService;
-import com.example.guitarmes.service.InstrumentTypeMasterService;
-import com.example.guitarmes.service.ProductSeriesMasterService;
 import com.example.guitarmes.service.ProductImageService;
 
 @Controller

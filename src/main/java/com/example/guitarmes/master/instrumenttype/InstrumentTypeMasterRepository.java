@@ -1,11 +1,9 @@
-package com.example.guitarmes.repository;
+package com.example.guitarmes.master.instrumenttype;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.example.guitarmes.entity.InstrumentTypeMaster;
 
 public interface InstrumentTypeMasterRepository
         extends JpaRepository<InstrumentTypeMaster, Long> {

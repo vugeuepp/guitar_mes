@@ -19,10 +19,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.master.instrumenttype.InstrumentTypeMaster;
+import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterRepository;
+import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
 import com.example.guitarmes.product.ProductRepository;
-import com.example.guitarmes.repository.InstrumentTypeMasterRepository;
 
 @ExtendWith(MockitoExtension.class)
 class InstrumentTypeMasterServiceTest {

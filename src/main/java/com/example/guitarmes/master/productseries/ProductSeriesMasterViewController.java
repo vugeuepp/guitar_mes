@@ -1,4 +1,4 @@
-package com.example.guitarmes.controller.view;
+package com.example.guitarmes.master.productseries;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.guitarmes.entity.ProductSeriesMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.service.ProductSeriesMasterService;
 
 @Controller
 public class ProductSeriesMasterViewController {

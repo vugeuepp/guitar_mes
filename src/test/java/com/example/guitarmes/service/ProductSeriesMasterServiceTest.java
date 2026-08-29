@@ -19,9 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.guitarmes.entity.ProductSeriesMaster;
 import com.example.guitarmes.exception.BusinessException;
-import com.example.guitarmes.repository.ProductSeriesMasterRepository;
+import com.example.guitarmes.master.productseries.ProductSeriesMaster;
+import com.example.guitarmes.master.productseries.ProductSeriesMasterRepository;
+import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 
 @ExtendWith(MockitoExtension.class)
 class ProductSeriesMasterServiceTest {

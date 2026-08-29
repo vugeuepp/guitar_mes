@@ -1,4 +1,4 @@
-package com.example.guitarmes.service;
+package com.example.guitarmes.master.instrumenttype;
 
 import java.util.List;
 import java.util.Locale;
@@ -6,10 +6,8 @@ import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.guitarmes.entity.InstrumentTypeMaster;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.product.ProductRepository;
-import com.example.guitarmes.repository.InstrumentTypeMasterRepository;
 
 @Service
 public class InstrumentTypeMasterService {
