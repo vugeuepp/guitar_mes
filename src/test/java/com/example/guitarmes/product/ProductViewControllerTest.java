@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -265,6 +267,72 @@ class ProductViewControllerTest {
                         "fingerboardMaterialTypeList",
                         "fretCountTypeList",
                         "scaleLengthTypeList"));
+    }
+
+    @Test
+    @DisplayName("製品画像を登録して詳細へリダイレクトできる")
+    void uploadProductImage_succeeds() throws Exception {
+        MockMultipartFile imageFile =
+                new MockMultipartFile(
+                        "imageFile",
+                        "product.jpg",
+                        "image/jpeg",
+                        "image-data".getBytes());
+
+        mockMvc.perform(multipart("/products/10/image")
+                        .file(imageFile))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/products/10/view"));
+
+        verify(productImageService)
+                .saveProductImage(
+                        eq(10L),
+                        any(org.springframework.web.multipart.MultipartFile.class));
+    }
+
+    @Test
+    @DisplayName("製品画像登録時の業務エラーを詳細画面へ表示できる")
+    void uploadProductImage_businessError_returnsDetail()
+            throws Exception {
+
+        MockMultipartFile imageFile =
+                new MockMultipartFile(
+                        "imageFile",
+                        "product.txt",
+                        "text/plain",
+                        "invalid-data".getBytes());
+        Product product = createProduct();
+
+        when(productImageService.saveProductImage(
+                eq(10L),
+                any(org.springframework.web.multipart.MultipartFile.class)))
+                .thenThrow(new BusinessException(
+                        "JPEG、PNG、WebP形式の画像を選択してください。"));
+        when(productService.getProductById(10L))
+                .thenReturn(product);
+        when(guitarService.getGuitarsByProductId(10L))
+                .thenReturn(List.of());
+
+        mockMvc.perform(multipart("/products/10/image")
+                        .file(imageFile))
+                .andExpect(status().isOk())
+                .andExpect(view().name("product-detail"))
+                .andExpect(model().attribute("product", product))
+                .andExpect(model().attribute("guitars", hasSize(0)))
+                .andExpect(model().attribute(
+                        "imageErrorMessage",
+                        "JPEG、PNG、WebP形式の画像を選択してください。"));
+    }
+
+    @Test
+    @DisplayName("製品画像を削除して詳細へリダイレクトできる")
+    void deleteProductImage_succeeds() throws Exception {
+        mockMvc.perform(post("/products/10/image/delete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/products/10/view"));
+
+        verify(productImageService)
+                .deleteProductImage(10L);
     }
 
     private Product createProduct() {
