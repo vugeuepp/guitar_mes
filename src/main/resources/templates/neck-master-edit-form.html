@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ネックマスタ編集</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('ネックマスタ編集')}"></div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            ネックマスタの表示名を編集します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/neck-masters/{id}/view(id=${neckMasterId})}">
+                詳細へ戻る
+            </a>
+        </div>
+    </div>
+    <form th:action="@{/neck-masters/{id}/edit(id=${neckMasterId})}"
+          th:object="${request}" method="post" class="form-container">
+        <div th:if="${errorMessage}" class="error-message"
+             role="alert" aria-live="polite">
+            <div class="error-message-title">入力内容を確認してください</div>
+            <p class="error-message-text" th:text="${errorMessage}"></p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Neck Master</p>
+                    <h2 class="form-section-title">ネックマスタ基本情報</h2>
+                </div>
+                <p class="form-section-description">
+                    識別情報と物理仕様は変更できません。モデル名のみ編集できます。
+                </p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="modelCode" class="form-label">モデルコード</label>
+                    <input type="text" id="modelCode" th:field="*{modelCode}"
+                           class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="productFamilyCode" class="form-label">製品ファミリーコード</label>
+                    <input type="text" id="productFamilyCode"
+                           th:field="*{productFamilyCode}" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="modelName" class="form-label">
+                        モデル名 <span class="form-required">必須</span>
+                    </label>
+                    <input type="text" id="modelName" th:field="*{modelName}"
+                           class="form-input" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                    <label for="neckType" class="form-label">ネックタイプ</label>
+                    <input type="text" id="neckType" th:field="*{neckType}"
+                           class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="neckMaterial" class="form-label">ネック材</label>
+                    <input type="text" id="neckMaterial" th:field="*{neckMaterial}"
+                           class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="fingerboardMaterial" class="form-label">指板材</label>
+                    <input type="text" id="fingerboardMaterial"
+                           th:field="*{fingerboardMaterial}" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="fretCount" class="form-label">フレット数</label>
+                    <input type="number" id="fretCount" th:field="*{fretCount}"
+                           class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="scale" class="form-label">スケール</label>
+                    <div class="form-input-with-unit">
+                        <input type="text" id="scale" th:field="*{scale}"
+                               class="form-input" readonly>
+                        <span class="form-input-unit">インチ</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline"
+               th:href="@{/neck-masters/{id}/view(id=${neckMasterId})}">
+                キャンセル
+            </a>
+            <button type="submit" class="btn btn-primary">変更内容を保存</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

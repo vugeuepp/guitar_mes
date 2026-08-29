@@ -24,6 +24,10 @@
         </p>
 
         <div class="page-toolbar-actions">
+            <a class="btn btn-secondary"
+               th:href="@{/body-masters/{id}/edit(id=${bodyMaster.id})}">
+                編集
+            </a>
             <a class="btn btn-outline"
                th:href="@{/body-masters/view}">
                 ボディマスタ一覧へ戻る
