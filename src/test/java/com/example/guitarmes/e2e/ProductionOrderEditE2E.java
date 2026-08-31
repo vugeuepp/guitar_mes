@@ -66,19 +66,26 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
 
         Locator quantityInput =
                 page.locator("input[name='plannedQuantity']");
+        Locator planMonthInput =
+                page.locator("input[name='planMonth']");
         Locator startDateInput =
                 page.locator("input[name='plannedStartDate']");
         Locator dueDateInput =
                 page.locator("input[name='dueDate']");
 
         assertThat(quantityInput).isVisible();
+        assertThat(planMonthInput).isVisible();
         assertThat(startDateInput).isVisible();
         assertThat(dueDateInput).isVisible();
 
         String originalQuantityText = quantityInput.inputValue();
+        String originalPlanMonth = planMonthInput.inputValue();
         String originalStartDate = startDateInput.inputValue();
         String originalDueDate = dueDateInput.inputValue();
 
+        assertTrue(
+                !originalPlanMonth.isBlank(),
+                "対象月の初期値が空です。");
         assertTrue(
                 !originalStartDate.isBlank(),
                 "生産開始予定日の初期値が空です。");
@@ -112,6 +119,7 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
         } finally {
             restoreOriginalValues(
                     originalQuantity,
+                    originalPlanMonth,
                     originalStartDate,
                     originalDueDate);
         }
@@ -119,6 +127,7 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
 
     private void restoreOriginalValues(
             int originalQuantity,
+            String originalPlanMonth,
             String originalStartDate,
             String originalDueDate) {
 
@@ -139,6 +148,8 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
 
         page.locator("input[name='plannedQuantity']")
                 .fill(String.valueOf(originalQuantity));
+        page.locator("input[name='planMonth']")
+                .fill(originalPlanMonth);
         page.locator("input[name='plannedStartDate']")
                 .fill(originalStartDate);
         page.locator("input[name='dueDate']")

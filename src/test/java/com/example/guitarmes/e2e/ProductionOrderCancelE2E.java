@@ -97,6 +97,8 @@ class ProductionOrderCancelE2E extends PlaywrightTestBase {
         LocalDate startDate = LocalDate.now().plusDays(1);
         LocalDate dueDate = startDate.plusDays(7);
 
+        page.locator("#planMonth")
+                .fill(startDate.toString().substring(0, 7));
         page.locator("#plannedQuantity").fill("1");
         page.locator("#plannedStartDate")
                 .fill(startDate.toString());

@@ -1,0 +1,36 @@
+package com.example.guitarmes.common;
+
+import java.sql.Date;
+import java.time.YearMonth;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+
+@Converter(autoApply = false)
+public class YearMonthDateConverter
+        implements AttributeConverter<YearMonth, Date> {
+
+    @Override
+    public Date convertToDatabaseColumn(
+            YearMonth attribute) {
+
+        if (attribute == null) {
+            return null;
+        }
+
+        return Date.valueOf(
+                attribute.atDay(1));
+    }
+
+    @Override
+    public YearMonth convertToEntityAttribute(
+            Date dbData) {
+
+        if (dbData == null) {
+            return null;
+        }
+
+        return YearMonth.from(
+                dbData.toLocalDate());
+    }
+}

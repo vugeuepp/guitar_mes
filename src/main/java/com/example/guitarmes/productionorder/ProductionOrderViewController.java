@@ -49,6 +49,7 @@ public class ProductionOrderViewController {
         productionOrderService.createProductionOrder(
                 request.getProductId(),
                 request.getPlannedQuantity(),
+                request.getPlanMonth(),
                 request.getPlannedStartDate(),
                 request.getDueDate());
         return "redirect:/production-orders/view";

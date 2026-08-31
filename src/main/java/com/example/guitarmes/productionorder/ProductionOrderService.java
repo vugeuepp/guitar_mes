@@ -3,6 +3,7 @@ package com.example.guitarmes.productionorder;
 import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -50,6 +51,7 @@ public class ProductionOrderService {
                 new ProductionOrderUpdateRequest();
         request.setProductId(order.getProduct().getId());
         request.setPlannedQuantity(order.getPlannedQuantity());
+        request.setPlanMonth(order.getPlanMonth());
         request.setPlannedStartDate(order.getPlannedStartDate());
         request.setDueDate(order.getDueDate());
         return request;
@@ -59,11 +61,13 @@ public class ProductionOrderService {
     public ProductionOrder createProductionOrder(
             Long productId,
             Integer plannedQuantity,
+            YearMonth planMonth,
             LocalDate plannedStartDate,
             LocalDate dueDate) {
         validateRequest(
                 productId,
                 plannedQuantity,
+                planMonth,
                 plannedStartDate,
                 dueDate);
         Product product = getProduct(productId);
@@ -72,6 +76,7 @@ public class ProductionOrderService {
                         generateOrderNo(),
                         product,
                         plannedQuantity,
+                        planMonth,
                         plannedStartDate,
                         dueDate,
                         PLANNED);
@@ -92,12 +97,14 @@ public class ProductionOrderService {
         validateRequest(
                 request.getProductId(),
                 request.getPlannedQuantity(),
+                request.getPlanMonth(),
                 request.getPlannedStartDate(),
                 request.getDueDate());
         Product product = getProduct(request.getProductId());
 
         order.setProduct(product);
         order.setPlannedQuantity(request.getPlannedQuantity());
+        order.setPlanMonth(request.getPlanMonth());
         order.setPlannedStartDate(request.getPlannedStartDate());
         order.setDueDate(request.getDueDate());
         return productionOrderRepository.save(order);
@@ -137,6 +144,7 @@ public class ProductionOrderService {
     private void validateRequest(
             Long productId,
             Integer plannedQuantity,
+            YearMonth planMonth,
             LocalDate plannedStartDate,
             LocalDate dueDate) {
         if (productId == null) {
@@ -147,6 +155,11 @@ public class ProductionOrderService {
             throw new BusinessException(
                     "計画数は1以上で入力してください。");
         }
+        if (planMonth == null) {
+            throw new BusinessException(
+                    "対象月を入力してください。");
+        }
+
         if (plannedStartDate != null
                 && dueDate != null
                 && dueDate.isBefore(plannedStartDate)) {

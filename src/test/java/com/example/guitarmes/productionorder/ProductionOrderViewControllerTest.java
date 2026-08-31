@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +96,7 @@ class ProductionOrderViewControllerTest {
         mockMvc.perform(post("/production-orders/create")
                         .param("productId", "10")
                         .param("plannedQuantity", "20")
+                        .param("planMonth", "2026-09")
                         .param("plannedStartDate", "2026-09-01")
                         .param("dueDate", "2026-09-30"))
                 .andExpect(status().is3xxRedirection())
@@ -104,6 +106,7 @@ class ProductionOrderViewControllerTest {
                 .createProductionOrder(
                         10L,
                         20,
+                        YearMonth.of(2026, 9),
                         startDate,
                         dueDate);
     }
@@ -146,6 +149,11 @@ class ProductionOrderViewControllerTest {
                 .andExpect(model().attribute(
                         "request",
                         org.hamcrest.Matchers.hasProperty(
+                                "planMonth",
+                                is(YearMonth.of(2026, 9)))))
+                .andExpect(model().attribute(
+                        "request",
+                        org.hamcrest.Matchers.hasProperty(
                                 "plannedStartDate",
                                 is(LocalDate.of(2026, 9, 1)))))
                 .andExpect(model().attribute(
@@ -161,6 +169,7 @@ class ProductionOrderViewControllerTest {
         mockMvc.perform(post("/production-orders/1/edit")
                         .param("productId", "10")
                         .param("plannedQuantity", "30")
+                        .param("planMonth", "2026-10")
                         .param("plannedStartDate", "2026-10-01")
                         .param("dueDate", "2026-10-31"))
                 .andExpect(status().is3xxRedirection())
@@ -172,6 +181,8 @@ class ProductionOrderViewControllerTest {
                         org.mockito.ArgumentMatchers.argThat(request ->
                                 request.getProductId().equals(10L)
                                 && request.getPlannedQuantity().equals(30)
+                                && request.getPlanMonth().equals(
+                                        YearMonth.of(2026, 10))
                                 && request.getPlannedStartDate().equals(
                                         LocalDate.of(2026, 10, 1))
                                 && request.getDueDate().equals(
@@ -195,6 +206,7 @@ class ProductionOrderViewControllerTest {
         mockMvc.perform(post("/production-orders/1/edit")
                         .param("productId", "10")
                         .param("plannedQuantity", "0")
+                        .param("planMonth", "2026-09")
                         .param("plannedStartDate", "2026-09-01")
                         .param("dueDate", "2026-09-30"))
                 .andExpect(status().isOk())
@@ -244,6 +256,7 @@ class ProductionOrderViewControllerTest {
                 "PO260001",
                 createProduct(),
                 20,
+                YearMonth.of(2026, 9),
                 LocalDate.of(2026, 9, 1),
                 LocalDate.of(2026, 9, 30),
                 ProductionOrderStatusConstants.PLANNED);
@@ -256,6 +269,7 @@ class ProductionOrderViewControllerTest {
                 new ProductionOrderUpdateRequest();
         request.setProductId(10L);
         request.setPlannedQuantity(20);
+        request.setPlanMonth(YearMonth.of(2026, 9));
         request.setPlannedStartDate(LocalDate.of(2026, 9, 1));
         request.setDueDate(LocalDate.of(2026, 9, 30));
         return request;

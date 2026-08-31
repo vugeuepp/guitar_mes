@@ -190,10 +190,11 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                     planned_quantity,
                     started_quantity,
                     completed_quantity,
+                    plan_month,
                     planned_start_date,
                     due_date,
                     status
-                ) VALUES (?, ?, 1, 0, 0, ?, ?, 'PLANNED')
+                ) VALUES (?, ?, 1, 0, 0, ?, ?, ?, 'PLANNED')
                 RETURNING id
                 """;
 
@@ -201,8 +202,9 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
             LocalDate startDate = LocalDate.now().plusDays(1);
             statement.setString(1, testOrderNo);
             statement.setLong(2, productId);
-            statement.setObject(3, startDate);
-            statement.setObject(4, startDate.plusDays(7));
+            statement.setObject(3, startDate.withDayOfMonth(1));
+            statement.setObject(4, startDate);
+            statement.setObject(5, startDate.plusDays(7));
             return executeInsertReturningId(statement);
         }
     }

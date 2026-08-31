@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,7 @@ class ProductionOrderServiceTest {
                 service.getProductionOrderUpdateRequest(1L);
         assertEquals(10L, request.getProductId());
         assertEquals(20, request.getPlannedQuantity());
+        assertEquals(YearMonth.of(2026, 9), request.getPlanMonth());
         assertEquals(LocalDate.of(2026, 9, 1), request.getPlannedStartDate());
         assertEquals(LocalDate.of(2026, 9, 30), request.getDueDate());
     }
@@ -71,6 +73,7 @@ class ProductionOrderServiceTest {
         ProductionOrderUpdateRequest request = request();
         request.setProductId(20L);
         request.setPlannedQuantity(30);
+        request.setPlanMonth(YearMonth.of(2026, 10));
         request.setPlannedStartDate(LocalDate.of(2026, 10, 1));
         request.setDueDate(LocalDate.of(2026, 10, 31));
         stubOrder(order);
@@ -80,6 +83,7 @@ class ProductionOrderServiceTest {
         ProductionOrder result = service.updateProductionOrder(1L, request);
         assertSame(changedProduct, result.getProduct());
         assertEquals(30, result.getPlannedQuantity());
+        assertEquals(YearMonth.of(2026, 10), result.getPlanMonth());
         assertEquals(LocalDate.of(2026, 10, 1), result.getPlannedStartDate());
         assertEquals(LocalDate.of(2026, 10, 31), result.getDueDate());
         assertEquals("PO260001", result.getOrderNo());
@@ -222,6 +226,7 @@ class ProductionOrderServiceTest {
                 "PO260001",
                 product(10L),
                 20,
+                YearMonth.of(2026, 9),
                 LocalDate.of(2026, 9, 1),
                 LocalDate.of(2026, 9, 30),
                 status);
@@ -242,6 +247,7 @@ class ProductionOrderServiceTest {
                 new ProductionOrderUpdateRequest();
         request.setProductId(10L);
         request.setPlannedQuantity(20);
+        request.setPlanMonth(YearMonth.of(2026, 9));
         request.setPlannedStartDate(LocalDate.of(2026, 9, 1));
         request.setDueDate(LocalDate.of(2026, 9, 30));
         return request;
