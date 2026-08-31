@@ -367,9 +367,9 @@
 
             <tr th:each="guitar : ${guitars}"
                 th:class="${guitar.currentProcess
-                           == T(com.example.guitarmes.common.ProcessConstants).COMPLETED}
+                           == T(com.example.guitarmes.process.common.GuitarProcessConstants).COMPLETED
                            ? 'completed'
-                           : ''">
+                           : ''}">
 
                 <td th:text="${guitar.id}">
                 </td>
