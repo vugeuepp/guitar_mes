@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.product.ProductService;
+import com.example.guitarmes.productionschedule.ProductionScheduleService;
 
 @Controller
 public class ProductionOrderViewController {
@@ -17,14 +18,17 @@ public class ProductionOrderViewController {
     private final ProductionOrderService productionOrderService;
     private final ProductService productService;
     private final GuitarService guitarService;
+    private final ProductionScheduleService productionScheduleService;
 
     public ProductionOrderViewController(
             ProductionOrderService productionOrderService,
             ProductService productService,
-            GuitarService guitarService) {
+            GuitarService guitarService,
+            ProductionScheduleService productionScheduleService) {
         this.productionOrderService = productionOrderService;
         this.productService = productService;
         this.guitarService = guitarService;
+        this.productionScheduleService = productionScheduleService;
     }
 
     @GetMapping("/production-orders/view")
@@ -118,5 +122,15 @@ public class ProductionOrderViewController {
         model.addAttribute(
                 "guitars",
                 guitarService.getGuitarsByProductionOrderId(id));
+        model.addAttribute(
+                "productionSchedules",
+                productionScheduleService
+                        .getProductionSchedulesByOrderId(id));
+        model.addAttribute(
+                "allocatedQuantity",
+                productionScheduleService.getAllocatedQuantity(id));
+        model.addAttribute(
+                "unallocatedQuantity",
+                productionScheduleService.getUnallocatedQuantity(id));
     }
 }

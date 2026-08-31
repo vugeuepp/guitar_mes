@@ -185,6 +185,75 @@
         <div class="detail-section-heading">
             <div>
                 <p class="detail-section-caption">
+                    Daily Production Plan
+                </p>
+                <h2 class="detail-section-title">
+                    日産計画
+                </h2>
+            </div>
+            <a th:if="${order.status != 'COMPLETED'
+                       and order.status != 'CANCELLED'
+                       and unallocatedQuantity > 0}"
+               class="btn btn-primary"
+               th:href="@{/production-orders/{id}/schedules/new(id=${order.id})}">
+                日産計画を登録
+            </a>
+        </div>
+        <div class="production-progress-grid">
+            <div class="production-progress-card">
+                <div class="production-progress-label">割当済数</div>
+                <div class="production-progress-value">
+                    <span th:text="${allocatedQuantity}"></span>
+                    <span class="production-progress-unit">台</span>
+                </div>
+            </div>
+            <div class="production-progress-card">
+                <div class="production-progress-label">未割当数</div>
+                <div class="production-progress-value">
+                    <span th:text="${unallocatedQuantity}"></span>
+                    <span class="production-progress-unit">台</span>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(productionSchedules)}"
+             class="empty-state">
+            <p>日産計画はまだ登録されていません。</p>
+        </div>
+        <div th:if="${not #lists.isEmpty(productionSchedules)}"
+             class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>計画日</th>
+                        <th>計画数</th>
+                        <th>状態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="schedule : ${productionSchedules}">
+                        <td th:text="${schedule.scheduleDate}"></td>
+                        <td>
+                            <span th:text="${schedule.plannedQuantity}"></span>
+                            <span>台</span>
+                        </td>
+                        <td>
+                            <span class="status-badge"
+                                  th:text="${schedule.status == 'PLANNED' ? '計画中'
+                                      : schedule.status == 'CONFIRMED' ? '確定'
+                                      : schedule.status == 'COMPLETED' ? '完了'
+                                      : '取消'}">
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
                     Start Production
                 </p>
                 <h2 class="detail-section-title">
