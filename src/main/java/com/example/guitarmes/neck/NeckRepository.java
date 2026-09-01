@@ -24,4 +24,6 @@ public interface NeckRepository
     Optional<Neck>
             findTopBySerialNoStartingWithOrderBySerialNoDesc(
                     String prefix);
+
+    long countByProductionSchedule_Id(Long productionScheduleId);
 }

@@ -24,4 +24,6 @@ public interface BodyRepository
     Optional<Body>
             findTopBySerialNoStartingWithOrderBySerialNoDesc(
                     String prefix);
+
+    long countByProductionSchedule_Id(Long productionScheduleId);
 }

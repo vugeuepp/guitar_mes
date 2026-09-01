@@ -1,5 +1,8 @@
 package com.example.guitarmes.productionorder;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.product.ProductService;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
 import com.example.guitarmes.productionschedule.ProductionScheduleService;
 
 @Controller
@@ -122,10 +126,13 @@ public class ProductionOrderViewController {
         model.addAttribute(
                 "guitars",
                 guitarService.getGuitarsByProductionOrderId(id));
+        List<ProductionSchedule> productionSchedules =
+                productionScheduleService
+                        .getProductionSchedulesByOrderId(id);
         model.addAttribute(
                 "productionSchedules",
-                productionScheduleService
-                        .getProductionSchedulesByOrderId(id));
+                productionSchedules);
+        addIssueAttributes(productionSchedules, model);
         model.addAttribute(
                 "allocatedQuantity",
                 productionScheduleService.getAllocatedQuantity(id));
@@ -133,4 +140,30 @@ public class ProductionOrderViewController {
                 "unallocatedQuantity",
                 productionScheduleService.getUnallocatedQuantity(id));
     }
+    private void addIssueAttributes(
+            List<ProductionSchedule> productionSchedules,
+            Model model) {
+        Map<Long, Long> issuedBodyCounts = new LinkedHashMap<>();
+        Map<Long, Long> issuedNeckCounts = new LinkedHashMap<>();
+        Map<Long, Boolean> componentsIssued = new LinkedHashMap<>();
+        for (ProductionSchedule schedule : productionSchedules) {
+            Long scheduleId = schedule.getId();
+            issuedBodyCounts.put(
+                    scheduleId,
+                    productionScheduleService
+                            .getIssuedBodyCount(scheduleId));
+            issuedNeckCounts.put(
+                    scheduleId,
+                    productionScheduleService
+                            .getIssuedNeckCount(scheduleId));
+            componentsIssued.put(
+                    scheduleId,
+                    productionScheduleService
+                            .isComponentsIssued(schedule));
+        }
+        model.addAttribute("issuedBodyCounts", issuedBodyCounts);
+        model.addAttribute("issuedNeckCounts", issuedNeckCounts);
+        model.addAttribute("componentsIssued", componentsIssued);
+    }
+
 }

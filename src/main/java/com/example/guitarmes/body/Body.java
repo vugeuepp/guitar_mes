@@ -1,6 +1,9 @@
 package com.example.guitarmes.body;
 
 import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
+
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,6 +33,12 @@ public class Body {
 	@ManyToOne
 	@JoinColumn(name = "body_master_id")
 	private BodyMaster bodyMaster;
+    @ManyToOne
+    @JoinColumn(name = "production_order_id")
+    private ProductionOrder productionOrder;
+    @ManyToOne
+    @JoinColumn(name = "production_schedule_id")
+    private ProductionSchedule productionSchedule;
 	
 	public Body() {
 		
@@ -106,4 +115,9 @@ public class Body {
 	
 	
 	
+
+    public ProductionOrder getProductionOrder() { return productionOrder; }
+    public void setProductionOrder(ProductionOrder productionOrder) { this.productionOrder = productionOrder; }
+    public ProductionSchedule getProductionSchedule() { return productionSchedule; }
+    public void setProductionSchedule(ProductionSchedule productionSchedule) { this.productionSchedule = productionSchedule; }
 }

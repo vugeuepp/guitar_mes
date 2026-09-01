@@ -15,6 +15,8 @@ import com.example.guitarmes.master.neck.NeckMaster;
 import com.example.guitarmes.master.neck.NeckMasterRepository;
 import com.example.guitarmes.process.analysis.ComponentStatusCountResponse;
 import com.example.guitarmes.product.Product;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
 
 @Service
 public class NeckService {
@@ -168,4 +170,12 @@ public class NeckService {
 	                    product.getNeckMaster()
 	                            .getId());
 	}
+
+    public Neck createNeck(Long neckMasterId, Product product, ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
+        Neck neck = createNeck(neckMasterId);
+        neck.setProduct(product);
+        neck.setProductionOrder(productionOrder);
+        neck.setProductionSchedule(productionSchedule);
+        return neckRepository.save(neck);
+    }
 }

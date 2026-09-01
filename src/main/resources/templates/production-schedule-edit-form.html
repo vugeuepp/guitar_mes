@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>日産計画編集</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('日産計画編集')}"></div>
+<main class="page-container">
+    <div class="page-toolbar">
+        <p class="page-toolbar-description">
+            計画中の日産計画について、計画日と数量を変更します。
+        </p>
+        <div class="page-toolbar-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/{id}/view(id=${order.id})}">
+                生産計画詳細へ戻る
+            </a>
+        </div>
+    </div>
+    <form th:action="@{/production-schedules/{id}/edit(id=${productionSchedule.id})}"
+          th:object="${request}"
+          method="post"
+          class="form-container">
+        <div th:if="${errorMessage}"
+             class="error-message"
+             role="alert">
+            <div class="error-message-title">入力内容を確認してください</div>
+            <p class="error-message-text" th:text="${errorMessage}"></p>
+        </div>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Production Order</p>
+                    <h2 class="form-section-title"
+                        th:text="${order.orderNo}"></h2>
+                </div>
+                <p class="form-section-description">
+                    対象月内の日付と、月間計画数以内の数量を入力してください。
+                </p>
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">対象月</div>
+                    <div class="detail-value" th:text="${order.planMonth}"></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">製品</div>
+                    <div class="detail-value"
+                         th:text="${order.product.modelNo + ' / '
+                                  + order.product.productName + ' / '
+                                  + order.product.color}"></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">月間計画数</div>
+                    <div class="detail-value"
+                         th:text="${order.plannedQuantity + ' 台'}"></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">割当済数</div>
+                    <div class="detail-value"
+                         th:text="${allocatedQuantity + ' 台'}"></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">未割当数</div>
+                    <div class="detail-value"
+                         th:text="${unallocatedQuantity + ' 台'}"></div>
+                </div>
+            </div>
+        </section>
+        <section class="form-section">
+            <div class="form-section-heading">
+                <div>
+                    <p class="form-section-caption">Daily Production Plan</p>
+                    <h2 class="form-section-title">日産計画内容</h2>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="scheduleDate" class="form-label">
+                        日産計画日 <span class="form-required">必須</span>
+                    </label>
+                    <input type="date"
+                           id="scheduleDate"
+                           th:field="*{scheduleDate}"
+                           class="form-input"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="plannedQuantity" class="form-label">
+                        日産計画数 <span class="form-required">必須</span>
+                    </label>
+                    <div class="form-input-with-unit">
+                        <input type="number"
+                               id="plannedQuantity"
+                               th:field="*{plannedQuantity}"
+                               class="form-input"
+                               min="1"
+                               required>
+                        <span class="form-input-unit">台</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <a class="btn btn-outline"
+               th:href="@{/production-orders/{id}/view(id=${order.id})}">
+                キャンセル
+            </a>
+            <button type="submit" class="btn btn-primary">
+                変更内容を保存
+            </button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

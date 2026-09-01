@@ -6,10 +6,16 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.guitarmes.body.BodyRepository;
+import com.example.guitarmes.body.BodyService;
 import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.neck.NeckRepository;
+import com.example.guitarmes.neck.NeckService;
+import com.example.guitarmes.product.Product;
 import com.example.guitarmes.exception.NotFoundException;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
@@ -23,16 +29,31 @@ public class ProductionScheduleService {
 
     private final ProductionOrderRepository
             productionOrderRepository;
+    private final BodyRepository bodyRepository;
+    private final BodyService bodyService;
+    private final NeckRepository neckRepository;
+    private final NeckService neckService;
 
+    @Autowired
     public ProductionScheduleService(
             ProductionScheduleRepository productionScheduleRepository,
+            ProductionOrderRepository productionOrderRepository,
+            BodyRepository bodyRepository,
+            BodyService bodyService,
+            NeckRepository neckRepository,
+            NeckService neckService) {
+        this.productionScheduleRepository = productionScheduleRepository;
+        this.productionOrderRepository = productionOrderRepository;
+        this.bodyRepository = bodyRepository;
+        this.bodyService = bodyService;
+        this.neckRepository = neckRepository;
+        this.neckService = neckService;
+    }
+
+    ProductionScheduleService(
+            ProductionScheduleRepository productionScheduleRepository,
             ProductionOrderRepository productionOrderRepository) {
-
-        this.productionScheduleRepository =
-                productionScheduleRepository;
-
-        this.productionOrderRepository =
-                productionOrderRepository;
+        this(productionScheduleRepository, productionOrderRepository, null, null, null, null);
     }
 
     public ProductionSchedule getProductionScheduleById(
@@ -179,10 +200,62 @@ public class ProductionScheduleService {
                     "完了済みまたは取消済みの日産計画は取消できません。");
         }
 
+        validateNotIssued(productionSchedule.getId());
         productionSchedule.setStatus(CANCELLED);
 
         return productionScheduleRepository.save(
                 productionSchedule);
+    }
+
+    @Transactional
+    public void issueComponents(Long id) {
+        ProductionSchedule schedule = getProductionScheduleById(id);
+        if (!CONFIRMED.equals(schedule.getStatus())) {
+            throw new BusinessException("確定済みの日産計画のみ部品を発行できます。");
+        }
+        ProductionOrder order = schedule.getProductionOrder();
+        validateProductionOrderAvailable(order);
+        Product product = order.getProduct();
+        if (product == null) { throw new BusinessException("日産計画に対応する製品が指定されていません。"); }
+        if (product.getBodyMaster() == null) { throw new BusinessException("製品に対応するボディマスタが設定されていません。"); }
+        if (product.getNeckMaster() == null) { throw new BusinessException("製品に対応するネックマスタが設定されていません。"); }
+        validateNotIssued(id);
+        for (int i = 0; i < schedule.getPlannedQuantity(); i++) {
+            bodyService.createBody(product.getBodyMaster().getId(), order, schedule);
+            neckService.createNeck(product.getNeckMaster().getId(), product, order, schedule);
+        }
+    }
+
+    public long getIssuedBodyCount(Long productionScheduleId) {
+        return bodyRepository.countByProductionSchedule_Id(
+                productionScheduleId);
+    }
+
+    public long getIssuedNeckCount(Long productionScheduleId) {
+        return neckRepository.countByProductionSchedule_Id(
+                productionScheduleId);
+    }
+
+    public boolean isComponentsIssued(
+            ProductionSchedule productionSchedule) {
+        if (productionSchedule == null
+                || productionSchedule.getId() == null) {
+            return false;
+        }
+        long bodyCount = getIssuedBodyCount(
+                productionSchedule.getId());
+        long neckCount = getIssuedNeckCount(
+                productionSchedule.getId());
+        return bodyCount >= productionSchedule.getPlannedQuantity()
+                && neckCount >= productionSchedule.getPlannedQuantity();
+    }
+
+    private void validateNotIssued(Long id) {
+        if (bodyRepository == null || neckRepository == null) { return; }
+        if (bodyRepository.countByProductionSchedule_Id(id) > 0
+                || neckRepository.countByProductionSchedule_Id(id) > 0) {
+            throw new BusinessException("既に部品発行済みです。");
+        }
     }
 
     private ProductionOrder getProductionOrder(

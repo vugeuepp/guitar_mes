@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -58,12 +59,7 @@ class ProductionScheduleViewControllerTest {
     @Test
     @DisplayName("日産計画登録画面を表示できる")
     void showCreateForm_succeeds() throws Exception {
-        when(productionOrderService.getProductionOrderById(1L))
-                .thenReturn(createOrder());
-        when(productionScheduleService.getAllocatedQuantity(1L))
-                .thenReturn(30);
-        when(productionScheduleService.getUnallocatedQuantity(1L))
-                .thenReturn(70);
+        stubFormSummary();
 
         mockMvc.perform(get(
                 "/production-orders/1/schedules/new"))
@@ -119,6 +115,147 @@ class ProductionScheduleViewControllerTest {
                         "errorMessage",
                         is("日産計画の合計が月間計画数を超えています。")))
                 .andExpect(model().attributeExists("request"));
+    }
+
+    @Test
+    @DisplayName("日産計画編集画面を表示できる")
+    void showEditForm_succeeds() throws Exception {
+        ProductionSchedule schedule = createSchedule();
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(schedule);
+        stubFormSummary();
+
+        mockMvc.perform(get("/production-schedules/10/edit"))
+                .andExpect(status().isOk())
+                .andExpect(view().name(
+                        "production-schedule-edit-form"))
+                .andExpect(model().attribute(
+                        "productionSchedule",
+                        schedule))
+                .andExpect(model().attributeExists("request"));
+    }
+
+    @Test
+    @DisplayName("日産計画を更新して生産計画詳細へ戻れる")
+    void update_succeeds() throws Exception {
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(createSchedule());
+
+        mockMvc.perform(post("/production-schedules/10/edit")
+                        .param("scheduleDate", "2026-09-02")
+                        .param("plannedQuantity", "30"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/production-orders/1/view"));
+
+        verify(productionScheduleService)
+                .updateProductionSchedule(
+                        10L,
+                        LocalDate.of(2026, 9, 2),
+                        30);
+    }
+
+    @Test
+    @DisplayName("日産計画を確定して生産計画詳細へ戻れる")
+    void confirm_succeeds() throws Exception {
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(createSchedule());
+
+        mockMvc.perform(post(
+                "/production-schedules/10/confirm"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/production-orders/1/view"));
+
+        verify(productionScheduleService)
+                .confirmProductionSchedule(10L);
+    }
+
+    @Test
+    @DisplayName("確定済み日産計画から部品を発行して生産計画詳細へ戻れる")
+    void issueComponents_succeeds() throws Exception {
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(createSchedule());
+        mockMvc.perform(post(
+                "/production-schedules/10/issue-components"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/production-orders/1/view"))
+                .andExpect(flash().attribute(
+                        "successMessage",
+                        "BodyとNeckを一括発行しました。"));
+        verify(productionScheduleService)
+                .issueComponents(10L);
+    }
+
+    @Test
+    @DisplayName("部品発行の業務エラーをFlashメッセージで表示できる")
+    void issueComponents_businessError_redirectsWithFlash()
+            throws Exception {
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(createSchedule());
+        org.mockito.Mockito.doThrow(
+                new BusinessException("既に部品発行済みです。"))
+                .when(productionScheduleService)
+                .issueComponents(10L);
+
+        mockMvc.perform(post(
+                "/production-schedules/10/issue-components"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/production-orders/1/view"))
+                .andExpect(flash().attribute(
+                        "errorMessage",
+                        "既に部品発行済みです。"));
+    }
+
+    @Test
+    @DisplayName("日産計画を取消して生産計画詳細へ戻れる")
+    void cancel_succeeds() throws Exception {
+        when(productionScheduleService
+                .getProductionScheduleById(10L))
+                .thenReturn(createSchedule());
+
+        mockMvc.perform(post(
+                "/production-schedules/10/cancel"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/production-orders/1/view"));
+
+        verify(productionScheduleService)
+                .cancelProductionSchedule(10L);
+    }
+
+    private void stubFormSummary() {
+        when(productionOrderService.getProductionOrderById(1L))
+                .thenReturn(createOrder());
+        when(productionScheduleService.getAllocatedQuantity(1L))
+                .thenReturn(30);
+        when(productionScheduleService.getUnallocatedQuantity(1L))
+                .thenReturn(70);
+    }
+
+    private ProductionScheduleUpdateRequest createUpdateRequest() {
+        ProductionScheduleUpdateRequest request =
+                new ProductionScheduleUpdateRequest();
+        request.setScheduleDate(LocalDate.of(2026, 9, 1));
+        request.setPlannedQuantity(20);
+        return request;
+    }
+
+    private ProductionSchedule createSchedule() {
+        ProductionSchedule schedule = new ProductionSchedule(
+                createOrder(),
+                LocalDate.of(2026, 9, 1),
+                20,
+                ProductionScheduleStatusConstants.PLANNED);
+        schedule.setId(10L);
+        return schedule;
     }
 
     private ProductionOrder createOrder() {

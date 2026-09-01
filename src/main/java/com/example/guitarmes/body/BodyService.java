@@ -15,6 +15,8 @@ import com.example.guitarmes.master.body.BodyMaster;
 import com.example.guitarmes.master.body.BodyMasterRepository;
 import com.example.guitarmes.process.analysis.ComponentStatusCountResponse;
 import com.example.guitarmes.product.Product;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
 
 @Service
 public class BodyService {
@@ -181,4 +183,11 @@ public class BodyService {
 	                    product.getBodyMaster()
 	                            .getId());
 	}
+
+    public Body createBody(Long bodyMasterId, ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
+        Body body = createBody(bodyMasterId);
+        body.setProductionOrder(productionOrder);
+        body.setProductionSchedule(productionSchedule);
+        return bodyRepository.save(body);
+    }
 }

@@ -1,11 +1,9 @@
 package com.example.guitarmes.productionorder;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -23,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.product.Product;
 import com.example.guitarmes.product.ProductService;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
 import com.example.guitarmes.productionschedule.ProductionScheduleService;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,9 +61,16 @@ class ProductionOrderViewControllerTest {
                 .thenReturn(order);
         when(guitarService.getGuitarsByProductionOrderId(1L))
                 .thenReturn(List.of());
+        ProductionSchedule schedule = createSchedule(order);
         when(productionScheduleService
                 .getProductionSchedulesByOrderId(1L))
-                .thenReturn(List.of());
+                .thenReturn(List.of(schedule));
+        when(productionScheduleService.getIssuedBodyCount(10L))
+                .thenReturn(30L);
+        when(productionScheduleService.getIssuedNeckCount(10L))
+                .thenReturn(30L);
+        when(productionScheduleService.isComponentsIssued(schedule))
+                .thenReturn(true);
         when(productionScheduleService.getAllocatedQuantity(1L))
                 .thenReturn(30);
         when(productionScheduleService.getUnallocatedQuantity(1L))
@@ -77,9 +83,31 @@ class ProductionOrderViewControllerTest {
                 .andExpect(model().attribute("guitars", hasSize(0)))
                 .andExpect(model().attribute(
                         "productionSchedules",
-                        hasSize(0)))
+                        hasSize(1)))
+                .andExpect(model().attribute(
+                        "issuedBodyCounts",
+                        hasEntry(10L, 30L)))
+                .andExpect(model().attribute(
+                        "issuedNeckCounts",
+                        hasEntry(10L, 30L)))
+                .andExpect(model().attribute(
+                        "componentsIssued",
+                        hasEntry(10L, true)))
                 .andExpect(model().attribute("allocatedQuantity", 30))
                 .andExpect(model().attribute("unallocatedQuantity", 70));
+    }
+
+    private com.example.guitarmes.productionschedule.ProductionSchedule
+            createSchedule(ProductionOrder order) {
+        com.example.guitarmes.productionschedule.ProductionSchedule schedule =
+                new com.example.guitarmes.productionschedule.ProductionSchedule(
+                        order,
+                        LocalDate.of(2026, 9, 1),
+                        30,
+                        com.example.guitarmes.productionschedule
+                                .ProductionScheduleStatusConstants.CONFIRMED);
+        schedule.setId(10L);
+        return schedule;
     }
 
     private ProductionOrder createOrder() {
