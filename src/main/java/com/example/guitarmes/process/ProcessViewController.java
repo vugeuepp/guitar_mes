@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.process;
 
 import org.springframework.stereotype.Controller;
@@ -6,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.example.guitarmes.exception.BusinessException;
 
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.process.common.ProcessTargetConstants;
@@ -90,4 +93,37 @@ public class ProcessViewController {
 		return "history-list";
 	}
 	
+
+    @PostMapping("/processes/bulk/start")
+    public String startProcesses(
+            @RequestParam(required = false) java.util.List<Long> guitarIds,
+            @RequestParam Long processId,
+            @RequestParam String workerName,
+            RedirectAttributes redirectAttributes) {
+        try {
+            int count = processService.startProcesses(
+                    guitarIds, processId, workerName).size();
+            redirectAttributes.addFlashAttribute(
+                    "successMessage", count + "件の工程を一括開始しました。");
+        } catch (BusinessException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage", exception.getMessage());
+        }
+        return "redirect:/guitars/view";
+    }
+
+    @PostMapping("/processes/bulk/end")
+    public String endProcesses(
+            @RequestParam(required = false) java.util.List<Long> historyIds,
+            RedirectAttributes redirectAttributes) {
+        try {
+            int count = processService.endProcesses(historyIds).size();
+            redirectAttributes.addFlashAttribute(
+                    "successMessage", count + "件の工程を一括終了しました。");
+        } catch (BusinessException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage", exception.getMessage());
+        }
+        return "redirect:/processes/end/view";
+    }
 }

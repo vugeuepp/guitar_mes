@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -136,110 +137,49 @@
     </div>
 
     <!-- ギター指定なし：全実施中工程 -->
-    <section th:if="${guitarSpecified == false}"
-             class="detail-section">
-
+    <section th:if="${guitarSpecified == false}" class="detail-section">
         <div class="detail-section-heading">
-
-            <div>
-                <p class="detail-section-caption">
-                    Running Processes
-                </p>
-
-                <h2 class="detail-section-title">
-                    実施中工程一覧
-                </h2>
-            </div>
-
-            <div class="detail-section-count">
-                <span th:text="${#lists.size(histories)}">
-                </span>
-                <span>
-                    件
-                </span>
-            </div>
-
+            <div><p class="detail-section-caption">Running Processes</p>
+            <h2 class="detail-section-title">実施中工程一覧</h2></div>
+            <div class="detail-section-count"><span th:text="${#lists.size(histories)}"></span><span>件</span></div>
         </div>
-
-        <div th:if="${#lists.isEmpty(histories)}"
-             class="empty-state">
-
-            <p>
-                現在実施中の工程はありません。
-            </p>
-
-        </div>
-
-        <div th:if="${not #lists.isEmpty(histories)}"
-             class="table-container">
-
-            <table class="data-table">
-
-                <thead>
-                <tr>
-                    <th>
-                        履歴ID
-                    </th>
-                    <th>
-                        工程ID
-                    </th>
-                    <th>
-                        作業者
-                    </th>
-                    <th>
-                        開始時刻
-                    </th>
-                    <th>
-                        終了
-                    </th>
-                </tr>
-                </thead>
-
-                <tbody>
-
-                <tr th:each="history : ${histories}">
-
-                    <td th:text="${history.id}">
-                    </td>
-
-                    <td th:text="${history.processId}">
-                    </td>
-
-                    <td th:text="${history.workerName}">
-                    </td>
-
-                    <td th:text="${history.startTime}">
-                    </td>
-
-                    <td class="table-action-cell">
-
-                        <form th:action="@{/processes/end}"
-                              method="post">
-
-                            <input type="hidden"
-                                   name="historyId"
-                                   th:value="${history.id}">
-
-                            <button type="submit"
-                                    class="btn btn-process-end">
-                                工程終了
-                            </button>
-
-                        </form>
-
-                    </td>
-
-                </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+        <div th:if="${successMessage}" class="success-message" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}"></div>
+        <div th:if="${#lists.isEmpty(histories)}" class="empty-state"><p>現在実施中の工程はありません。</p></div>
+        <form th:if="${not #lists.isEmpty(histories)}" th:action="@{/processes/bulk/end}"
+              method="post" class="bulk-process-form">
+            <section class="bulk-action-panel">
+                <div class="bulk-selection-count">選択中: <strong id="selected-count">0</strong>件</div>
+                <button type="submit" class="btn btn-process-end">一括工程終了</button>
+            </section>
+            <div class="table-container"><table class="data-table bulk-select-table">
+                <thead><tr><th><input type="checkbox" id="select-all" aria-label="全件選択"></th>
+                <th>履歴ID</th><th>ギターID</th><th>工程ID</th><th>作業者</th><th>開始時刻</th><th>単体操作</th></tr></thead>
+                <tbody><tr th:each="history : ${histories}">
+                    <td class="bulk-checkbox-cell"><input type="checkbox" name="historyIds" class="row-checkbox"
+                        th:value="${history.id}" th:attr="aria-label=${'履歴' + history.id + 'を選択'}"></td>
+                    <td th:text="${history.id}"></td><td th:text="${history.guitarId}"></td>
+                    <td th:text="${history.processId}"></td><td th:text="${history.workerName}"></td>
+                    <td th:text="${history.startTime}"></td><td class="table-action-cell">
+                    <form th:action="@{/processes/end}" method="post"><input type="hidden" name="historyId" th:value="${history.id}">
+                    <button type="submit" class="btn btn-process-end">工程終了</button></form></td>
+                </tr></tbody>
+            </table></div>
+        </form>
     </section>
-
 </main>
 
+<script>
+(() => {
+  const all = document.getElementById('select-all');
+  const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
+  const count = document.getElementById('selected-count');
+  if (!all || !count) return;
+  const update = () => { const n = boxes.filter(b => b.checked).length; count.textContent = n;
+    all.checked = boxes.length > 0 && n === boxes.length; all.indeterminate = n > 0 && n < boxes.length; };
+  all.addEventListener('change', () => { boxes.forEach(b => b.checked = all.checked); update(); });
+  boxes.forEach(b => b.addEventListener('change', update)); update();
+})();
+</script>
 </body>
 </html>

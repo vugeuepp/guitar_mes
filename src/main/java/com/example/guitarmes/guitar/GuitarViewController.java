@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.guitar;
 
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,7 @@ public class GuitarViewController {
 	@GetMapping("/guitars/view")
 	public String guitarList(Model model) {
 		model.addAttribute("guitars", guitarService.getGuitarProgressList(processService, assemblyService));
+        model.addAttribute("processes", processService.getAvailableGuitarProcesses());
 		return "guitar-list";
 	}
 	

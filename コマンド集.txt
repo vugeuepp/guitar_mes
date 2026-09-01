@@ -1,0 +1,39 @@
+tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.txt /Users/naokiyamada/git/guitar-mes/guitar_mes/src
+./mvnw \ -Dtest=ProductionScheduleIssueE2E \ test
+
+ヘッドレス実行
+/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
+  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
+  -Dtest=ProductionScheduleIssueE2E \
+  test
+  
+  ブラウザ試験遅く
+  /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
+  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
+  -Dplaywright.headless=false \
+  -Dplaywright.slowMo=1000 \
+  -Dtest=ProductionScheduleIssueE2E \
+  test
+  
+  通常テスト
+  /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
+-f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
+test
+
+E2E全体
+/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
+-f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
+ -Dplaywright.headless=false \
+ -Dplaywright.slowMo=1000 \
+'-Dtest=*E2E' \
+test
+
+mkdir -p \
+/Users/naokiyamada/git/guitar-mes/guitar_mes/target/test-logs
+
+/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
+  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
+  -Dtest=GuitarViewControllerTest,ProcessServiceTest,ProcessViewControllerTest,ProcessWorkControllerTest \
+  test \
+  2>&1 | tee \
+"/Users/naokiyamada/git/guitar-mes/guitar_mes/target/test-logs/phase4-related-$(date '+%Y%m%d-%H%M%S').log"
