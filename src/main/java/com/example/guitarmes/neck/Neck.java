@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.example.guitarmes.assembly.Assembly;
 import com.example.guitarmes.master.neck.NeckMaster;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
+
 import com.example.guitarmes.product.Product;
 
 import jakarta.persistence.Entity;
@@ -40,6 +43,12 @@ public class Neck {
 	@ManyToOne
 	@JoinColumn(name = "neck_master_id")
 	private NeckMaster neckMaster;
+    @ManyToOne
+    @JoinColumn(name = "production_order_id")
+    private ProductionOrder productionOrder;
+    @ManyToOne
+    @JoinColumn(name = "production_schedule_id")
+    private ProductionSchedule productionSchedule;
 	
 	public Neck() {
 		
@@ -116,4 +125,9 @@ public class Neck {
 	public void setNeckMaster(NeckMaster neckMaster) {
 		this.neckMaster = neckMaster;
 	}
+
+    public ProductionOrder getProductionOrder() { return productionOrder; }
+    public void setProductionOrder(ProductionOrder productionOrder) { this.productionOrder = productionOrder; }
+    public ProductionSchedule getProductionSchedule() { return productionSchedule; }
+    public void setProductionSchedule(ProductionSchedule productionSchedule) { this.productionSchedule = productionSchedule; }
 }

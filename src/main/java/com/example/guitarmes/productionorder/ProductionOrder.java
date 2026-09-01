@@ -1,10 +1,13 @@
 package com.example.guitarmes.productionorder;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
+import com.example.guitarmes.common.YearMonthDateConverter;
 import com.example.guitarmes.product.Product;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,6 +45,12 @@ public class ProductionOrder {
     @Column(nullable = false)
     private Integer completedQuantity;
 
+    @Convert(converter = YearMonthDateConverter.class)
+    @Column(
+            name = "plan_month",
+            nullable = false)
+    private YearMonth planMonth;
+
     private LocalDate plannedStartDate;
 
     private LocalDate dueDate;
@@ -56,6 +65,7 @@ public class ProductionOrder {
             String orderNo,
             Product product,
             Integer plannedQuantity,
+            YearMonth planMonth,
             LocalDate plannedStartDate,
             LocalDate dueDate,
             String status) {
@@ -67,6 +77,8 @@ public class ProductionOrder {
 
         this.startedQuantity = 0;
         this.completedQuantity = 0;
+
+        this.planMonth = planMonth;
 
         this.plannedStartDate =
                 plannedStartDate;
@@ -136,6 +148,16 @@ public class ProductionOrder {
 
         this.completedQuantity =
                 completedQuantity;
+    }
+
+    public YearMonth getPlanMonth() {
+        return planMonth;
+    }
+
+    public void setPlanMonth(
+            YearMonth planMonth) {
+
+        this.planMonth = planMonth;
     }
 
     public LocalDate getPlannedStartDate() {

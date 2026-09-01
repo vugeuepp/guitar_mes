@@ -185,6 +185,120 @@
         <div class="detail-section-heading">
             <div>
                 <p class="detail-section-caption">
+                    Daily Production Plan
+                </p>
+                <h2 class="detail-section-title">
+                    日産計画
+                </h2>
+            </div>
+            <a th:if="${order.status != 'COMPLETED'
+                       and order.status != 'CANCELLED'
+                       and unallocatedQuantity > 0}"
+               class="btn btn-primary"
+               th:href="@{/production-orders/{id}/schedules/new(id=${order.id})}">
+                日産計画を登録
+            </a>
+        </div>
+        <div class="production-progress-grid">
+            <div class="production-progress-card">
+                <div class="production-progress-label">割当済数</div>
+                <div class="production-progress-value">
+                    <span th:text="${allocatedQuantity}"></span>
+                    <span class="production-progress-unit">台</span>
+                </div>
+            </div>
+            <div class="production-progress-card">
+                <div class="production-progress-label">未割当数</div>
+                <div class="production-progress-value">
+                    <span th:text="${unallocatedQuantity}"></span>
+                    <span class="production-progress-unit">台</span>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(productionSchedules)}"
+             class="empty-state">
+            <p>日産計画はまだ登録されていません。</p>
+        </div>
+        <div th:if="${not #lists.isEmpty(productionSchedules)}"
+             class="table-container">
+			 <!-- production-order-detail.html の日産計画テーブル部分を以下に差し替えてください -->
+			 <table class="data-table">
+			     <thead>
+			         <tr>
+			             <th>計画日</th>
+			             <th>計画数</th>
+			             <th>状態</th>
+			             <th>Body発行数</th>
+                         <th>Neck発行数</th>
+                         <th>発行状態</th>
+                         <th>操作</th>
+			         </tr>
+			     </thead>
+			     <tbody>
+			         <tr th:each="schedule : ${productionSchedules}">
+			             <td th:text="${schedule.scheduleDate}"></td>
+			             <td>
+			                 <span th:text="${schedule.plannedQuantity}"></span>
+			                 <span>台</span>
+			             </td>
+			             <td>
+			                 <span class="status-badge"
+			                       th:text="${schedule.status == 'PLANNED' ? '計画中'
+			                           : schedule.status == 'CONFIRMED' ? '確定'
+			                           : schedule.status == 'COMPLETED' ? '完了'
+			                           : '取消'}"></span><td><span th:text="${issuedBodyCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
+                         <td><span th:text="${issuedNeckCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
+                         <td><span class="status-badge" th:text="${componentsIssued[schedule.id] ? '発行済み' : '未発行'}"></span></td>
+                         <td class="table-action-cell">
+			                 <div class="page-toolbar-actions">
+			                     <a th:if="${schedule.status == 'PLANNED'}"
+			                        class="btn btn-detail"
+			                        th:href="@{/production-schedules/{id}/edit(id=${schedule.id})}">
+			                         編集
+			                     </a>
+			                     <form th:if="${schedule.status == 'PLANNED'}"
+			                           th:action="@{/production-schedules/{id}/confirm(id=${schedule.id})}"
+			                           method="post"
+			                           onsubmit="return confirm('この日産計画を確定しますか？');">
+			                         <button type="submit" class="btn btn-primary">確定</button>
+			                     </form>
+			                     <form th:if="${schedule.status == 'CONFIRMED' and !componentsIssued[schedule.id]}"
+			                           th:action="@{/production-schedules/{id}/issue-components(id=${schedule.id})}"
+			                           method="post"
+			                           onsubmit="return confirm('この日産計画のBodyとNeckを一括発行しますか？');">
+			                         <button type="submit" class="btn btn-primary">部品発行</button>
+			                     </form>
+			                                                  <form th:if="${componentsIssued[schedule.id]}"
+                                   th:action="@{/assemblies/new}"
+                                   method="get">
+                                 <input type="hidden"
+                                        name="productionOrderId"
+                                        th:value="${order.id}">
+                                 <input type="hidden"
+                                        name="productionScheduleId"
+                                        th:value="${schedule.id}">
+                                 <button type="submit" class="btn btn-primary">
+                                     ネック取付
+                                 </button>
+                             </form>
+<form th:if="${(schedule.status == 'PLANNED' or schedule.status == 'CONFIRMED') and !componentsIssued[schedule.id]}"
+			                           th:action="@{/production-schedules/{id}/cancel(id=${schedule.id})}"
+			                           method="post"
+			                           onsubmit="return confirm('この日産計画を取消しますか？');">
+			                         <button type="submit" class="btn btn-outline">取消</button>
+			                     </form>
+			                 </div>
+			             </td>
+			         </tr>
+			     </tbody>
+			 </table>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">
                     Start Production
                 </p>
                 <h2 class="detail-section-title">
@@ -216,22 +330,6 @@
                     この生産計画は完了しています。
                 </p>
             </div>
-
-            <form th:if="${order.startedQuantity
-                          < order.plannedQuantity
-                        and order.status != 'COMPLETED'
-                        and order.status != 'CANCELLED'}"
-                  th:action="@{/assemblies/new}"
-                  method="get">
-                <input type="hidden"
-                       name="productionOrderId"
-                       th:value="${order.id}">
-
-                <button type="submit"
-                        class="btn btn-primary">
-                    ネック取付
-                </button>
-            </form>
         </div>
     </section>
 

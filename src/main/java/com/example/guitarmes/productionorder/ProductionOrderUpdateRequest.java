@@ -1,6 +1,7 @@
 package com.example.guitarmes.productionorder;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -8,6 +9,9 @@ public class ProductionOrderUpdateRequest {
 
     private Long productId;
     private Integer plannedQuantity;
+
+    @DateTimeFormat(pattern = "yyyy-MM")
+    private YearMonth planMonth;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate plannedStartDate;
@@ -32,6 +36,16 @@ public class ProductionOrderUpdateRequest {
 
     public void setPlannedQuantity(Integer plannedQuantity) {
         this.plannedQuantity = plannedQuantity;
+    }
+
+    public YearMonth getPlanMonth() {
+        return planMonth;
+    }
+
+    public void setPlanMonth(
+            YearMonth planMonth) {
+
+        this.planMonth = planMonth;
     }
 
     public LocalDate getPlannedStartDate() {

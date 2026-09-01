@@ -15,6 +15,8 @@ import com.example.guitarmes.master.body.BodyMaster;
 import com.example.guitarmes.master.body.BodyMasterRepository;
 import com.example.guitarmes.process.analysis.ComponentStatusCountResponse;
 import com.example.guitarmes.product.Product;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
 
 @Service
 public class BodyService {
@@ -181,4 +183,40 @@ public class BodyService {
 	                    product.getBodyMaster()
 	                            .getId());
 	}
+
+    public Body createBody(Long bodyMasterId, ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
+        Body body = createBody(bodyMasterId);
+        body.setProductionOrder(productionOrder);
+        body.setProductionSchedule(productionSchedule);
+        return bodyRepository.save(body);
+    }
+
+    public List<Body> getAvailableBodiesByProductionSchedule(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule) {
+        validateScheduleSelection(productionOrder, productionSchedule);
+        Product product = productionOrder.getProduct();
+        if (product == null || product.getBodyMaster() == null) {
+            throw new BusinessException(
+                    "対象製品に対応するボディマスタが設定されていません。");
+        }
+        return bodyRepository
+                .findByStatusAndProductionOrder_IdAndProductionSchedule_IdAndBodyMaster_Id(
+                        AVAILABLE,
+                        productionOrder.getId(),
+                        productionSchedule.getId(),
+                        product.getBodyMaster().getId());
+    }
+
+    private void validateScheduleSelection(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule) {
+        if (productionOrder == null || productionSchedule == null
+                || productionSchedule.getProductionOrder() == null
+                || !productionOrder.getId().equals(
+                        productionSchedule.getProductionOrder().getId())) {
+            throw new BusinessException(
+                    "日産計画が生産計画と一致していません。");
+        }
+    }
 }
