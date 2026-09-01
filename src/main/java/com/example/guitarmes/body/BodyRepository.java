@@ -26,4 +26,9 @@ public interface BodyRepository
                     String prefix);
 
     long countByProductionSchedule_Id(Long productionScheduleId);
+    List<Body> findByStatusAndProductionOrder_IdAndProductionSchedule_IdAndBodyMaster_Id(
+            String status,
+            Long productionOrderId,
+            Long productionScheduleId,
+            Long bodyMasterId);
 }

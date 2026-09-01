@@ -28,7 +28,8 @@ class ProductionOrderSmokeE2E extends PlaywrightTestBase {
         assertThat(page.getByRole(
                 com.microsoft.playwright.options.AriaRole.LINK,
                 new Page.GetByRoleOptions()
-                        .setName("生産計画を登録")))
+                        .setName("生産計画を登録")
+                        .setExact(true)))
                 .isVisible();
         assertThat(page.locator("main.page-container"))
                 .containsText("生産計画");

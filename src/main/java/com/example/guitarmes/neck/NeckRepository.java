@@ -26,4 +26,9 @@ public interface NeckRepository
                     String prefix);
 
     long countByProductionSchedule_Id(Long productionScheduleId);
+    List<Neck> findByStatusAndProductionOrder_IdAndProductionSchedule_IdAndNeckMaster_Id(
+            String status,
+            Long productionOrderId,
+            Long productionScheduleId,
+            Long neckMasterId);
 }

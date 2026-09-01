@@ -1,9 +1,7 @@
 package com.example.guitarmes.e2e;
 
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -36,6 +34,7 @@ class GuitarProcessE2E extends PlaywrightTestBase {
     private static final String WORKER_NAME = "E2E Worker";
 
     private Long productionOrderId;
+    private Long productionScheduleId;
     private Long bodyId;
     private Long neckId;
     private Long guitarId;
@@ -92,12 +91,25 @@ class GuitarProcessE2E extends PlaywrightTestBase {
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
             try {
-                bodyId = insertBody(connection, product, bodySerial);
-                neckId = insertNeck(connection, product, neckSerial);
                 productionOrderId = insertProductionOrder(
                         connection,
                         product.productId(),
                         orderNo);
+                productionScheduleId = insertProductionSchedule(
+                        connection,
+                        productionOrderId);
+                bodyId = insertBody(
+                        connection,
+                        product,
+                        bodySerial,
+                        productionOrderId,
+                        productionScheduleId);
+                neckId = insertNeck(
+                        connection,
+                        product,
+                        neckSerial,
+                        productionOrderId,
+                        productionScheduleId);
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
@@ -141,7 +153,9 @@ class GuitarProcessE2E extends PlaywrightTestBase {
     private Long insertBody(
             Connection connection,
             ProductReference product,
-            String serialNo) throws Exception {
+            String serialNo,
+            Long orderId,
+            Long scheduleId) throws Exception {
 
         String sql = """
                 INSERT INTO t_body (
@@ -150,8 +164,10 @@ class GuitarProcessE2E extends PlaywrightTestBase {
                     color,
                     current_process,
                     status,
-                    body_master_id
-                ) VALUES (?, ?, ?, ?, 'AVAILABLE', ?)
+                    body_master_id,
+                    production_order_id,
+                    production_schedule_id
+                ) VALUES (?, ?, ?, ?, 'AVAILABLE', ?, ?, ?)
                 RETURNING id
                 """;
 
@@ -161,6 +177,8 @@ class GuitarProcessE2E extends PlaywrightTestBase {
             statement.setString(3, product.color());
             statement.setString(4, "E2E_READY");
             statement.setLong(5, product.bodyMasterId());
+            statement.setLong(6, orderId);
+            statement.setLong(7, scheduleId);
             return executeInsertReturningId(statement);
         }
     }
@@ -168,7 +186,9 @@ class GuitarProcessE2E extends PlaywrightTestBase {
     private Long insertNeck(
             Connection connection,
             ProductReference product,
-            String serialNo) throws Exception {
+            String serialNo,
+            Long orderId,
+            Long scheduleId) throws Exception {
 
         String sql = """
                 INSERT INTO t_neck (
@@ -177,8 +197,10 @@ class GuitarProcessE2E extends PlaywrightTestBase {
                     current_process,
                     status,
                     product_id,
-                    neck_master_id
-                ) VALUES (?, ?, ?, 'AVAILABLE', ?, ?)
+                    neck_master_id,
+                    production_order_id,
+                    production_schedule_id
+                ) VALUES (?, ?, ?, 'AVAILABLE', ?, ?, ?, ?)
                 RETURNING id
                 """;
 
@@ -188,6 +210,8 @@ class GuitarProcessE2E extends PlaywrightTestBase {
             statement.setString(3, "E2E_READY");
             statement.setLong(4, product.productId());
             statement.setLong(5, product.neckMasterId());
+            statement.setLong(6, orderId);
+            statement.setLong(7, scheduleId);
             return executeInsertReturningId(statement);
         }
     }
@@ -223,6 +247,29 @@ class GuitarProcessE2E extends PlaywrightTestBase {
         }
     }
 
+    private Long insertProductionSchedule(
+            Connection connection,
+            Long orderId) throws Exception {
+        String sql = """
+                INSERT INTO t_production_schedule (
+                    production_order_id,
+                    schedule_date,
+                    planned_quantity,
+                    status,
+                    created_at,
+                    updated_at
+                ) VALUES (?, ?, 1, 'CONFIRMED',
+                          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id
+                """;
+        try (PreparedStatement statement =
+                connection.prepareStatement(sql)) {
+            statement.setLong(1, orderId);
+            statement.setObject(2, LocalDate.now().plusDays(1));
+            return executeInsertReturningId(statement);
+        }
+    }
+
     private Long executeInsertReturningId(
             PreparedStatement statement) throws Exception {
 
@@ -246,17 +293,19 @@ class GuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasTitle(Pattern.compile("生産計画詳細"));
         assertThat(page.locator("main.page-container"))
                 .containsText(orderNo);
-        assertThat(page.locator(".status-badge"))
+        assertThat(page.locator(
+                ".status-badge.status-planned"))
                 .hasText("計画中");
         captureScreenshot("01-production-order-detail.png");
     }
 
     private void openAssemblyForm() {
-        page.getByRole(
-                AriaRole.BUTTON,
-                new Page.GetByRoleOptions()
-                        .setName("ネック取付"))
-                .click();
+        page.navigate(
+                BASE_URL
+                + "/assemblies/new?productionOrderId="
+                + productionOrderId
+                + "&productionScheduleId="
+                + productionScheduleId);
         page.waitForLoadState();
 
         assertThat(page).hasTitle(Pattern.compile("ネック取付登録"));
@@ -374,7 +423,8 @@ class GuitarProcessE2E extends PlaywrightTestBase {
                 + "/view");
         page.waitForLoadState();
 
-        assertThat(page.locator(".status-badge"))
+        assertThat(page.locator(
+                ".status-badge.status-working"))
                 .hasText("製造中");
         assertThat(page.locator("main.page-container"))
                 .containsText("計画数に達しています");
@@ -525,7 +575,9 @@ class GuitarProcessE2E extends PlaywrightTestBase {
                 + "/view");
         page.waitForLoadState();
 
-        assertThat(page.locator(".status-badge"))
+        assertThat(page.locator(".detail-section")
+                .first()
+                .locator(".status-badge"))
                 .hasText("完了");
         assertThat(page.locator("main.page-container"))
                 .containsText("この生産計画は完了しています。");
@@ -543,6 +595,10 @@ class GuitarProcessE2E extends PlaywrightTestBase {
                 deleteById(connection, "t_guitar", guitarId);
                 deleteById(connection, "t_body", bodyId);
                 deleteById(connection, "t_neck", neckId);
+                deleteById(
+                        connection,
+                        "t_production_schedule",
+                        productionScheduleId);
                 deleteById(
                         connection,
                         "t_production_order",

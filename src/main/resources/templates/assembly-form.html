@@ -104,7 +104,15 @@
 
             <div class="detail-item">
 
+                <div class="detail-item">
                 <div class="detail-label">
+                    対象日産計画
+                </div>
+                <div class="detail-value"
+                     th:text="${productionSchedule.scheduleDate + ' / ' + productionSchedule.plannedQuantity + ' 台'}">
+                </div>
+            </div>
+            <div class="detail-label">
                     生産進捗
                 </div>
 
@@ -172,6 +180,9 @@
         <input type="hidden"
                name="productionOrderId"
                th:value="${productionOrder.id}">
+        <input type="hidden"
+               name="productionScheduleId"
+               th:value="${productionSchedule.id}">
 
         <section class="form-section">
 

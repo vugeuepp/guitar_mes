@@ -3,6 +3,7 @@ package com.example.guitarmes.assembly;
 public class AssemblyCreateRequest {
 
     private Long productionOrderId;
+    private Long productionScheduleId;
 
     private Long neckId;
 
@@ -24,6 +25,13 @@ public class AssemblyCreateRequest {
                 productionOrderId;
     }
 
+    public Long getProductionScheduleId() {
+        return productionScheduleId;
+    }
+    public void setProductionScheduleId(
+            Long productionScheduleId) {
+        this.productionScheduleId = productionScheduleId;
+    }
     public Long getNeckId() {
         return neckId;
     }

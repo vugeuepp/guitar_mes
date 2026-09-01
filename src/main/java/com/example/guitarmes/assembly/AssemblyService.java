@@ -20,6 +20,8 @@ import com.example.guitarmes.neck.NeckRepository;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.productionorder.ProductionOrderStatusConstants;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
+import com.example.guitarmes.productionschedule.ProductionScheduleRepository;
 
 @Service
 public class AssemblyService {
@@ -30,6 +32,7 @@ public class AssemblyService {
     private final ProductionOrderRepository
             productionOrderRepository;
     private final GuitarService guitarService;
+    private final ProductionScheduleRepository productionScheduleRepository;
 
     public AssemblyService(
             AssemblyRepository assemblyRepository,
@@ -37,7 +40,8 @@ public class AssemblyService {
             BodyRepository bodyRepository,
             ProductionOrderRepository
                     productionOrderRepository,
-            GuitarService guitarService) {
+            GuitarService guitarService,
+            ProductionScheduleRepository productionScheduleRepository) {
 
         this.assemblyRepository =
                 assemblyRepository;
@@ -53,6 +57,8 @@ public class AssemblyService {
 
         this.guitarService =
                 guitarService;
+        this.productionScheduleRepository =
+                productionScheduleRepository;
     }
 
     /**
@@ -107,20 +113,31 @@ public class AssemblyService {
     @Transactional
     public Assembly createAssembly(
             Long productionOrderId,
+            Long productionScheduleId,
             Long neckId,
             Long bodyId,
             String workerName) {
 
         ProductionOrder productionOrder = findProductionOrderOrThrow(productionOrderId);
+        ProductionSchedule productionSchedule =
+                findProductionScheduleOrThrow(productionScheduleId);
         Neck targetNeck = findNeckOrThrow(neckId);
         Body targetBody = findBodyOrThrow(bodyId);
 
         validateWorkerName(workerName);
         validateProductionOrder(productionOrder);
+        validateProductionSchedule(
+                productionOrder,
+                productionSchedule);
         validateNeckAvailable(targetNeck);
         validateBodyAvailable(targetBody);
         validateComponentCompatibility(
                 productionOrder,
+                targetNeck,
+                targetBody);
+        validateComponentProductionSchedule(
+                productionOrder,
+                productionSchedule,
                 targetNeck,
                 targetBody);
 
@@ -157,6 +174,48 @@ public class AssemblyService {
         return savedAssembly;
     }
     
+    private ProductionSchedule findProductionScheduleOrThrow(
+            Long productionScheduleId) {
+        return productionScheduleRepository
+                .findById(productionScheduleId)
+                .orElseThrow(() -> new NotFoundException(
+                        "指定された日産計画が存在しません。"));
+    }
+
+    private void validateProductionSchedule(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule) {
+        if (productionSchedule.getProductionOrder() == null
+                || !productionOrder.getId().equals(
+                        productionSchedule.getProductionOrder().getId())) {
+            throw new BusinessException(
+                    "日産計画が生産計画と一致していません。");
+        }
+    }
+
+    private void validateComponentProductionSchedule(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule,
+            Neck neck,
+            Body body) {
+        if (body.getProductionOrder() == null
+                || neck.getProductionOrder() == null
+                || body.getProductionSchedule() == null
+                || neck.getProductionSchedule() == null) {
+            throw new BusinessException(
+                    "日産計画から発行されたボディとネックを選択してください。");
+        }
+        Long orderId = productionOrder.getId();
+        Long scheduleId = productionSchedule.getId();
+        if (!orderId.equals(body.getProductionOrder().getId())
+                || !orderId.equals(neck.getProductionOrder().getId())
+                || !scheduleId.equals(body.getProductionSchedule().getId())
+                || !scheduleId.equals(neck.getProductionSchedule().getId())) {
+            throw new BusinessException(
+                    "選択されたボディとネックは同じ日産計画に属していません。");
+        }
+    }
+
     private void validateComponentCompatibility(
             ProductionOrder productionOrder,
             Neck neck,

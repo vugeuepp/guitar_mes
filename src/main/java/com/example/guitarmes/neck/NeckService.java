@@ -178,4 +178,33 @@ public class NeckService {
         neck.setProductionSchedule(productionSchedule);
         return neckRepository.save(neck);
     }
+
+    public List<Neck> getAvailableNecksByProductionSchedule(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule) {
+        validateScheduleSelection(productionOrder, productionSchedule);
+        Product product = productionOrder.getProduct();
+        if (product == null || product.getNeckMaster() == null) {
+            throw new BusinessException(
+                    "対象製品に対応するネックマスタが設定されていません。");
+        }
+        return neckRepository
+                .findByStatusAndProductionOrder_IdAndProductionSchedule_IdAndNeckMaster_Id(
+                        AVAILABLE,
+                        productionOrder.getId(),
+                        productionSchedule.getId(),
+                        product.getNeckMaster().getId());
+    }
+
+    private void validateScheduleSelection(
+            ProductionOrder productionOrder,
+            ProductionSchedule productionSchedule) {
+        if (productionOrder == null || productionSchedule == null
+                || productionSchedule.getProductionOrder() == null
+                || !productionOrder.getId().equals(
+                        productionSchedule.getProductionOrder().getId())) {
+            throw new BusinessException(
+                    "日産計画が生産計画と一致していません。");
+        }
+    }
 }

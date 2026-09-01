@@ -29,6 +29,7 @@ public class AssemblyController {
 
         return assemblyService.createAssembly(
                 request.getProductionOrderId(),
+                request.getProductionScheduleId(),
                 request.getNeckId(),
                 request.getBodyId(),
                 request.getWorkerName());

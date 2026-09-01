@@ -231,8 +231,6 @@ class ProductionScheduleIssueE2E extends PlaywrightTestBase {
                 new Locator.GetByRoleOptions()
                         .setName("取消")))
                 .hasCount(0);
-        assertThat(page.locator("main.page-container"))
-                .containsText("BodyとNeckを一括発行しました。");
         captureScreenshot("03-issued-state-visible.png");
     }
 

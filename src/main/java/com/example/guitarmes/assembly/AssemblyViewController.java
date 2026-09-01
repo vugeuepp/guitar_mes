@@ -12,6 +12,8 @@ import com.example.guitarmes.neck.NeckService;
 import com.example.guitarmes.product.Product;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderService;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
+import com.example.guitarmes.productionschedule.ProductionScheduleService;
 
 @Controller
 public class AssemblyViewController {
@@ -21,13 +23,17 @@ public class AssemblyViewController {
     private final BodyService bodyService;
     private final ProductionOrderService
             productionOrderService;
+    private final ProductionScheduleService
+            productionScheduleService;
 
     public AssemblyViewController(
             AssemblyService assemblyService,
             NeckService neckService,
             BodyService bodyService,
             ProductionOrderService
-                    productionOrderService) {
+                    productionOrderService,
+            ProductionScheduleService
+                    productionScheduleService) {
 
         this.assemblyService =
                 assemblyService;
@@ -40,6 +46,8 @@ public class AssemblyViewController {
 
         this.productionOrderService =
                 productionOrderService;
+        this.productionScheduleService =
+                productionScheduleService;
     }
 
     /**
@@ -62,6 +70,7 @@ public class AssemblyViewController {
     @GetMapping("/assemblies/new")
     public String newAssemblyForm(
             @RequestParam Long productionOrderId,
+            @RequestParam Long productionScheduleId,
             Model model) {
 
         ProductionOrder productionOrder =
@@ -69,24 +78,31 @@ public class AssemblyViewController {
                         .getProductionOrderById(
                                 productionOrderId);
 
-        Product product =
-                productionOrder.getProduct();
+        ProductionSchedule productionSchedule =
+                productionScheduleService
+                        .getProductionScheduleById(
+                                productionScheduleId);
 
         model.addAttribute(
                 "productionOrder",
                 productionOrder);
 
         model.addAttribute(
+                "productionSchedule",
+                productionSchedule);
+        model.addAttribute(
                 "necks",
                 neckService
-                        .getAvailableNecksByProduct(
-                                product));
+                        .getAvailableNecksByProductionSchedule(
+                                productionOrder,
+                                productionSchedule));
 
         model.addAttribute(
                 "bodies",
                 bodyService
-                        .getAvailableBodiesByProduct(
-                                product));
+                        .getAvailableBodiesByProductionSchedule(
+                                productionOrder,
+                                productionSchedule));
 
         return "assembly-form";
     }
@@ -105,6 +121,7 @@ public class AssemblyViewController {
     @PostMapping("/assemblies/create")
     public String createAssembly(
             @RequestParam Long productionOrderId,
+            @RequestParam Long productionScheduleId,
             @RequestParam Long neckId,
             @RequestParam Long bodyId,
             @RequestParam String workerName) {
@@ -112,6 +129,7 @@ public class AssemblyViewController {
         Assembly assembly =
                 assemblyService.createAssembly(
                         productionOrderId,
+                        productionScheduleId,
                         neckId,
                         bodyId,
                         workerName);

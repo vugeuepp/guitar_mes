@@ -5,18 +5,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.regex.Pattern;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 
 class ProductionOrderEditE2E extends PlaywrightTestBase {
+    private static final String E2E_DB_URL =
+            System.getProperty(
+                    "e2e.db.url",
+                    "jdbc:postgresql://localhost:5432/guitar_mes_e2e");
+    private static final String E2E_DB_USER =
+            System.getProperty("e2e.db.user", "naokiyamada");
+    private static final String E2E_DB_PASSWORD =
+            System.getProperty("e2e.db.password", "");
 
-    private static final String ORDER_NO = "PO260006";
+    private Long productionOrderId;
+    private String orderNo;
 
     @Override
     protected Path getEvidenceDirectory() {
@@ -25,136 +38,104 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
 
     @Test
     @DisplayName("未着手の生産計画を編集して証跡を保存できる")
-    void editProductionOrderAndCaptureEvidence() {
-        page.navigate(BASE_URL + "/production-orders/view");
-        page.waitForLoadState();
-
-        assertThat(page).hasTitle(
-                Pattern.compile("生産計画一覧"));
-        captureScreenshot("01-list.png");
-
-        Locator targetRow = page.locator("tbody tr")
-                .filter(new Locator.FilterOptions()
-                        .setHasText(ORDER_NO));
-        assertEquals(
-                1,
-                targetRow.count(),
-                ORDER_NO + "の行が一意に見つかりません。");
-
-        targetRow.getByRole(
-                AriaRole.LINK,
-                new Locator.GetByRoleOptions()
-                        .setName("詳細"))
-                .click();
-        page.waitForLoadState();
-
-        assertThat(page).hasURL(
-                Pattern.compile(".*/production-orders/\\d+/view"));
-        assertThat(page.locator("main.page-container"))
-                .containsText(ORDER_NO);
-        captureScreenshot("02-detail-before.png");
-
-        page.getByRole(
-                AriaRole.LINK,
-                new Page.GetByRoleOptions()
-                        .setName("編集"))
-                .click();
-        page.waitForLoadState();
-
-        assertThat(page).hasURL(
-                Pattern.compile(".*/production-orders/\\d+/edit"));
-
-        Locator quantityInput =
-                page.locator("input[name='plannedQuantity']");
-        Locator planMonthInput =
-                page.locator("input[name='planMonth']");
-        Locator startDateInput =
-                page.locator("input[name='plannedStartDate']");
-        Locator dueDateInput =
-                page.locator("input[name='dueDate']");
-
-        assertThat(quantityInput).isVisible();
-        assertThat(planMonthInput).isVisible();
-        assertThat(startDateInput).isVisible();
-        assertThat(dueDateInput).isVisible();
-
-        String originalQuantityText = quantityInput.inputValue();
-        String originalPlanMonth = planMonthInput.inputValue();
-        String originalStartDate = startDateInput.inputValue();
-        String originalDueDate = dueDateInput.inputValue();
-
-        assertTrue(
-                !originalPlanMonth.isBlank(),
-                "対象月の初期値が空です。");
-        assertTrue(
-                !originalStartDate.isBlank(),
-                "生産開始予定日の初期値が空です。");
-        assertTrue(
-                !originalDueDate.isBlank(),
-                "納期の初期値が空です。");
-
-        int originalQuantity =
-                Integer.parseInt(originalQuantityText);
-        int updatedQuantity = originalQuantity + 1;
-
-        captureScreenshot("03-edit-before.png");
-
-        quantityInput.fill(String.valueOf(updatedQuantity));
-        captureScreenshot("04-edit-input.png");
-
+    void editProductionOrderAndCaptureEvidence() throws Exception {
         try {
-            page.getByRole(
-                    AriaRole.BUTTON,
-                    new Page.GetByRoleOptions()
-                            .setName(Pattern.compile("保存|更新")))
-                    .click();
-            page.waitForLoadState();
-
-            assertThat(page).hasURL(
-                    Pattern.compile(
-                            ".*/production-orders/\\d+/view"));
-            assertThat(page.locator("main.page-container"))
-                    .containsText(String.valueOf(updatedQuantity));
-            captureScreenshot("05-detail-after.png");
+            prepareProductionOrder();
+            openProductionOrderList();
+            openProductionOrderDetail();
+            editProductionOrder();
+            verifyDatabaseState();
         } finally {
-            restoreOriginalValues(
-                    originalQuantity,
-                    originalPlanMonth,
-                    originalStartDate,
-                    originalDueDate);
+            cleanupSafely();
+            verifyCleanup();
         }
     }
 
-    private void restoreOriginalValues(
-            int originalQuantity,
-            String originalPlanMonth,
-            String originalStartDate,
-            String originalDueDate) {
-
-        if (page.url().matches(
-                ".*/production-orders/\\d+/view")) {
-            page.getByRole(
-                    AriaRole.LINK,
-                    new Page.GetByRoleOptions()
-                            .setName("編集"))
-                    .click();
-            page.waitForLoadState();
+    private void prepareProductionOrder() throws Exception {
+        Long productId = findProductId();
+        orderNo = "E2E-ORDER-EDIT-" + System.currentTimeMillis();
+        YearMonth planMonth = YearMonth.now().plusMonths(1);
+        String sql = """
+                INSERT INTO t_production_order (
+                    order_no,
+                    product_id,
+                    planned_quantity,
+                    started_quantity,
+                    completed_quantity,
+                    plan_month,
+                    planned_start_date,
+                    due_date,
+                    status
+                ) VALUES (?, ?, 10, 0, 0, ?, ?, ?, 'PLANNED')
+                RETURNING id
+                """;
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, orderNo);
+            statement.setLong(2, productId);
+            statement.setObject(3, planMonth.atDay(1));
+            statement.setObject(4, planMonth.atDay(2));
+            statement.setObject(5, planMonth.atEndOfMonth());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(resultSet.next());
+                productionOrderId = resultSet.getLong("id");
+            }
         }
+    }
 
-        if (!page.url().matches(
-                ".*/production-orders/\\d+/edit")) {
-            return;
+    private Long findProductId() throws Exception {
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT id FROM m_product ORDER BY id LIMIT 1");
+             ResultSet resultSet = statement.executeQuery()) {
+            if (!resultSet.next()) {
+                throw new IllegalStateException(
+                        "E2Eに使用できるProductがありません。");
+            }
+            return resultSet.getLong("id");
         }
+    }
 
-        page.locator("input[name='plannedQuantity']")
-                .fill(String.valueOf(originalQuantity));
-        page.locator("input[name='planMonth']")
-                .fill(originalPlanMonth);
-        page.locator("input[name='plannedStartDate']")
-                .fill(originalStartDate);
-        page.locator("input[name='dueDate']")
-                .fill(originalDueDate);
+    private void openProductionOrderList() {
+        page.navigate(BASE_URL + "/production-orders/view");
+        page.waitForLoadState();
+        assertThat(page).hasTitle(Pattern.compile("生産計画一覧"));
+        captureScreenshot("01-list.png");
+    }
 
+    private void openProductionOrderDetail() {
+        Locator targetRow = page.locator("tbody tr")
+                .filter(new Locator.FilterOptions().setHasText(orderNo));
+        assertEquals(
+                1,
+                targetRow.count(),
+                orderNo + "の行が一意に見つかりません。");
+        targetRow.getByRole(
+                AriaRole.LINK,
+                new Locator.GetByRoleOptions().setName("詳細"))
+                .click();
+        page.waitForLoadState();
+        assertThat(page).hasURL(Pattern.compile(
+                ".*/production-orders/" + productionOrderId + "/view"));
+        assertThat(page.locator("main.page-container"))
+                .containsText(orderNo);
+        captureScreenshot("02-detail-before.png");
+    }
+
+    private void editProductionOrder() {
+        page.getByRole(
+                AriaRole.LINK,
+                new Page.GetByRoleOptions().setName("編集"))
+                .click();
+        page.waitForLoadState();
+
+        Locator quantityInput =
+                page.locator("input[name='plannedQuantity']");
+        assertThat(quantityInput).hasValue("10");
+        captureScreenshot("03-edit-before.png");
+
+        quantityInput.fill("11");
+        captureScreenshot("04-edit-input.png");
         page.getByRole(
                 AriaRole.BUTTON,
                 new Page.GetByRoleOptions()
@@ -162,8 +143,63 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
                 .click();
         page.waitForLoadState();
 
-        assertThat(page).hasURL(
-                Pattern.compile(".*/production-orders/\\d+/view"));
-        captureScreenshot("06-detail-restored.png");
+        assertThat(page).hasURL(Pattern.compile(
+                ".*/production-orders/" + productionOrderId + "/view"));
+        assertThat(page.locator("main.page-container"))
+                .containsText("11");
+        captureScreenshot("05-detail-after.png");
+    }
+
+    private void verifyDatabaseState() throws Exception {
+        String sql = """
+                SELECT planned_quantity
+                FROM t_production_order
+                WHERE id = ?
+                """;
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, productionOrderId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(resultSet.next());
+                assertEquals(11, resultSet.getInt("planned_quantity"));
+            }
+        }
+    }
+
+    private void cleanupSafely() throws Exception {
+        if (productionOrderId == null) {
+            return;
+        }
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "DELETE FROM t_production_order "
+                     + "WHERE id = ? AND order_no = ?")) {
+            statement.setLong(1, productionOrderId);
+            statement.setString(2, orderNo);
+            statement.executeUpdate();
+        }
+    }
+
+    private void verifyCleanup() throws Exception {
+        if (orderNo == null) {
+            return;
+        }
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT COUNT(*) FROM t_production_order "
+                     + "WHERE order_no = ?")) {
+            statement.setString(1, orderNo);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(resultSet.next());
+                assertEquals(0, resultSet.getInt(1));
+            }
+        }
+    }
+
+    private Connection openConnection() throws Exception {
+        return DriverManager.getConnection(
+                E2E_DB_URL,
+                E2E_DB_USER,
+                E2E_DB_PASSWORD);
     }
 }
