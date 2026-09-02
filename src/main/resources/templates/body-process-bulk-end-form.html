@@ -63,8 +63,7 @@
                 <thead>
                 <tr>
                     <th><input type="checkbox" id="select-all" aria-label="対象工程を全件選択" disabled></th>
-                    <th>履歴ID</th>
-                    <th>ボディID</th>
+                    <th>ボディシリアル番号</th>
                     <th>工程名</th>
                     <th>作業者</th>
                     <th>開始時刻</th>
@@ -72,21 +71,16 @@
                 </thead>
                 <tbody>
                 <tr th:each="history : ${histories}"
-                    th:attr="data-history-id=${history.id},data-process-id=${history.processId}">
+                    th:attr="data-history-id=${history.historyId},data-process-id=${history.processId}">
                     <td>
                         <input type="checkbox"
                                class="row-checkbox"
                                name="historyIds"
-                               th:value="${history.id}"
+                               th:value="${history.historyId}"
                                disabled>
                     </td>
-                    <td th:text="${history.id}"></td>
-                    <td th:text="${history.bodyId}"></td>
-                    <td>
-                        <span th:each="process : ${processes}"
-                              th:if="${process.id == history.processId}"
-                              th:text="${process.processName}"></span>
-                    </td>
+                    <td th:text="${history.bodySerialNo}"></td>
+                    <td th:text="${history.processName}"></td>
                     <td th:text="${history.workerName}"></td>
                     <td th:text="${history.startTime}"></td>
                 </tr>

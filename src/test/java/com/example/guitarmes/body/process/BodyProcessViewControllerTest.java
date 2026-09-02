@@ -86,12 +86,14 @@ class BodyProcessViewControllerTest {
 
     @Test
     void bulkEndView_providesHistoriesAndProcesses() throws Exception {
-        List<BodyProcessHistory> histories =
-                List.of(new BodyProcessHistory());
+        List<BodyProcessRunningResponse> histories =
+                List.of(new BodyProcessRunningResponse(
+                        1L, 2L, "DB260001", 3L,
+                        "塗装後検品", "Worker", null));
         List<ManufacturingProcess> processes =
                 List.of(new ManufacturingProcess());
 
-        when(bodyProcessService.getRunningProcesses())
+        when(bodyProcessService.getRunningProcessResponses())
                 .thenReturn(histories);
         when(bodyProcessService.getBodyProcesses())
                 .thenReturn(processes);

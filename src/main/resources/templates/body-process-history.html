@@ -144,9 +144,6 @@
                 <thead>
                     <tr>
                         <th>
-                            履歴ID
-                        </th>
-                        <th>
                             工程
                         </th>
                         <th>
@@ -173,9 +170,6 @@
                 <tbody>
 
                     <tr th:each="history : ${histories}">
-
-                        <td th:text="${history.historyId}">
-                        </td>
 
                         <td th:text="${history.processName}">
                         </td>

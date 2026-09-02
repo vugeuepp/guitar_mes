@@ -485,4 +485,30 @@ public class BodyProcessService {
         }
     }
 
+
+    public BodyProcessRunningResponse getRunningProcessResponse(
+            Long bodyId) {
+        BodyProcessHistory history = getRunningProcess(bodyId);
+        return history == null ? null : toRunningResponse(history);
+    }
+
+    public List<BodyProcessRunningResponse> getRunningProcessResponses() {
+        return getRunningProcesses().stream()
+                .map(this::toRunningResponse)
+                .toList();
+    }
+
+    private BodyProcessRunningResponse toRunningResponse(
+            BodyProcessHistory history) {
+        Body body = findBodyForBulk(history.getBodyId());
+        ManufacturingProcess process = findBodyProcess(history.getProcessId());
+        return new BodyProcessRunningResponse(
+                history.getId(),
+                body.getId(),
+                body.getSerialNo(),
+                process.getId(),
+                process.getProcessName(),
+                history.getWorkerName(),
+                history.getStartTime());
+    }
 }

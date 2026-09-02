@@ -306,6 +306,10 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page.locator("#selected-count")).hasText("0");
         assertThat(historyRow(historyIds.get(0)).locator("input.row-checkbox")).isDisabled();
         assertThat(historyRow(historyIds.get(1)).locator("input.row-checkbox")).isDisabled();
+        assertThat(page.locator("table.bulk-select-table"))
+                .containsText(firstSerial);
+        assertEquals(0, page.locator("table.bulk-select-table")
+                .getByText("履歴ID").count());
         captureScreenshot("04-running-process-list.png");
     }
 

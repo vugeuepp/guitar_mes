@@ -713,4 +713,30 @@ public class NeckProcessService {
         }
     }
 
+
+    public NeckProcessRunningResponse getRunningProcessResponse(
+            Long neckId) {
+        NeckProcessHistory history = getRunningProcess(neckId);
+        return history == null ? null : toRunningResponse(history);
+    }
+
+    public List<NeckProcessRunningResponse> getRunningProcessResponses() {
+        return getRunningProcesses().stream()
+                .map(this::toRunningResponse)
+                .toList();
+    }
+
+    private NeckProcessRunningResponse toRunningResponse(
+            NeckProcessHistory history) {
+        Neck neck = findNeckForBulk(history.getNeckId());
+        ManufacturingProcess process = findNeckProcessForBulk(history.getProcessId());
+        return new NeckProcessRunningResponse(
+                history.getId(),
+                neck.getId(),
+                neck.getSerialNo(),
+                process.getId(),
+                process.getProcessName(),
+                history.getWorkerName(),
+                history.getStartTime());
+    }
 }

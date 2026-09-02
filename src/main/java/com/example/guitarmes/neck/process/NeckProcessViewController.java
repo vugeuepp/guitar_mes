@@ -72,7 +72,7 @@ public class NeckProcessViewController {
         model.addAttribute(
                 "runningHistory",
                 neckProcessService
-                        .getRunningProcess(neckId));
+                        .getRunningProcessResponse(neckId));
 
         return "neck-process-end-form";
     }
@@ -150,7 +150,7 @@ public class NeckProcessViewController {
     public String showBulkEndForm(Model model) {
         model.addAttribute(
                 "histories",
-                neckProcessService.getRunningProcesses());
+                neckProcessService.getRunningProcessResponses());
         model.addAttribute(
                 "processes",
                 neckProcessService.getNeckProcesses());

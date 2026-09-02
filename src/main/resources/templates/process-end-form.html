@@ -28,8 +28,8 @@
             <table class="data-table">
                 <thead>
                 <tr>
-                    <th>履歴ID</th>
-                    <th>工程ID</th>
+                    <th>ギター</th>
+                    <th>工程名</th>
                     <th>作業者</th>
                     <th>開始時刻</th>
                     <th>終了</th>
@@ -37,13 +37,13 @@
                 </thead>
                 <tbody>
                 <tr>
-                    <td th:text="${runningHistory.id}"></td>
-                    <td th:text="${runningHistory.processId}"></td>
+                    <td th:text="${runningHistory.guitarSerialNo}"></td>
+                    <td th:text="${runningHistory.processName}"></td>
                     <td th:text="${runningHistory.workerName}"></td>
                     <td th:text="${runningHistory.startTime}"></td>
                     <td class="table-action-cell">
                         <form th:action="@{/processes/end}" method="post">
-                            <input type="hidden" name="historyId" th:value="${runningHistory.id}">
+                            <input type="hidden" name="historyId" th:value="${runningHistory.historyId}">
                             <button type="submit" class="btn btn-process-end">工程終了</button>
                         </form>
                     </td>
@@ -115,21 +115,17 @@
                     </thead>
                     <tbody>
                     <tr th:each="history : ${histories}"
-                        th:attr="data-history-id=${history.id},data-process-id=${history.processId}">
+                        th:attr="data-history-id=${history.historyId},data-process-id=${history.processId}">
                         <td class="bulk-checkbox-cell">
                             <input type="checkbox"
                                    name="historyIds"
                                    class="row-checkbox"
-                                   th:value="${history.id}"
+                                   th:value="${history.historyId}"
                                    disabled
                                    th:attr="aria-label=${'工程履歴を選択'}">
                         </td>
-                        <td th:text="${history.guitarId}"></td>
-                        <td>
-                            <span th:each="process : ${processes}"
-                                  th:if="${process.id == history.processId}"
-                                  th:text="${process.processName}"></span>
-                        </td>
+                        <td th:text="${history.guitarSerialNo}"></td>
+                        <td th:text="${history.processName}"></td>
                         <td th:text="${history.workerName}"></td>
                         <td th:text="${history.startTime}"></td>
                         <td class="table-action-cell">
@@ -137,7 +133,7 @@
                                     class="btn btn-process-end"
                                     th:formaction="@{/processes/end}"
                                     name="historyId"
-                                    th:value="${history.id}">
+                                    th:value="${history.historyId}">
                                 工程終了
                             </button>
                         </td>

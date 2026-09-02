@@ -69,7 +69,7 @@
             <table class="data-table guitar-management-table bulk-select-table">
                 <thead><tr>
                     <th><input type="checkbox" id="select-all" aria-label="全件選択"></th>
-                    <th>ID</th><th>シリアル番号</th><th>製品</th><th>現在工程</th>
+                    <th>シリアル番号</th><th>製品</th><th>現在工程</th>
                     <th>進捗率</th><th>状態</th><th>操作</th><th>詳細</th>
                 </tr></thead>
                 <tbody>
@@ -82,7 +82,7 @@
                                th:disabled="${guitar.hasRunningProcess or !guitar.hasNextProcess}"
                                th:attr="aria-label=${guitar.serialNo + 'を選択'},data-base-eligible=${!guitar.hasRunningProcess and guitar.hasNextProcess}">
                     </td>
-                    <td th:text="${guitar.id}"></td>
+                    
                     <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span></td>
                     <td class="guitar-management-product-cell" th:text="${guitar.productName}"></td>
                     <td th:text="${guitar.currentProcess}"></td>
