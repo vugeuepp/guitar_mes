@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.process;
 
 import java.time.Duration;
@@ -866,6 +867,107 @@ public class ProcessService {
 
             throw new BusinessException(
                     "作業者を入力してください。");
+        }
+    }
+
+    @Transactional
+    public List<ProcessHistory> startProcesses(
+            List<Long> guitarIds,
+            Long processId,
+            String workerName) {
+        validateIds(guitarIds, "工程開始対象を選択してください。");
+        validateWorkerName(workerName);
+        ManufacturingProcess selectedProcess = findProcessOrThrow(processId);
+        validateGuitarProcess(selectedProcess);
+        List<Long> uniqueIds = guitarIds.stream().distinct().toList();
+        List<Guitar> guitars = uniqueIds.stream()
+                .map(this::findGuitarOrThrow)
+                .toList();
+        for (Guitar guitar : guitars) {
+            validateStartable(guitar, selectedProcess);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        List<ProcessHistory> histories = new ArrayList<>();
+        for (Guitar guitar : guitars) {
+            guitar.setCurrentProcess(selectedProcess.getProcessName());
+            histories.add(new ProcessHistory(
+                    guitar.getId(), processId, workerName.trim(), now));
+        }
+        guitarRepository.saveAll(guitars);
+        return historyRepository.saveAll(histories);
+    }
+
+    @Transactional
+    public List<ProcessHistory> endProcesses(List<Long> historyIds) {
+        validateIds(historyIds, "工程終了対象を選択してください。");
+        List<Long> uniqueIds = historyIds.stream().distinct().toList();
+        List<ProcessHistory> histories = uniqueIds.stream()
+                .map(id -> historyRepository.findById(id)
+                        .orElseThrow(() -> new NotFoundException(
+                                "指定された工程履歴が存在しません。ID: " + id)))
+                .toList();
+        List<Guitar> guitars = new ArrayList<>();
+        List<ManufacturingProcess> processes = new ArrayList<>();
+        for (ProcessHistory history : histories) {
+            if (history.getEndTime() != null) {
+                throw new BusinessException(
+                        "すでに終了した工程が含まれています。履歴ID: " + history.getId());
+            }
+            ManufacturingProcess process = findProcessOrThrow(history.getProcessId());
+            validateGuitarProcess(process);
+            processes.add(process);
+            guitars.add(findGuitarOrThrow(history.getGuitarId()));
+        }
+        Long firstProcessId = histories.get(0).getProcessId();
+        if (histories.stream().anyMatch(h -> !firstProcessId.equals(h.getProcessId()))) {
+            throw new BusinessException("異なる工程をまとめて終了することはできません。");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        histories.forEach(history -> history.setEndTime(now));
+        for (int i = 0; i < guitars.size(); i++) {
+            ManufacturingProcess nextProcess = findNextProcessAfter(processes.get(i));
+            if (nextProcess == null) {
+                completeGuitar(guitars.get(i));
+            } else {
+                guitars.get(i).setCurrentProcess(nextProcess.getProcessName());
+            }
+        }
+        guitarRepository.saveAll(guitars);
+        return historyRepository.saveAll(histories);
+    }
+
+    public List<ManufacturingProcess> getAvailableGuitarProcesses() {
+        return getGuitarProcesses();
+    }
+
+    private void validateStartable(
+            Guitar guitar,
+            ManufacturingProcess selectedProcess) {
+        if (guitar.getProductionOrder() == null) {
+            throw new BusinessException(
+                    "旧フローのギターデータが含まれています。ID: " + guitar.getId());
+        }
+        if (GuitarProcessConstants.COMPLETED.equals(guitar.getCurrentProcess())) {
+            throw new BusinessException(
+                    "完成済みのギターが含まれています。ID: " + guitar.getId());
+        }
+        if (hasRunningProcess(guitar.getId())) {
+            throw new BusinessException(
+                    "実施中工程のあるギターが含まれています。ID: " + guitar.getId());
+        }
+        ManufacturingProcess nextProcess = getNextAvailableProcess(guitar.getId());
+        if (!nextProcess.getId().equals(selectedProcess.getId())) {
+            throw new BusinessException(
+                    "開始可能工程が一致しないギターが含まれています。ID: " + guitar.getId());
+        }
+    }
+
+    private void validateIds(List<Long> ids, String message) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(message);
+        }
+        if (ids.stream().anyMatch(id -> id == null)) {
+            throw new BusinessException("対象IDに不正な値が含まれています。");
         }
     }
 }

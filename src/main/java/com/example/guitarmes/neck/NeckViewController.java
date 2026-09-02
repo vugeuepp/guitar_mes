@@ -7,19 +7,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.master.neck.NeckMasterService;
+import com.example.guitarmes.neck.process.NeckProcessService;
 
 @Controller
 public class NeckViewController {
 
     private final NeckService neckService;
     private final NeckMasterService neckMasterService;
+    private final NeckProcessService neckProcessService;
 
     public NeckViewController(
             NeckService neckService,
-            NeckMasterService neckMasterService) {
+            NeckMasterService neckMasterService,
+            NeckProcessService neckProcessService) {
 
         this.neckService = neckService;
         this.neckMasterService = neckMasterService;
+        this.neckProcessService = neckProcessService;
     }
 
     @GetMapping("/necks/view")
@@ -28,6 +32,9 @@ public class NeckViewController {
         model.addAttribute(
                 "necks",
                 neckService.getNecks());
+        model.addAttribute(
+                "neckProcesses",
+                neckProcessService.getNeckProcesses());
 
         return "neck-list";
     }

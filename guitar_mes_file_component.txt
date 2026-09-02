@@ -1,0 +1,259 @@
+/Users/naokiyamada/git/guitar-mes/guitar_mes/src
+├── main
+│   ├── java
+│   │   └── com
+│   │       └── example
+│   │           └── guitarmes
+│   │               ├── assembly
+│   │               │   ├── Assembly.java
+│   │               │   ├── AssemblyController.java
+│   │               │   ├── AssemblyCreateRequest.java
+│   │               │   ├── AssemblyRepository.java
+│   │               │   ├── AssemblyResponse.java
+│   │               │   ├── AssemblyService.java
+│   │               │   └── AssemblyViewController.java
+│   │               ├── body
+│   │               │   ├── Body.java
+│   │               │   ├── BodyController.java
+│   │               │   ├── BodyCreateRequest.java
+│   │               │   ├── BodyRepository.java
+│   │               │   ├── BodyService.java
+│   │               │   ├── BodyViewController.java
+│   │               │   └── process
+│   │               │       ├── BodyProcessConstants.java
+│   │               │       ├── BodyProcessHistory.java
+│   │               │       ├── BodyProcessHistoryRepository.java
+│   │               │       ├── BodyProcessHistoryResponse.java
+│   │               │       ├── BodyProcessService.java
+│   │               │       └── BodyProcessViewController.java
+│   │               ├── common
+│   │               │   ├── DateTimeFormatterUtil.java
+│   │               │   ├── StatusConstants.java
+│   │               │   ├── StatusDisplayHelper.java
+│   │               │   └── YearMonthDateConverter.java
+│   │               ├── dashboard
+│   │               │   └── HomeController.java
+│   │               ├── dto
+│   │               │   └── ErrorResponse.java
+│   │               ├── exception
+│   │               │   ├── BusinessException.java
+│   │               │   ├── GlobalExceptionHandler.java
+│   │               │   └── NotFoundException.java
+│   │               ├── guitar
+│   │               │   ├── Guitar.java
+│   │               │   ├── GuitarController.java
+│   │               │   ├── GuitarProgressResponse.java
+│   │               │   ├── GuitarRepository.java
+│   │               │   ├── GuitarService.java
+│   │               │   ├── GuitarUpdateRequest.java
+│   │               │   └── GuitarViewController.java
+│   │               ├── GuitarMesApplication.java
+│   │               ├── master
+│   │               │   ├── body
+│   │               │   │   ├── BodyMaster.java
+│   │               │   │   ├── BodyMasterController.java
+│   │               │   │   ├── BodyMasterRepository.java
+│   │               │   │   ├── BodyMasterService.java
+│   │               │   │   └── BodyMasterUpdateRequest.java
+│   │               │   ├── BodyMaterialType.java
+│   │               │   ├── FingerboardMaterialType.java
+│   │               │   ├── FretCountType.java
+│   │               │   ├── instrumenttype
+│   │               │   │   ├── InstrumentTypeMaster.java
+│   │               │   │   ├── InstrumentTypeMasterRepository.java
+│   │               │   │   ├── InstrumentTypeMasterService.java
+│   │               │   │   └── InstrumentTypeMasterViewController.java
+│   │               │   ├── neck
+│   │               │   │   ├── NeckMaster.java
+│   │               │   │   ├── NeckMasterController.java
+│   │               │   │   ├── NeckMasterRepository.java
+│   │               │   │   ├── NeckMasterService.java
+│   │               │   │   └── NeckMasterUpdateRequest.java
+│   │               │   ├── NeckMaterialType.java
+│   │               │   ├── productseries
+│   │               │   │   ├── ProductSeriesMaster.java
+│   │               │   │   ├── ProductSeriesMasterRepository.java
+│   │               │   │   ├── ProductSeriesMasterService.java
+│   │               │   │   └── ProductSeriesMasterViewController.java
+│   │               │   └── ScaleLengthType.java
+│   │               ├── neck
+│   │               │   ├── Neck.java
+│   │               │   ├── NeckController.java
+│   │               │   ├── NeckCreateRequest.java
+│   │               │   ├── NeckRepository.java
+│   │               │   ├── NeckService.java
+│   │               │   ├── NeckViewController.java
+│   │               │   └── process
+│   │               │       ├── NeckProcessConstants.java
+│   │               │       ├── NeckProcessHistory.java
+│   │               │       ├── NeckProcessHistoryRepository.java
+│   │               │       ├── NeckProcessHistoryResponse.java
+│   │               │       ├── NeckProcessService.java
+│   │               │       └── NeckProcessViewController.java
+│   │               ├── process
+│   │               │   ├── analysis
+│   │               │   │   ├── ComponentProcessAverageTimeResponse.java
+│   │               │   │   ├── ComponentStatusCountResponse.java
+│   │               │   │   ├── ProcessAnalysisViewController.java
+│   │               │   │   ├── ProcessAverageTimeResponse.java
+│   │               │   │   └── ProcessCountResponse.java
+│   │               │   ├── BulkProcessEndRequest.java
+│   │               │   ├── BulkProcessStartRequest.java
+│   │               │   ├── common
+│   │               │   │   ├── GuitarProcessConstants.java
+│   │               │   │   ├── ProcessConstants.java
+│   │               │   │   ├── ProcessResultConstants.java
+│   │               │   │   ├── ProcessStatusConstants.java
+│   │               │   │   └── ProcessTargetConstants.java
+│   │               │   ├── ManufacturingProcess.java
+│   │               │   ├── ManufacturingProcessController.java
+│   │               │   ├── ManufacturingProcessRepository.java
+│   │               │   ├── ProcessEndRequest.java
+│   │               │   ├── ProcessHistory.java
+│   │               │   ├── ProcessHistoryRepository.java
+│   │               │   ├── ProcessHistoryResponse.java
+│   │               │   ├── ProcessService.java
+│   │               │   ├── ProcessStartRequest.java
+│   │               │   ├── ProcessStatusResponse.java
+│   │               │   ├── ProcessViewController.java
+│   │               │   └── ProcessWorkController.java
+│   │               ├── product
+│   │               │   ├── image
+│   │               │   │   ├── ProductImageService.java
+│   │               │   │   └── ProductImageWebConfig.java
+│   │               │   ├── InternalModelCodeService.java
+│   │               │   ├── Product.java
+│   │               │   ├── ProductRepository.java
+│   │               │   ├── ProductService.java
+│   │               │   ├── ProductUpdateRequest.java
+│   │               │   ├── ProductVariationCreateRequest.java
+│   │               │   ├── ProductVariationRequest.java
+│   │               │   └── ProductViewController.java
+│   │               ├── productionorder
+│   │               │   ├── ProductionOrder.java
+│   │               │   ├── ProductionOrderCreateRequest.java
+│   │               │   ├── ProductionOrderDisplayHelper.java
+│   │               │   ├── ProductionOrderRepository.java
+│   │               │   ├── ProductionOrderService.java
+│   │               │   ├── ProductionOrderStatusConstants.java
+│   │               │   ├── ProductionOrderUpdateRequest.java
+│   │               │   └── ProductionOrderViewController.java
+│   │               └── productionschedule
+│   │                   ├── ProductionSchedule.java
+│   │                   ├── ProductionScheduleCreateRequest.java
+│   │                   ├── ProductionScheduleRepository.java
+│   │                   ├── ProductionScheduleService.java
+│   │                   ├── ProductionScheduleStatusConstants.java
+│   │                   ├── ProductionScheduleUpdateRequest.java
+│   │                   └── ProductionScheduleViewController.java
+│   └── resources
+│       ├── application-e2e.properties
+│       ├── application.properties
+│       ├── static
+│       │   └── css
+│       │       └── style.css
+│       └── templates
+│           ├── assembly-detail.html
+│           ├── assembly-form.html
+│           ├── assembly-list.html
+│           ├── body-form.html
+│           ├── body-list.html
+│           ├── body-master-detail.html
+│           ├── body-master-edit-form.html
+│           ├── body-master-form.html
+│           ├── body-master-list.html
+│           ├── body-process-end-form.html
+│           ├── body-process-history.html
+│           ├── body-process-start-form.html
+│           ├── fragments
+│           │   ├── header.html
+│           │   └── menu.html
+│           ├── guitar-detail.html
+│           ├── guitar-list.html
+│           ├── history-list.html
+│           ├── home.html
+│           ├── instrument-type-edit-form.html
+│           ├── instrument-type-form.html
+│           ├── instrument-type-list.html
+│           ├── neck-form.html
+│           ├── neck-list.html
+│           ├── neck-master-detail.html
+│           ├── neck-master-edit-form.html
+│           ├── neck-master-form.html
+│           ├── neck-master-list.html
+│           ├── neck-process-end-form.html
+│           ├── neck-process-history.html
+│           ├── neck-process-start-form.html
+│           ├── process-analysis.html
+│           ├── process-end-form.html
+│           ├── process-start-form.html
+│           ├── product-detail.html
+│           ├── product-edit-form.html
+│           ├── product-form.html
+│           ├── product-list.html
+│           ├── product-series-edit-form.html
+│           ├── product-series-form.html
+│           ├── product-series-list.html
+│           ├── production-order-detail.html
+│           ├── production-order-edit-form.html
+│           ├── production-order-form.html
+│           ├── production-order-list.html
+│           ├── production-schedule-edit-form.html
+│           └── production-schedule-form.html
+└── test
+    ├── java
+    │   └── com
+    │       └── example
+    │           └── guitarmes
+    │               ├── assembly
+    │               │   ├── AssemblyServiceTest.java
+    │               │   └── AssemblyViewControllerTest.java
+    │               ├── e2e
+    │               │   ├── AssemblyCreateE2E.java
+    │               │   ├── GuitarProcessE2E.java
+    │               │   ├── InstrumentTypeMasterE2E.java
+    │               │   ├── PlaywrightTestBase.java
+    │               │   ├── ProductImageUploadE2E.java
+    │               │   ├── ProductionOrderCancelE2E.java
+    │               │   ├── ProductionOrderEditE2E.java
+    │               │   ├── ProductionOrderSmokeE2E.java
+    │               │   ├── ProductionScheduleCreateE2E.java
+    │               │   ├── ProductionScheduleIssueE2E.java
+    │               │   ├── ProductionScheduleOperationE2E.java
+    │               │   └── ProductSeriesMasterE2E.java
+    │               ├── guitar
+    │               │   └── GuitarViewControllerTest.java
+    │               ├── GuitarMesApplicationTests.java
+    │               ├── master
+    │               │   ├── body
+    │               │   │   ├── BodyMasterControllerTest.java
+    │               │   │   └── BodyMasterServiceTest.java
+    │               │   ├── instrumenttype
+    │               │   │   ├── InstrumentTypeMasterServiceTest.java
+    │               │   │   └── InstrumentTypeMasterViewControllerTest.java
+    │               │   ├── neck
+    │               │   │   ├── NeckMasterControllerTest.java
+    │               │   │   └── NeckMasterServiceTest.java
+    │               │   └── productseries
+    │               │       ├── ProductSeriesMasterServiceTest.java
+    │               │       └── ProductSeriesMasterViewControllerTest.java
+    │               ├── process
+    │               │   ├── ProcessServiceTest.java
+    │               │   ├── ProcessViewControllerTest.java
+    │               │   └── ProcessWorkControllerTest.java
+    │               ├── product
+    │               │   ├── image
+    │               │   │   └── ProductImageServiceTest.java
+    │               │   ├── ProductServiceTest.java
+    │               │   └── ProductViewControllerTest.java
+    │               ├── productionorder
+    │               │   ├── ProductionOrderServiceTest.java
+    │               │   └── ProductionOrderViewControllerTest.java
+    │               └── productionschedule
+    │                   ├── ProductionScheduleIssueServiceTest.java
+    │                   ├── ProductionScheduleServiceTest.java
+    │                   └── ProductionScheduleViewControllerTest.java
+    └── resources
+        └── application-e2e.properties
+
+52 directories, 205 files

@@ -125,4 +125,70 @@ public class NeckProcessViewController {
 
         return "neck-process-history";
     }
+
+    @PostMapping("/neck-processes/bulk/start")
+    public String startProcesses(
+            @RequestParam(required = false) java.util.List<Long> neckIds,
+            @RequestParam Long processId,
+            @RequestParam String workerName,
+            RedirectAttributes redirectAttributes) {
+        try {
+            int count = neckProcessService
+                    .startProcesses(neckIds, processId, workerName).size();
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    count + "件のネック工程を一括開始しました。");
+        } catch (BusinessException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage());
+        }
+        return "redirect:/necks/view";
+    }
+
+    @GetMapping("/neck-processes/bulk/end/view")
+    public String showBulkEndForm(Model model) {
+        model.addAttribute(
+                "histories",
+                neckProcessService.getRunningProcesses());
+        model.addAttribute(
+                "processes",
+                neckProcessService.getNeckProcesses());
+        return "neck-process-bulk-end-form";
+    }
+
+    @PostMapping("/neck-processes/bulk/end")
+    public String endProcesses(
+            @RequestParam(required = false)
+            java.util.List<Long> historyIds,
+            @RequestParam String result,
+            @RequestParam(required = false)
+            String note,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            int count = neckProcessService
+                    .endProcesses(
+                            historyIds,
+                            result,
+                            note)
+                    .size();
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    count
+                    + "件のネック工程を"
+                    + "一括終了しました。");
+
+            return "redirect:/necks/view";
+
+        } catch (BusinessException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    exception.getMessage());
+
+            return "redirect:/neck-processes/bulk/end/view";
+        }
+    }
+
 }

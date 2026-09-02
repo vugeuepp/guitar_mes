@@ -7,19 +7,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.master.body.BodyMasterService;
+import com.example.guitarmes.body.process.BodyProcessService;
 
 @Controller
 public class BodyViewController {
 
     private final BodyService bodyService;
     private final BodyMasterService bodyMasterService;
+    private final BodyProcessService bodyProcessService;
 
     public BodyViewController(
             BodyService bodyService,
-            BodyMasterService bodyMasterService) {
+            BodyMasterService bodyMasterService,
+            BodyProcessService bodyProcessService) {
 
         this.bodyService = bodyService;
         this.bodyMasterService = bodyMasterService;
+        this.bodyProcessService = bodyProcessService;
     }
 
     @GetMapping("/bodies/view")
@@ -28,6 +32,9 @@ public class BodyViewController {
         model.addAttribute(
                 "bodies",
                 bodyService.getBodies());
+        model.addAttribute(
+                "bodyProcesses",
+                bodyProcessService.getBodyProcesses());
 
         return "body-list";
     }

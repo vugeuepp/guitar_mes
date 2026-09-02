@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
@@ -21,206 +22,105 @@
 </div>
 
 <main class="page-container">
-
     <div class="page-toolbar">
-
         <p class="page-toolbar-description">
-            ネック取付時に生成されたギター個体と、
-            現在の製造進捗を確認できます。
+            複数のギターを選択し、同じ工程を一括開始できます。
         </p>
-
         <div class="page-toolbar-actions">
-
-            <a class="btn btn-primary"
-               th:href="@{/production-orders/view}">
-
-                生産計画一覧を開く
-
+            <a class="btn btn-process-end" th:href="@{/processes/end/view}">
+                一括工程終了
             </a>
-
+            <a class="btn btn-primary" th:href="@{/production-orders/view}">
+                生産計画一覧を開く
+            </a>
         </div>
-
     </div>
-
-    <!-- Guitarが0件の場合 -->
-    <div th:if="${#lists.isEmpty(guitars)}"
-         class="empty-state">
-
-        <p>
-            生成済みのギター個体はありません。
-        </p>
-
-        <p>
-            生産計画詳細からネック取付を登録すると、
-            ギター個体が自動生成されます。
-        </p>
-
-        <a class="btn btn-primary"
-           th:href="@{/production-orders/view}">
-
-            生産計画一覧を開く
-
-        </a>
-
+    <div th:if="${successMessage}" class="success-message" role="status"
+         th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="error-message" role="alert"
+         th:text="${errorMessage}"></div>
+    <div th:if="${#lists.isEmpty(guitars)}" class="empty-state">
+        <p>生成済みのギター個体はありません。</p>
     </div>
-
-    <!-- Guitar一覧 -->
-    <div th:if="${not #lists.isEmpty(guitars)}"
-         class="table-container">
-
-        <table class="data-table guitar-management-table">
-
-            <colgroup>
-
-                <col class="guitar-management-column-id">
-
-                <col class="guitar-management-column-serial">
-
-                <col class="guitar-management-column-product">
-
-                <col class="guitar-management-column-process">
-
-                <col class="guitar-management-column-progress">
-
-                <col class="guitar-management-column-status">
-
-                <col class="guitar-management-column-operation">
-
-                <col class="guitar-management-column-detail">
-
-            </colgroup>
-
-            <thead>
-
-                <tr>
-                    <th>ID</th>
-                    <th>シリアル番号</th>
-                    <th>製品</th>
-                    <th>現在工程</th>
-                    <th>進捗率</th>
-                    <th>状態</th>
-                    <th>操作</th>
-                    <th>詳細</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
+    <form th:if="${not #lists.isEmpty(guitars)}"
+          th:action="@{/processes/bulk/start}" method="post"
+          class="bulk-process-form" id="bulk-start-form">
+        <section class="bulk-action-panel">
+            <div class="form-group">
+                <label class="form-label" for="processId">対象工程</label>
+                <select id="processId" name="processId" class="form-select" required>
+                    <option value="">選択してください</option>
+                    <option th:each="process : ${processes}"
+                            th:value="${process.id}"
+                            th:text="${process.processName}"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="workerName">作業者</label>
+                <input id="workerName" name="workerName" class="form-input" required>
+            </div>
+            <div class="bulk-selection-count">選択中: <strong id="selected-count">0</strong>件</div>
+            <button type="submit" class="btn btn-primary">一括工程開始</button>
+        </section>
+        <div class="table-container">
+            <table class="data-table guitar-management-table bulk-select-table">
+                <thead><tr>
+                    <th><input type="checkbox" id="select-all" aria-label="全件選択"></th>
+                    <th>ID</th><th>シリアル番号</th><th>製品</th><th>現在工程</th>
+                    <th>進捗率</th><th>状態</th><th>操作</th><th>詳細</th>
+                </tr></thead>
+                <tbody>
                 <tr th:each="guitar : ${guitars}"
-                    th:classappend=
-                    "${guitar.currentProcess == '完成'}
-                    ? 'completed'
-                    : ''">
-
-                    <td th:text="${guitar.id}">
+                    th:classappend="${guitar.currentProcess == '完成'} ? 'completed' : ''">
+                    <td class="bulk-checkbox-cell">
+                        <input type="checkbox" name="guitarIds" class="row-checkbox"
+                               th:value="${guitar.id}"
+                               th:disabled="${guitar.hasRunningProcess or !guitar.hasNextProcess}"
+                               th:attr="aria-label=${guitar.serialNo + 'を選択'}">
                     </td>
-
-                    <td>
-
-                        <span class="guitar-serial-number"
-                              th:text="${guitar.serialNo}">
-                        </span>
-
+                    <td th:text="${guitar.id}"></td>
+                    <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span></td>
+                    <td class="guitar-management-product-cell" th:text="${guitar.productName}"></td>
+                    <td th:text="${guitar.currentProcess}"></td>
+                    <td th:text="${guitar.progressRate + '%'}"></td>
+                    <td class="status-cell">
+                        <span th:if="${guitar.hasRunningProcess}" class="status-badge status-working">作業中</span>
+                        <span th:if="${!guitar.hasRunningProcess and guitar.currentProcess != '完成'}" class="status-badge status-waiting">工程待ち</span>
+                        <span th:if="${!guitar.hasRunningProcess and guitar.currentProcess == '完成'}" class="status-badge status-available">完成</span>
                     </td>
-
-                    <td class="guitar-management-product-cell"
-                        th:text="${guitar.productName}">
-                    </td>
-
-                    <td th:text="${guitar.currentProcess}">
-                    </td>
-
-                    <td th:text="${guitar.progressRate + '%'}">
-                    </td>
-
-                    <!-- 状態 -->
-					<td class="status-cell">
-
-					    <span th:if="${guitar.hasRunningProcess}"
-					          class="status-badge status-working">
-					        作業中
-					    </span>
-
-					    <span th:if="${!guitar.hasRunningProcess
-					                  and guitar.currentProcess != '完成'}"
-					          class="status-badge status-waiting">
-					        工程待ち
-					    </span>
-
-					    <span th:if="${!guitar.hasRunningProcess
-					                  and guitar.currentProcess == '完成'}"
-					          class="status-badge status-available">
-					        完成
-					    </span>
-
-					</td>
-
-                    <!-- 工程操作 -->
                     <td class="guitar-operation-cell">
-
-                        <a th:if="${guitar.hasRunningProcess}"
-                           class="btn btn-process-end"
-                           th:href="@{/processes/end/view(
-                               guitarId=${guitar.id})}">
-
-                            工程終了
-
-                        </a>
-
-                        <a th:if="${!guitar.hasRunningProcess
-                                   and guitar.hasNextProcess}"
-                           class="btn btn-primary"
-                           th:href="@{/processes/start/view(
-                               guitarId=${guitar.id})}">
-
-                            工程開始
-
-                        </a>
-
-                        <span th:if="${!guitar.hasRunningProcess
-                                      and !guitar.hasNextProcess
-                                      and guitar.currentProcess == '完成'}"
-                              class="list-no-action">
-
-                            完成済み
-
-                        </span>
-
-                        <span th:if="${!guitar.hasRunningProcess
-                                      and !guitar.hasNextProcess
-                                      and guitar.currentProcess != '完成'}"
-                              class="list-no-action">
-
-                            操作なし
-
-                        </span>
-
+                        <a th:if="${guitar.hasRunningProcess}" class="btn btn-process-end"
+                           th:href="@{/processes/end/view(guitarId=${guitar.id})}">工程終了</a>
+                        <a th:if="${!guitar.hasRunningProcess and guitar.hasNextProcess}" class="btn btn-primary"
+                           th:href="@{/processes/start/view(guitarId=${guitar.id})}">工程開始</a>
+                        <span th:if="${!guitar.hasRunningProcess and !guitar.hasNextProcess}" class="list-no-action">操作なし</span>
                     </td>
-
-                    <!-- 詳細 -->
-                    <td class="table-action-cell">
-
-                        <a class="btn btn-detail"
-                           th:href="@{/guitars/{id}/view(
-                               id=${guitar.id})}">
-
-                            詳細
-
-                        </a>
-
-                    </td>
-
+                    <td class="table-action-cell"><a class="btn btn-detail"
+                        th:href="@{/guitars/{id}/view(id=${guitar.id})}">詳細</a></td>
                 </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
+                </tbody>
+            </table>
+        </div>
+    </form>
 </main>
 
+<script>
+(() => {
+  const all = document.getElementById('select-all');
+  const boxes = Array.from(document.querySelectorAll('.row-checkbox:not(:disabled)'));
+  const count = document.getElementById('selected-count');
+  if (!all || !count) return;
+  const update = () => {
+    const selected = boxes.filter(box => box.checked).length;
+    count.textContent = selected;
+    all.checked = boxes.length > 0 && selected === boxes.length;
+    all.indeterminate = selected > 0 && selected < boxes.length;
+  };
+  all.addEventListener('change', () => { boxes.forEach(box => box.checked = all.checked); update(); });
+  boxes.forEach(box => box.addEventListener('change', update));
+  update();
+})();
+</script>
 </body>
 
 </html>

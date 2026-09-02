@@ -1,0 +1,54 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m-----------------------< [0;36mcom.example:guitar_mes[0;1m >-----------------------[m
+[[1;34mINFO[m] [1mBuilding guitar_mes 0.0.1-SNAPSHOT[m
+[[1;34mINFO[m]   from pom.xml
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mclean:3.5.0:clean[m [1m(default-clean)[m @ [36mguitar_mes[0;1m ---[m
+[[1;34mINFO[m] Deleting /Users/naokiyamada/git/guitar-mes/guitar_mes/target
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mresources:3.5.0:resources[m [1m(default-resources)[m @ [36mguitar_mes[0;1m ---[m
+[[1;34mINFO[m] Copying 2 resources from src/main/resources to target/classes
+[[1;34mINFO[m] Copying 49 resources from src/main/resources to target/classes
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mcompiler:3.15.0:compile[m [1m(default-compile)[m @ [36mguitar_mes[0;1m ---[m
+[[1;34mINFO[m] Recompiling the module because of [1mchanged source code[m.
+[[1;34mINFO[m] Compiling 120 source files with javac [debug parameters release 17] to target/classes
+[[1;34mINFO[m] -------------------------------------------------------------
+[[1;31mERROR[m] COMPILATION ERROR : 
+[[1;34mINFO[m] -------------------------------------------------------------
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[137,21] シンボルを見つけられません
+  シンボル:   メソッド startProcesses(java.util.List<java.lang.Long>,java.lang.Long,java.lang.String)
+  場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[150,48] シンボルを見つけられません
+  シンボル:   メソッド getRunningProcesses()
+  場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[162,21] シンボルを見つけられません
+  シンボル:   メソッド endProcesses(java.util.List<java.lang.Long>,java.lang.String,java.lang.String)
+  場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;34mINFO[m] 3 errors 
+[[1;34mINFO[m] -------------------------------------------------------------
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;31mBUILD FAILURE[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  1.912 s
+[[1;34mINFO[m] Finished at: 2026-09-02T13:14:35+09:00
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;31mERROR[m] Failed to execute goal [32morg.apache.maven.plugins:maven-compiler-plugin:3.15.0:compile[m [1m(default-compile)[m on project [36mguitar_mes[m: [1;31mCompilation failure[m: Compilation failure: 
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[137,21] シンボルを見つけられません
+[[1;31mERROR[m]   シンボル:   メソッド startProcesses(java.util.List<java.lang.Long>,java.lang.Long,java.lang.String)
+[[1;31mERROR[m]   場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[150,48] シンボルを見つけられません
+[[1;31mERROR[m]   シンボル:   メソッド getRunningProcesses()
+[[1;31mERROR[m]   場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;31mERROR[m] /Users/naokiyamada/git/guitar-mes/guitar_mes/src/main/java/com/example/guitarmes/neck/process/NeckProcessViewController.java:[162,21] シンボルを見つけられません
+[[1;31mERROR[m]   シンボル:   メソッド endProcesses(java.util.List<java.lang.Long>,java.lang.String,java.lang.String)
+[[1;31mERROR[m]   場所: タイプcom.example.guitarmes.neck.process.NeckProcessServiceの変数 neckProcessService
+[[1;31mERROR[m] -> [1m[Help 1][m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

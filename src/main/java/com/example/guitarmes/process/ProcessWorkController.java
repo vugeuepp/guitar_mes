@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.process;
 
 import java.util.List;
@@ -32,4 +33,19 @@ public class ProcessWorkController {
 	public List<ProcessHistoryResponse> getHistory(@PathVariable Long guitarId) {
 		return processService.getHistory(guitarId);
 	}
+
+    @PostMapping("/bulk/start")
+    public List<ProcessHistory> startProcesses(
+            @RequestBody BulkProcessStartRequest request) {
+        return processService.startProcesses(
+                request.getGuitarIds(),
+                request.getProcessId(),
+                request.getWorkerName());
+    }
+
+    @PostMapping("/bulk/end")
+    public List<ProcessHistory> endProcesses(
+            @RequestBody BulkProcessEndRequest request) {
+        return processService.endProcesses(request.getHistoryIds());
+    }
 }

@@ -18,4 +18,5 @@ public interface NeckProcessHistoryRepository
 
     boolean existsByNeckIdAndEndTimeIsNull(
             Long neckId);
+    List<NeckProcessHistory> findByEndTimeIsNull();
 }

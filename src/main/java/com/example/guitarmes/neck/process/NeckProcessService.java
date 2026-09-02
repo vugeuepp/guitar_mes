@@ -49,6 +49,7 @@ public class NeckProcessService {
             Long neckId,
             Long processId,
             String workerName) {
+        validateWorkerName(workerName);
 
         if (historyRepository
                 .existsByNeckIdAndEndTimeIsNull(
@@ -602,5 +603,114 @@ public class NeckProcessService {
 		
 		return responses;
 		}
+
+
+    /** ネック工程マスタを工程順に取得する。 */
+    public List<ManufacturingProcess> getNeckProcesses() {
+        return processRepository.findByTargetTypeOrderByProcessOrderAsc(
+                ProcessTargetConstants.NECK);
+    }
+
+    @Transactional
+    public List<NeckProcessHistory> startProcesses(
+            List<Long> neckIds, Long processId, String workerName) {
+        validateIds(neckIds, "工程開始対象を選択してください。");
+        validateWorkerName(workerName);
+        ManufacturingProcess process = findNeckProcessForBulk(processId);
+        List<Neck> necks = neckIds.stream().distinct()
+                .map(this::findNeckForBulk).toList();
+        for (Neck neck : necks) {
+            if (historyRepository.existsByNeckIdAndEndTimeIsNull(neck.getId())) {
+                throw new BusinessException(
+                        "実施中工程のあるネックが含まれています。ID: " + neck.getId());
+            }
+            validateStartableProcess(neck, process.getProcessName());
+        }
+        LocalDateTime now = LocalDateTime.now();
+        List<NeckProcessHistory> histories = new ArrayList<>();
+        for (Neck neck : necks) {
+            neck.setCurrentProcess(process.getProcessName());
+            neck.setStatus(WORKING);
+            histories.add(new NeckProcessHistory(
+                    neck.getId(), processId, workerName.trim(), now));
+        }
+        neckRepository.saveAll(necks);
+        return historyRepository.saveAll(histories);
+    }
+
+    @Transactional
+    public List<NeckProcessHistory> endProcesses(
+            List<Long> historyIds, String result, String note) {
+        validateIds(historyIds, "工程終了対象を選択してください。");
+        List<NeckProcessHistory> histories = historyIds.stream().distinct()
+                .map(id -> historyRepository.findById(id).orElseThrow(
+                        () -> new NotFoundException(
+                                "指定された履歴が存在しません。ID: " + id)))
+                .toList();
+        Long processId = histories.get(0).getProcessId();
+        if (histories.stream().anyMatch(
+                history -> !processId.equals(history.getProcessId()))) {
+            throw new BusinessException(
+                    "異なる工程をまとめて終了することはできません。");
+        }
+        ManufacturingProcess process = findNeckProcessForBulk(processId);
+        validateResult(process.getProcessName(), result);
+        validateNgNote(result, note);
+        List<Neck> necks = new ArrayList<>();
+        for (NeckProcessHistory history : histories) {
+            if (history.getEndTime() != null) {
+                throw new BusinessException(
+                        "終了済み工程が含まれています。履歴ID: " + history.getId());
+            }
+            necks.add(findNeckForBulk(history.getNeckId()));
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < histories.size(); i++) {
+            NeckProcessHistory history = histories.get(i);
+            history.setResult(result);
+            history.setNote(note);
+            history.setEndTime(now);
+            updateNeckAfterProcess(
+                    necks.get(i), process.getProcessName(), result);
+        }
+        neckRepository.saveAll(necks);
+        return historyRepository.saveAll(histories);
+    }
+
+    public List<NeckProcessHistory> getRunningProcesses() {
+        return historyRepository.findByEndTimeIsNull();
+    }
+
+    private Neck findNeckForBulk(Long id) {
+        return neckRepository.findById(id).orElseThrow(
+                () -> new NotFoundException(
+                        "指定されたネックが存在しません。ID: " + id));
+    }
+
+    private ManufacturingProcess findNeckProcessForBulk(Long id) {
+        ManufacturingProcess process = processRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        "指定された工程が存在しません。"));
+        if (!ProcessTargetConstants.NECK.equals(process.getTargetType())) {
+            throw new BusinessException(
+                    "指定された工程はネック工程ではありません。");
+        }
+        return process;
+    }
+
+    private void validateWorkerName(String workerName) {
+        if (workerName == null || workerName.isBlank()) {
+            throw new BusinessException("作業者を入力してください。");
+        }
+    }
+
+    private void validateIds(List<Long> ids, String message) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(message);
+        }
+        if (ids.stream().anyMatch(id -> id == null)) {
+            throw new BusinessException("対象IDに不正な値が含まれています。");
+        }
+    }
 
 }
