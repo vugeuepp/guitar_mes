@@ -1,182 +1,107 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>ボディ管理一覧</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
-<body>
-
-<div th:replace="~{fragments/header :: header('ボディ管理一覧')}">
-</div>
-
+<head><meta charset="UTF-8"><title>ボディ管理一覧</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><div th:replace="~{fragments/header :: header('ボディ管理一覧')}"></div>
 <main class="page-container">
+<div class="page-toolbar"><p class="page-toolbar-description">ボディ個体の工程を複数選択して一括処理できます。</p><div class="page-toolbar-actions"><a class="btn btn-primary" th:href="@{/bodies/new}">新規ボディ登録</a><a class="btn btn-process-end" th:href="@{/body-processes/bulk/end/view}">一括工程終了</a></div></div>
+<div th:if="${successMessage}" class="success-message" role="status" th:text="${successMessage}"></div><div th:if="${errorMessage}" class="error-message" role="alert" th:text="${errorMessage}"></div>
+<form id="bulk-start-form" th:action="@{/body-processes/bulk/start}" method="post" class="bulk-process-form">
+<section class="bulk-action-panel"><p class="form-help bulk-process-guidance">先に対象工程を選択してください。選択した工程と一致する個体だけを一括選択できます。</p><div class="form-group"><label for="processId">対象工程</label><select id="processId" name="processId" required><option value="">選択してください</option><option th:each="process : ${bodyProcesses}" th:value="${process.id}" th:text="${process.processName}" th:attr="data-process-name=${process.processName}"></option></select></div><div class="form-group"><label for="workerName">作業者</label><input id="workerName" name="workerName" required></div><div class="bulk-selection-count">選択中: <strong id="selected-count">0</strong>件</div><button class="btn btn-primary">一括工程開始</button></section>
+<div th:if="${#lists.isEmpty(bodies)}" class="empty-state">登録されているボディはありません。</div>
+<div th:if="${not #lists.isEmpty(bodies)}" class="table-container"><table class="data-table body-management-table"><thead><tr><th><input type="checkbox" id="select-all" aria-label="全件選択"></th><th>ID</th><th>シリアル番号</th><th>モデル名</th><th>現在工程</th><th>状態</th><th>工程操作</th><th>履歴</th></tr></thead><tbody><tr th:each="item : ${bodies}" th:attr="data-process-name=${item.currentProcess}"><td><input type="checkbox" class="row-checkbox" name="bodyIds" th:value="${item.id}" th:disabled="${item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK'}" th:attr="aria-label=${item.serialNo + 'を選択'},data-base-eligible=${!(item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK')}"></td><td th:text="${item.id}"></td><td th:text="${item.serialNo}"></td><td th:text="${item.modelName}"></td><td th:text="${item.currentProcess}"></td><td><span class="status-badge" th:classappend="${@statusDisplay.getCssClass(item.status)}" th:text="${@statusDisplay.getLabel(item.status)}"></span></td><td><a th:if="${item.status == 'WORKING'}" class="btn btn-process-end" th:href="@{/body-processes/end/view(bodyId=${item.id})}">工程終了</a><a th:if="${item.status == 'WAITING' or item.status == 'WAITING_INSPECTION' or item.status == 'REWORK'}" class="btn btn-primary" th:href="@{/body-processes/start/view(bodyId=${item.id})}">工程開始</a><span th:if="${item.status == 'AVAILABLE' or item.status == 'ASSEMBLED' or item.status == 'REJECTED' or item.status == 'RETURNED'}">操作不可</span></td><td><a class="btn btn-detail" th:href="@{/bodies/{id}/process-history(id=${item.id})}">工程履歴</a></td></tr></tbody></table></div></form></main>
+<script th:inline="none">
+(() => {
+    const processSelect = document.getElementById('processId');
+    const workerName = document.getElementById('workerName');
+    const submitButton = document.querySelector(
+        '#bulk-start-form button[type="submit"], #bulk-start-form button:not([type])');
+    const selectAll = document.getElementById('select-all');
+    const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
+    const selectedCount = document.getElementById('selected-count');
 
-    <div class="page-toolbar">
-        <p class="page-toolbar-description">
-            ボディ個体の登録状況と工程進捗を確認できます。
-        </p>
+    if (!processSelect || !workerName || !submitButton
+            || !selectAll || !selectedCount) {
+        return;
+    }
 
-        <div class="page-toolbar-actions">
-            <a class="btn btn-primary"
-               th:href="@{/bodies/new}">
-                新規ボディ登録
-            </a>
-        </div>
-    </div>
+    const processOptions = Array.from(processSelect.options)
+        .filter(option => option.value !== '');
 
-    <div th:if="${#lists.isEmpty(bodies)}"
-         class="empty-state">
-        <p>登録されているボディはありません。</p>
-    </div>
+    const hasEligibleTarget = processName => boxes.some(box => {
+        const row = box.closest('tr');
+        const baseEligible = box.dataset.baseEligible === 'true';
+        return baseEligible && row.dataset.processName === processName;
+    });
 
-    <div th:unless="${#lists.isEmpty(bodies)}"
-         class="table-container">
+    processOptions.forEach(option => {
+        const processName = option.dataset.processName
+            || option.textContent.trim();
+        option.hidden = !hasEligibleTarget(processName);
+        option.disabled = option.hidden;
+    });
 
-        <table class="data-table body-management-table">
+    const availableOptions = processOptions.filter(option => !option.hidden);
+    const placeholder = processSelect.options[0];
 
-            <colgroup>
-                <col class="body-column-id">
-                <col class="body-column-serial">
-                <col class="body-column-code">
-                <col class="body-column-model">
-                <col class="body-column-type">
-                <col class="body-column-material">
-                <col class="body-column-color">
-                <col class="body-column-process">
-                <col class="body-column-status">
-                <col class="body-column-action">
-                <col class="body-column-history">
-            </colgroup>
+    if (availableOptions.length === 0) {
+        placeholder.textContent = '一括開始可能な工程はありません';
+        processSelect.disabled = true;
+        workerName.disabled = true;
+        submitButton.disabled = true;
+    } else {
+        placeholder.textContent = '選択してください';
+        processSelect.disabled = false;
+        workerName.disabled = false;
+        submitButton.disabled = false;
+    }
 
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>シリアル番号</th>
-                <th>モデルコード</th>
-                <th>モデル名</th>
-                <th>ボディタイプ</th>
-                <th>材質</th>
-                <th>カラー</th>
-                <th>現在工程</th>
-                <th>状態</th>
-                <th>工程操作</th>
-                <th>履歴</th>
-            </tr>
-            </thead>
+    const updateSelectionState = () => {
+        const enabledBoxes = boxes.filter(box => !box.disabled);
+        const checkedBoxes = enabledBoxes.filter(box => box.checked);
 
-            <tbody>
+        selectedCount.textContent = checkedBoxes.length;
+        selectAll.disabled = enabledBoxes.length === 0;
+        selectAll.checked = enabledBoxes.length > 0
+            && checkedBoxes.length === enabledBoxes.length;
+        selectAll.indeterminate = checkedBoxes.length > 0
+            && checkedBoxes.length < enabledBoxes.length;
+    };
 
-            <tr th:each="body : ${bodies}">
+    const applyProcessFilter = () => {
+        const selectedOption = processSelect.selectedOptions[0];
+        const processName = selectedOption?.dataset.processName
+            || selectedOption?.textContent.trim()
+            || '';
+        const processSelected = processSelect.value !== '';
 
-                <td th:text="${body.id}"></td>
+        boxes.forEach(box => {
+            const row = box.closest('tr');
+            const baseEligible = box.dataset.baseEligible === 'true';
+            const matchesProcess = processSelected
+                && row.dataset.processName === processName;
 
-                <td th:text="${body.serialNo}"></td>
+            box.checked = false;
+            box.disabled = !(baseEligible && matchesProcess);
+            row.classList.toggle(
+                'is-disabled',
+                !(baseEligible && matchesProcess));
+        });
 
-                <td th:text="${body.bodyMaster != null
-                              ? body.bodyMaster.modelCode
-                              : '未設定'}">
-                </td>
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        updateSelectionState();
+    };
 
-                <td th:text="${body.bodyMaster != null
-                              ? body.bodyMaster.modelName
-                              : body.modelName}">
-                </td>
+    processSelect.addEventListener('change', applyProcessFilter);
+    selectAll.addEventListener('change', () => {
+        boxes.filter(box => !box.disabled)
+            .forEach(box => box.checked = selectAll.checked);
+        updateSelectionState();
+    });
+    boxes.forEach(box => {
+        box.addEventListener('change', updateSelectionState);
+    });
 
-                <td th:text="${body.bodyMaster != null
-                              ? body.bodyMaster.bodyType
-                              : '未設定'}">
-                </td>
-
-                <td th:text="${body.bodyMaster != null
-                              ? body.bodyMaster.material
-                              : '未設定'}">
-                </td>
-
-                <td th:text="${body.bodyMaster != null
-                              ? body.bodyMaster.color
-                              : body.color}">
-                </td>
-
-                <td>
-                    <span class="body-current-process"
-                          th:text="${body.currentProcess}">
-                    </span>
-                </td>
-
-                <td class="status-cell">
-                    <span class="status-badge"
-                          th:classappend="${@statusDisplay.getCssClass(body.status)}"
-                          th:text="${@statusDisplay.getLabel(body.status)}">
-                    </span>
-                </td>
-
-                <td>
-
-                    <form th:if="${body.status == 'WORKING'}"
-                          th:action="@{/body-processes/end/view}"
-                          method="get">
-
-                        <input type="hidden"
-                               name="bodyId"
-                               th:value="${body.id}">
-
-                        <button type="submit"
-                                class="btn btn-process-end">
-                            工程終了
-                        </button>
-
-                    </form>
-
-                    <form th:if="${body.status == 'WAITING'
-                                  or body.status == 'WAITING_INSPECTION'
-                                  or body.status == 'REWORK'}"
-                          th:action="@{/body-processes/start/view}"
-                          method="get">
-
-                        <input type="hidden"
-                               name="bodyId"
-                               th:value="${body.id}">
-
-                        <button type="submit"
-                                class="btn btn-primary">
-                            工程開始
-                        </button>
-
-                    </form>
-
-                    <span class="list-no-action"
-                          th:if="${body.status == 'AVAILABLE'
-                                or body.status == 'ASSEMBLED'
-                                or body.status == 'REJECTED'}">
-                        操作不可
-                    </span>
-
-                </td>
-
-                <td>
-
-                    <form th:action="@{/bodies/{id}/process-history(id=${body.id})}"
-                          method="get">
-
-                        <button type="submit"
-                                class="btn btn-detail">
-                            工程履歴
-                        </button>
-
-                    </form>
-
-                </td>
-
-            </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-</main>
-
-</body>
-</html>
+    applyProcessFilter();
+})();
+</script></body></html>

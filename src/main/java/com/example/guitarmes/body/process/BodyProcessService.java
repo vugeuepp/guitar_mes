@@ -43,6 +43,7 @@ public class BodyProcessService {
 
     @Transactional
     public BodyProcessHistory startProcess(Long bodyId, Long processId, String workerName) {
+        validateWorkerName(workerName);
         if (historyRepository.existsByBodyIdAndEndTimeIsNull(bodyId)) {
             throw new BusinessException("このボディには現在実施中の工程があります。");
         }
@@ -377,5 +378,111 @@ public class BodyProcessService {
 
 	return responses;
 	}
+
+
+    @Transactional
+    public List<BodyProcessHistory> startProcesses(
+            List<Long> bodyIds,
+            Long processId,
+            String workerName) {
+        validateIds(bodyIds, "工程開始対象を選択してください。");
+        validateWorkerName(workerName);
+        ManufacturingProcess process = findBodyProcess(processId);
+        List<Body> bodies = bodyIds.stream().distinct()
+                .map(this::findBodyForBulk).toList();
+        for (Body body : bodies) {
+            if (historyRepository.existsByBodyIdAndEndTimeIsNull(body.getId())) {
+                throw new BusinessException(
+                        "実施中工程のあるボディが含まれています。ID: " + body.getId());
+            }
+            validateStartableProcess(body, process.getProcessName());
+        }
+        LocalDateTime now = LocalDateTime.now();
+        List<BodyProcessHistory> histories = new ArrayList<>();
+        for (Body body : bodies) {
+            body.setCurrentProcess(process.getProcessName());
+            body.setStatus(WORKING);
+            histories.add(new BodyProcessHistory(
+                    body.getId(), processId, workerName.trim(), now));
+        }
+        bodyRepository.saveAll(bodies);
+        return historyRepository.saveAll(histories);
+    }
+
+    @Transactional
+    public List<BodyProcessHistory> endProcesses(
+            List<Long> historyIds,
+            String result,
+            String note) {
+        validateIds(historyIds, "工程終了対象を選択してください。");
+        List<BodyProcessHistory> histories = historyIds.stream().distinct()
+                .map(id -> historyRepository.findById(id).orElseThrow(
+                        () -> new NotFoundException(
+                                "指定された履歴が存在しません。ID: " + id)))
+                .toList();
+        Long processId = histories.get(0).getProcessId();
+        if (histories.stream().anyMatch(
+                history -> !processId.equals(history.getProcessId()))) {
+            throw new BusinessException(
+                    "異なる工程をまとめて終了することはできません。");
+        }
+        ManufacturingProcess process = findBodyProcess(processId);
+        validateResult(process.getProcessName(), result);
+        List<Body> bodies = new ArrayList<>();
+        for (BodyProcessHistory history : histories) {
+            if (history.getEndTime() != null) {
+                throw new BusinessException(
+                        "終了済み工程が含まれています。履歴ID: " + history.getId());
+            }
+            bodies.add(findBodyForBulk(history.getBodyId()));
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < histories.size(); i++) {
+            BodyProcessHistory history = histories.get(i);
+            history.setResult(result);
+            history.setNote(note);
+            history.setEndTime(now);
+            updateBodyAfterProcess(
+                    bodies.get(i), process.getProcessName(), result);
+        }
+        bodyRepository.saveAll(bodies);
+        return historyRepository.saveAll(histories);
+    }
+
+    public List<BodyProcessHistory> getRunningProcesses() {
+        return historyRepository.findByEndTimeIsNull();
+    }
+
+    private Body findBodyForBulk(Long id) {
+        return bodyRepository.findById(id).orElseThrow(
+                () -> new NotFoundException(
+                        "指定されたボディが存在しません。ID: " + id));
+    }
+
+    private ManufacturingProcess findBodyProcess(Long id) {
+        ManufacturingProcess process = processRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        "指定された工程が存在しません。"));
+        if (!ProcessTargetConstants.BODY.equals(process.getTargetType())) {
+            throw new BusinessException(
+                    "指定された工程はボディ工程ではありません。");
+        }
+        return process;
+    }
+
+    private void validateWorkerName(String workerName) {
+        if (workerName == null || workerName.isBlank()) {
+            throw new BusinessException("作業者を入力してください。");
+        }
+    }
+
+    private void validateIds(List<Long> ids, String message) {
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(message);
+        }
+        if (ids.stream().anyMatch(id -> id == null)) {
+            throw new BusinessException("対象IDに不正な値が含まれています。");
+        }
+    }
 
 }

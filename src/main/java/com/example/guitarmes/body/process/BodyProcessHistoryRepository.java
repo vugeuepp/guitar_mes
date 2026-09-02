@@ -12,4 +12,5 @@ public interface BodyProcessHistoryRepository extends JpaRepository<BodyProcessH
     Optional<BodyProcessHistory> findFirstByBodyIdAndEndTimeIsNullOrderByStartTimeDesc(Long bodyId);
 
     boolean existsByBodyIdAndEndTimeIsNull(Long bodyId);
+    List<BodyProcessHistory> findByEndTimeIsNull();
 }

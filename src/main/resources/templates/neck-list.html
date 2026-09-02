@@ -1,170 +1,107 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-	<meta charset="UTF-8">
-	<title>ネック一覧</title>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
-<body>
-	<div th:replace=
-	 "~{fragments/header :: header('ネック管理一覧')}">
-	</div>
+<head><meta charset="UTF-8"><title>ネック管理一覧</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><div th:replace="~{fragments/header :: header('ネック管理一覧')}"></div>
+<main class="page-container">
+<div class="page-toolbar"><p class="page-toolbar-description">ネック個体の工程を複数選択して一括処理できます。</p><div class="page-toolbar-actions"><a class="btn btn-primary" th:href="@{/necks/new}">新規ネック登録</a><a class="btn btn-process-end" th:href="@{/neck-processes/bulk/end/view}">一括工程終了</a></div></div>
+<div th:if="${successMessage}" class="success-message" role="status" th:text="${successMessage}"></div><div th:if="${errorMessage}" class="error-message" role="alert" th:text="${errorMessage}"></div>
+<form id="bulk-start-form" th:action="@{/neck-processes/bulk/start}" method="post" class="bulk-process-form">
+<section class="bulk-action-panel"><p class="form-help bulk-process-guidance">先に対象工程を選択してください。選択した工程と一致する個体だけを一括選択できます。</p><div class="form-group"><label for="processId">対象工程</label><select id="processId" name="processId" required><option value="">選択してください</option><option th:each="process : ${neckProcesses}" th:value="${process.id}" th:text="${process.processName}" th:attr="data-process-name=${process.processName}"></option></select></div><div class="form-group"><label for="workerName">作業者</label><input id="workerName" name="workerName" required></div><div class="bulk-selection-count">選択中: <strong id="selected-count">0</strong>件</div><button class="btn btn-primary">一括工程開始</button></section>
+<div th:if="${#lists.isEmpty(necks)}" class="empty-state">登録されているネックはありません。</div>
+<div th:if="${not #lists.isEmpty(necks)}" class="table-container"><table class="data-table neck-management-table"><thead><tr><th><input type="checkbox" id="select-all" aria-label="全件選択"></th><th>ID</th><th>シリアル番号</th><th>モデル名</th><th>現在工程</th><th>状態</th><th>工程操作</th><th>履歴</th></tr></thead><tbody><tr th:each="item : ${necks}" th:attr="data-process-name=${item.currentProcess}"><td><input type="checkbox" class="row-checkbox" name="neckIds" th:value="${item.id}" th:disabled="${item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK'}" th:attr="aria-label=${item.serialNo + 'を選択'},data-base-eligible=${!(item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK')}"></td><td th:text="${item.id}"></td><td th:text="${item.serialNo}"></td><td th:text="${item.modelName}"></td><td th:text="${item.currentProcess}"></td><td><span class="status-badge" th:classappend="${@statusDisplay.getCssClass(item.status)}" th:text="${@statusDisplay.getLabel(item.status)}"></span></td><td><a th:if="${item.status == 'WORKING'}" class="btn btn-process-end" th:href="@{/neck-processes/end/view(neckId=${item.id})}">工程終了</a><a th:if="${item.status == 'WAITING' or item.status == 'WAITING_INSPECTION' or item.status == 'REWORK'}" class="btn btn-primary" th:href="@{/neck-processes/start/view(neckId=${item.id})}">工程開始</a><span th:if="${item.status == 'AVAILABLE' or item.status == 'ASSEMBLED' or item.status == 'REJECTED' or item.status == 'RETURNED'}">操作不可</span></td><td><a class="btn btn-detail" th:href="@{/necks/{id}/process-history(id=${item.id})}">工程履歴</a></td></tr></tbody></table></div></form></main>
+<script th:inline="none">
+(() => {
+    const processSelect = document.getElementById('processId');
+    const workerName = document.getElementById('workerName');
+    const submitButton = document.querySelector(
+        '#bulk-start-form button[type="submit"], #bulk-start-form button:not([type])');
+    const selectAll = document.getElementById('select-all');
+    const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
+    const selectedCount = document.getElementById('selected-count');
 
-	<main class="page-container">
+    if (!processSelect || !workerName || !submitButton
+            || !selectAll || !selectedCount) {
+        return;
+    }
 
-	    <div class="page-toolbar">
+    const processOptions = Array.from(processSelect.options)
+        .filter(option => option.value !== '');
 
-	        <p class="page-toolbar-description">
+    const hasEligibleTarget = processName => boxes.some(box => {
+        const row = box.closest('tr');
+        const baseEligible = box.dataset.baseEligible === 'true';
+        return baseEligible && row.dataset.processName === processName;
+    });
 
-	            ネック個体の登録状況と
-	            工程進捗を確認できます。
+    processOptions.forEach(option => {
+        const processName = option.dataset.processName
+            || option.textContent.trim();
+        option.hidden = !hasEligibleTarget(processName);
+        option.disabled = option.hidden;
+    });
 
-	        </p>
+    const availableOptions = processOptions.filter(option => !option.hidden);
+    const placeholder = processSelect.options[0];
 
-	        <div class="page-toolbar-actions">
+    if (availableOptions.length === 0) {
+        placeholder.textContent = '一括開始可能な工程はありません';
+        processSelect.disabled = true;
+        workerName.disabled = true;
+        submitButton.disabled = true;
+    } else {
+        placeholder.textContent = '選択してください';
+        processSelect.disabled = false;
+        workerName.disabled = false;
+        submitButton.disabled = false;
+    }
 
-	            <a class="btn btn-primary"
-	               th:href="@{/necks/new}">
+    const updateSelectionState = () => {
+        const enabledBoxes = boxes.filter(box => !box.disabled);
+        const checkedBoxes = enabledBoxes.filter(box => box.checked);
 
-	                新規ネック登録
+        selectedCount.textContent = checkedBoxes.length;
+        selectAll.disabled = enabledBoxes.length === 0;
+        selectAll.checked = enabledBoxes.length > 0
+            && checkedBoxes.length === enabledBoxes.length;
+        selectAll.indeterminate = checkedBoxes.length > 0
+            && checkedBoxes.length < enabledBoxes.length;
+    };
 
-	            </a>
+    const applyProcessFilter = () => {
+        const selectedOption = processSelect.selectedOptions[0];
+        const processName = selectedOption?.dataset.processName
+            || selectedOption?.textContent.trim()
+            || '';
+        const processSelected = processSelect.value !== '';
 
-	        </div>
+        boxes.forEach(box => {
+            const row = box.closest('tr');
+            const baseEligible = box.dataset.baseEligible === 'true';
+            const matchesProcess = processSelected
+                && row.dataset.processName === processName;
 
-	    </div>
-		<main class="table-container">
+            box.checked = false;
+            box.disabled = !(baseEligible && matchesProcess);
+            row.classList.toggle(
+                'is-disabled',
+                !(baseEligible && matchesProcess));
+        });
 
-		    <table class="data-table neck-management-table">
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        updateSelectionState();
+    };
 
-		        <colgroup>
+    processSelect.addEventListener('change', applyProcessFilter);
+    selectAll.addEventListener('change', () => {
+        boxes.filter(box => !box.disabled)
+            .forEach(box => box.checked = selectAll.checked);
+        updateSelectionState();
+    });
+    boxes.forEach(box => {
+        box.addEventListener('change', updateSelectionState);
+    });
 
-		            <col class="neck-column-id">
-		            <col class="neck-column-serial">
-		            <col class="neck-column-model">
-		            <col class="neck-column-type">
-		            <col class="neck-column-material">
-		            <col class="neck-column-fingerboard">
-		            <col class="neck-column-fret">
-		            <col class="neck-column-scale">
-		            <col class="neck-column-process">
-		            <col class="neck-column-status">
-		            <col class="neck-column-action">
-		            <col class="neck-column-history">
-
-		        </colgroup>
-
-		        <thead>
-
-		            <tr>
-
-		                <th>ID</th>
-		                <th>シリアル番号</th>
-		                <th>モデル名</th>
-		                <th>ネックタイプ</th>
-		                <th>ネック材</th>
-		                <th>指板材</th>
-		                <th>フレット数</th>
-		                <th>スケール</th>
-		                <th>現在工程</th>
-		                <th>状態</th>
-		                <th>工程操作</th>
-		                <th>履歴</th>
-
-		            </tr>
-
-		        </thead>
-
-		        <tbody>
-
-    <tr th:each="neck : ${necks}">
-        <td th:text="${neck.id}"></td>
-        <td th:text="${neck.serialNo}"></td>
-
-        <td th:text="${neck.neckMaster != null ?
-                      neck.neckMaster.modelName :
-                      neck.modelName}">
-        </td>
-
-        <td th:text="${neck.neckMaster?.neckType}"></td>
-        <td th:text="${neck.neckMaster?.neckMaterial}"></td>
-        <td th:text="${neck.neckMaster?.fingerboardMaterial}"></td>
-        <td th:text="${neck.neckMaster?.fretCount}"></td>
-        <td th:text="${neck.neckMaster?.scale}"></td>
-
-		<td>
-		    <span class="neck-current-process"
-		          th:text="${neck.currentProcess}">
-		    </span>
-		</td>
-		<td class="status-cell">
-		    <span class="status-badge"
-		          th:classappend="${@statusDisplay.getCssClass(neck.status)}"
-		          th:text="${@statusDisplay.getLabel(neck.status)}">
-		    </span>
-		</td>
-		<td>
-
-		    <!-- 作業中 -->
-		    <form th:if="${neck.status == 'WORKING'}"
-		          th:action="@{/neck-processes/end/view}"
-		          method="get">
-
-		        <input type="hidden"
-		               name="neckId"
-		               th:value="${neck.id}">
-
-			   <button type="submit"
-			           class="btn btn-process-end">
-		            工程終了
-		        </button>
-
-		    </form>
-
-		    <!-- 工程待ち -->
-		    <form th:if="${neck.status == 'WAITING'}"
-		          th:action="@{/neck-processes/start/view}"
-		          method="get">
-
-		        <input type="hidden"
-		               name="neckId"
-		               th:value="${neck.id}">
-
-			   <button type="submit"
-			           class="btn btn-primary">
-		            工程開始
-		        </button>
-
-		    </form>
-
-		    <!-- 操作不可 -->
-			<span class="list-no-action"
-			      th:if="${neck.status == 'AVAILABLE'
-			            or neck.status == 'RETURNED'
-			            or neck.status == 'ASSEMBLED'
-			            or neck.status == 'REJECTED'}"
-			      th:text="${@statusDisplay.getLabel(neck.status)}">
-				  操作不可
-			</span>
-
-		</td>
-		<td>
-		    <form th:action=
-		          "@{/necks/{id}/process-history(id=${neck.id})}"
-		          method="get">
-
-				  <button type="submit"
-				          class="btn btn-detail">
-		            工程履歴
-		        </button>
-
-		    </form>
-		</td>
-    </tr>
-</table>
-
-
-<br>
-</main>
-</body>
-</html>
+    applyProcessFilter();
+})();
+</script></body></html>
