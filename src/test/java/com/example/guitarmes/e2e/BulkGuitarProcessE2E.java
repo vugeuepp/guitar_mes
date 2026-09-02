@@ -44,6 +44,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
     private String orderNo;
     private String firstSerial;
     private String secondSerial;
+    private String otherSerial;
     private ProcessReference firstProcess;
     private ProcessReference secondProcess;
 
@@ -83,6 +84,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         orderNo = "E2E-BULK-" + suffix;
         firstSerial = "E2EBULK-A-" + suffix;
         secondSerial = "E2EBULK-B-" + suffix;
+        otherSerial = "E2EBULK-X-" + suffix;
 
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
@@ -103,6 +105,12 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
                         productionOrderId,
                         secondSerial,
                         firstProcess.processName()));
+                guitarIds.add(insertGuitar(
+                        connection,
+                        product.productId(),
+                        productionOrderId,
+                        otherSerial,
+                        secondProcess.processName()));
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
@@ -219,18 +227,32 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasTitle(Pattern.compile("ギター管理一覧"));
         assertThat(page.locator("main.page-container")).containsText(firstSerial);
         assertThat(page.locator("main.page-container")).containsText(secondSerial);
+        assertThat(page.locator(".bulk-process-guidance"))
+                .containsText("先に対象工程を選択してください");
+        assertThat(guitarRow(firstSerial).locator("input.row-checkbox")).isDisabled();
+        assertThat(guitarRow(secondSerial).locator("input.row-checkbox")).isDisabled();
+        assertThat(guitarRow(otherSerial).locator("input.row-checkbox")).isDisabled();
         assertThat(page.locator("#selected-count")).hasText("0");
         captureScreenshot("01-guitar-list.png");
     }
 
     private void selectTargetGuitars() {
+        page.locator("#processId").selectOption(String.valueOf(firstProcess.id()));
+        assertThat(guitarRow(firstSerial).locator("input.row-checkbox")).isEnabled();
+        assertThat(guitarRow(secondSerial).locator("input.row-checkbox")).isEnabled();
+        assertThat(guitarRow(otherSerial).locator("input.row-checkbox")).isDisabled();
         guitarRow(firstSerial).locator("input.row-checkbox").check();
         guitarRow(secondSerial).locator("input.row-checkbox").check();
-
         assertThat(page.locator("#selected-count")).hasText("2");
-        page.locator("#processId").selectOption(String.valueOf(firstProcess.id()));
-        page.locator("#workerName").fill(WORKER_NAME);
 
+        page.locator("#processId").selectOption(String.valueOf(secondProcess.id()));
+        assertThat(page.locator("#selected-count")).hasText("0");
+        assertThat(guitarRow(otherSerial).locator("input.row-checkbox")).isEnabled();
+
+        page.locator("#processId").selectOption(String.valueOf(firstProcess.id()));
+        guitarRow(firstSerial).locator("input.row-checkbox").check();
+        guitarRow(secondSerial).locator("input.row-checkbox").check();
+        page.locator("#workerName").fill(WORKER_NAME);
         assertThat(page.locator("#processId"))
                 .hasValue(String.valueOf(firstProcess.id()));
         assertThat(page.locator("#workerName")).hasValue(WORKER_NAME);
@@ -282,10 +304,16 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasTitle(Pattern.compile("工程終了"));
         assertThat(page.locator("main.page-container")).containsText(WORKER_NAME);
         assertThat(page.locator("#selected-count")).hasText("0");
+        assertThat(historyRow(historyIds.get(0)).locator("input.row-checkbox")).isDisabled();
+        assertThat(historyRow(historyIds.get(1)).locator("input.row-checkbox")).isDisabled();
         captureScreenshot("04-running-process-list.png");
     }
 
     private void selectTargetHistories() {
+        page.locator("#targetProcessId")
+                .selectOption(String.valueOf(firstProcess.id()));
+        assertThat(historyRow(historyIds.get(0)).locator("input.row-checkbox")).isEnabled();
+        assertThat(historyRow(historyIds.get(1)).locator("input.row-checkbox")).isEnabled();
         historyRow(historyIds.get(0)).locator("input.row-checkbox").check();
         historyRow(historyIds.get(1)).locator("input.row-checkbox").check();
 
@@ -300,10 +328,10 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
                 .click();
         page.waitForLoadState();
 
-        assertThat(page).hasURL(Pattern.compile(".*/processes/end/view"));
+        assertThat(page).hasURL(Pattern.compile(".*/guitars/view"));
         assertThat(page.locator(".success-message")).containsText("2件");
-        assertEquals(0, historyRow(historyIds.get(0)).count());
-        assertEquals(0, historyRow(historyIds.get(1)).count());
+        assertThat(guitarRow(firstSerial)).containsText(secondProcess.processName());
+        assertThat(guitarRow(secondSerial)).containsText(secondProcess.processName());
         captureScreenshot("06-bulk-ended.png");
     }
 

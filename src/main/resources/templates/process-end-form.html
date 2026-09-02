@@ -82,6 +82,20 @@
               class="bulk-process-form"
               id="bulk-end-form">
             <section class="bulk-action-panel">
+                <p class="form-help bulk-process-guidance">
+                    先に対象工程を選択してください。選択した工程と一致するギターだけを一括選択できます。
+                </p>
+                <div class="form-group">
+                    <label class="form-label" for="targetProcessId">対象工程</label>
+                    <select id="targetProcessId" class="form-select" required>
+                        <option value="">選択してください</option>
+                        <option th:each="process : ${processes}"
+                                th:if="${#lists.contains(histories.![processId], process.id)}"
+                                th:value="${process.id}"
+                                th:text="${process.processName}"
+                                th:attr="data-process-name=${process.processName}"></option>
+                    </select>
+                </div>
                 <div class="bulk-selection-count">
                     選択中: <strong id="selected-count">0</strong>件
                 </div>
@@ -92,9 +106,8 @@
                     <thead>
                     <tr>
                         <th><input type="checkbox" id="select-all" aria-label="全件選択"></th>
-                        <th>履歴ID</th>
-                        <th>ギターID</th>
-                        <th>工程ID</th>
+                        <th>ギター</th>
+                        <th>工程名</th>
                         <th>作業者</th>
                         <th>開始時刻</th>
                         <th>単体操作</th>
@@ -102,17 +115,21 @@
                     </thead>
                     <tbody>
                     <tr th:each="history : ${histories}"
-                        th:attr="data-history-id=${history.id}">
+                        th:attr="data-history-id=${history.id},data-process-id=${history.processId}">
                         <td class="bulk-checkbox-cell">
                             <input type="checkbox"
                                    name="historyIds"
                                    class="row-checkbox"
                                    th:value="${history.id}"
-                                   th:attr="aria-label=${'履歴' + history.id + 'を選択'}">
+                                   disabled
+                                   th:attr="aria-label=${'工程履歴を選択'}">
                         </td>
-                        <td th:text="${history.id}"></td>
                         <td th:text="${history.guitarId}"></td>
-                        <td th:text="${history.processId}"></td>
+                        <td>
+                            <span th:each="process : ${processes}"
+                                  th:if="${process.id == history.processId}"
+                                  th:text="${process.processName}"></span>
+                        </td>
                         <td th:text="${history.workerName}"></td>
                         <td th:text="${history.startTime}"></td>
                         <td class="table-action-cell">
@@ -131,26 +148,45 @@
         </form>
     </section>
 </main>
-<script>
+<script th:inline="none">
 (() => {
-  const all = document.getElementById('select-all');
-  const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
-  const count = document.getElementById('selected-count');
-  if (!all || !count) return;
+    const processSelect = document.getElementById('targetProcessId');
+    const selectAll = document.getElementById('select-all');
+    const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
+    const selectedCount = document.getElementById('selected-count');
+    if (!processSelect || !selectAll || !selectedCount) return;
 
-  const update = () => {
-    const selected = boxes.filter(box => box.checked).length;
-    count.textContent = selected;
-    all.checked = boxes.length > 0 && selected === boxes.length;
-    all.indeterminate = selected > 0 && selected < boxes.length;
-  };
+    const update = () => {
+        const enabled = boxes.filter(box => !box.disabled);
+        const checked = enabled.filter(box => box.checked);
+        selectedCount.textContent = checked.length;
+        selectAll.disabled = enabled.length === 0;
+        selectAll.checked = enabled.length > 0 && checked.length === enabled.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < enabled.length;
+    };
 
-  all.addEventListener('change', () => {
-    boxes.forEach(box => box.checked = all.checked);
-    update();
-  });
-  boxes.forEach(box => box.addEventListener('change', update));
-  update();
+    const applyFilter = () => {
+        const processId = processSelect.value;
+        boxes.forEach(box => {
+            const row = box.closest('tr');
+            const matches = processId !== '' && row.dataset.processId === processId;
+            box.checked = false;
+            box.disabled = !matches;
+            row.classList.toggle('is-disabled', !matches);
+        });
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        update();
+    };
+
+    processSelect.addEventListener('change', applyFilter);
+    selectAll.addEventListener('change', () => {
+        boxes.filter(box => !box.disabled)
+            .forEach(box => box.checked = selectAll.checked);
+        update();
+    });
+    boxes.forEach(box => box.addEventListener('change', update));
+    applyFilter();
 })();
 </script>
 </body>

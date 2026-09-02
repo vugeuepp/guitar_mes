@@ -28,12 +28,36 @@ E2E全体
 '-Dtest=*E2E' \
 test
 
-mkdir -p \
-/Users/naokiyamada/git/guitar-mes/guitar_mes/target/test-logs
+◼︎E2E 
+PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+RUN_ID=$(date '+%Y%m%d-%H%M%S')
 
-/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
-  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
-  -Dtest=GuitarViewControllerTest,ProcessServiceTest,ProcessViewControllerTest,ProcessWorkControllerTest \
-  test \
-  2>&1 | tee \
-"/Users/naokiyamada/git/guitar-mes/guitar_mes/target/test-logs/phase4-related-$(date '+%Y%m%d-%H%M%S').log"
+LOGDIR="$PROJECT/logs/test-logs/$RUN_ID"
+LOGFILE="$LOGDIR/console-$RUN_ID.log"
+
+mkdir -p "$LOGDIR"
+
+(
+  set -o pipefail
+
+  "$PROJECT/mvnw" \
+    -f "$PROJECT/pom.xml" \
+    -Dstyle.color=always \
+    -Dplaywright.headless=false \
+    -Dplaywright.slowMo=1000 \
+    -Dtest=BulkGuitarProcessE2E \
+    test \
+    2>&1 | tee "$LOGFILE"
+)
+
+STATUS=$?
+
+echo
+echo "終了コード: $STATUS"
+echo "ログ: $LOGFILE"
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "BulkGuitarProcessE2Eに失敗しました。ログを共有してください。"
+else
+  echo "BulkGuitarProcessE2Eは正常に完了しました。"
+fi

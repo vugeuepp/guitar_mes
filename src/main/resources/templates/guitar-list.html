@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
@@ -46,13 +45,17 @@
           th:action="@{/processes/bulk/start}" method="post"
           class="bulk-process-form" id="bulk-start-form">
         <section class="bulk-action-panel">
+            <p class="form-help bulk-process-guidance">
+                先に対象工程を選択してください。選択した工程と一致するギターだけを一括選択できます。
+            </p>
             <div class="form-group">
                 <label class="form-label" for="processId">対象工程</label>
                 <select id="processId" name="processId" class="form-select" required>
                     <option value="">選択してください</option>
                     <option th:each="process : ${processes}"
                             th:value="${process.id}"
-                            th:text="${process.processName}"></option>
+                            th:text="${process.processName}"
+                            th:attr="data-process-name=${process.processName}"></option>
                 </select>
             </div>
             <div class="form-group">
@@ -71,12 +74,13 @@
                 </tr></thead>
                 <tbody>
                 <tr th:each="guitar : ${guitars}"
+                    th:attr="data-process-name=${guitar.currentProcess}"
                     th:classappend="${guitar.currentProcess == '完成'} ? 'completed' : ''">
                     <td class="bulk-checkbox-cell">
                         <input type="checkbox" name="guitarIds" class="row-checkbox"
                                th:value="${guitar.id}"
                                th:disabled="${guitar.hasRunningProcess or !guitar.hasNextProcess}"
-                               th:attr="aria-label=${guitar.serialNo + 'を選択'}">
+                               th:attr="aria-label=${guitar.serialNo + 'を選択'},data-base-eligible=${!guitar.hasRunningProcess and guitar.hasNextProcess}">
                     </td>
                     <td th:text="${guitar.id}"></td>
                     <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span></td>
@@ -104,21 +108,75 @@
     </form>
 </main>
 
-<script>
+<script th:inline="none">
 (() => {
-  const all = document.getElementById('select-all');
-  const boxes = Array.from(document.querySelectorAll('.row-checkbox:not(:disabled)'));
-  const count = document.getElementById('selected-count');
-  if (!all || !count) return;
-  const update = () => {
-    const selected = boxes.filter(box => box.checked).length;
-    count.textContent = selected;
-    all.checked = boxes.length > 0 && selected === boxes.length;
-    all.indeterminate = selected > 0 && selected < boxes.length;
-  };
-  all.addEventListener('change', () => { boxes.forEach(box => box.checked = all.checked); update(); });
-  boxes.forEach(box => box.addEventListener('change', update));
-  update();
+    const processSelect = document.getElementById('processId');
+    const workerName = document.getElementById('workerName');
+    const submitButton = document.querySelector('#bulk-start-form button[type="submit"]');
+    const selectAll = document.getElementById('select-all');
+    const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
+    const selectedCount = document.getElementById('selected-count');
+
+    if (!processSelect || !workerName || !submitButton
+            || !selectAll || !selectedCount) return;
+
+    const processOptions = Array.from(processSelect.options)
+        .filter(option => option.value !== '');
+    const hasEligibleTarget = processName => boxes.some(box => {
+        const row = box.closest('tr');
+        return box.dataset.baseEligible === 'true'
+            && row.dataset.processName === processName;
+    });
+
+    processOptions.forEach(option => {
+        const name = option.dataset.processName || option.textContent.trim();
+        option.hidden = !hasEligibleTarget(name);
+        option.disabled = option.hidden;
+    });
+
+    const availableOptions = processOptions.filter(option => !option.hidden);
+    const placeholder = processSelect.options[0];
+    if (availableOptions.length === 0) {
+        placeholder.textContent = '一括開始可能な工程はありません';
+        processSelect.disabled = true;
+        workerName.disabled = true;
+        submitButton.disabled = true;
+    }
+
+    const update = () => {
+        const enabled = boxes.filter(box => !box.disabled);
+        const checked = enabled.filter(box => box.checked);
+        selectedCount.textContent = checked.length;
+        selectAll.disabled = enabled.length === 0;
+        selectAll.checked = enabled.length > 0 && checked.length === enabled.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < enabled.length;
+    };
+
+    const applyFilter = () => {
+        const option = processSelect.selectedOptions[0];
+        const processName = option?.dataset.processName || option?.textContent.trim() || '';
+        const selected = processSelect.value !== '';
+        boxes.forEach(box => {
+            const row = box.closest('tr');
+            const eligible = box.dataset.baseEligible === 'true';
+            const matches = selected && row.dataset.processName === processName;
+            box.checked = false;
+            box.disabled = !(eligible && matches);
+            row.classList.toggle('is-disabled', !(eligible && matches));
+        });
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        update();
+    };
+
+    processSelect.addEventListener('change', applyFilter);
+    selectAll.addEventListener('change', () => {
+        boxes.filter(box => !box.disabled)
+            .forEach(box => box.checked = selectAll.checked);
+        update();
+    });
+    boxes.forEach(box => box.addEventListener('change', update));
+    applyFilter();
 })();
 </script>
 </body>

@@ -1,4 +1,3 @@
-
 package com.example.guitarmes.process;
 
 import org.springframework.stereotype.Controller;
@@ -75,6 +74,7 @@ public class ProcessViewController {
 	    } else {
 	    	
 	        model.addAttribute("histories", processService.getRunningProcesses());
+            model.addAttribute("processes", processService.getAvailableGuitarProcesses());
 	    }
 
 	    return "process-end-form";
@@ -124,6 +124,6 @@ public class ProcessViewController {
             redirectAttributes.addFlashAttribute(
                     "errorMessage", exception.getMessage());
         }
-        return "redirect:/processes/end/view";
+        return "redirect:/guitars/view";
     }
 }
