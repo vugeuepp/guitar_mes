@@ -359,4 +359,94 @@ public class AssemblyService {
         }
         return convertToResponse(assembly);
     }
+
+    @Transactional
+    public List<Assembly> createAssemblies(
+            Long productionOrderId,
+            Long productionScheduleId,
+            List<Long> neckIds,
+            List<Long> bodyIds,
+            String workerName) {
+        validateWorkerName(workerName);
+        validateBulkIds(neckIds, bodyIds);
+
+        ProductionOrder productionOrder =
+                findProductionOrderOrThrow(productionOrderId);
+        ProductionSchedule productionSchedule =
+                findProductionScheduleOrThrow(productionScheduleId);
+        validateProductionOrder(productionOrder);
+        validateProductionSchedule(productionOrder, productionSchedule);
+
+        int count = neckIds.size();
+        if (productionOrder.getStartedQuantity() + count
+                > productionOrder.getPlannedQuantity()) {
+            throw new BusinessException(
+                    "一括登録件数が生産計画の残り数量を超えています。");
+        }
+
+        List<Long> uniqueNeckIds = neckIds.stream().distinct().toList();
+        List<Long> uniqueBodyIds = bodyIds.stream().distinct().toList();
+        if (uniqueNeckIds.size() != count) {
+            throw new BusinessException("同じネックを複数回選択できません。");
+        }
+        if (uniqueBodyIds.size() != count) {
+            throw new BusinessException("同じボディを複数回選択できません。");
+        }
+
+        List<Neck> necks = neckIds.stream()
+                .map(this::findNeckOrThrow)
+                .toList();
+        List<Body> bodies = bodyIds.stream()
+                .map(this::findBodyOrThrow)
+                .toList();
+
+        for (int i = 0; i < count; i++) {
+            Neck neck = necks.get(i);
+            Body body = bodies.get(i);
+            validateNeckAvailable(neck);
+            validateBodyAvailable(body);
+            validateComponentCompatibility(productionOrder, neck, body);
+            validateComponentProductionSchedule(
+                    productionOrder, productionSchedule, neck, body);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Assembly> assemblies = new java.util.ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Neck neck = necks.get(i);
+            Body body = bodies.get(i);
+            Guitar guitar = guitarService.createGuitar(productionOrder);
+            assemblies.add(new Assembly(
+                    guitar, neck, body, now, workerName.trim()));
+            neck.setStatus(ASSEMBLED);
+            body.setStatus(ASSEMBLED);
+        }
+
+        List<Assembly> saved = assemblyRepository.saveAll(assemblies);
+        neckRepository.saveAll(necks);
+        bodyRepository.saveAll(bodies);
+        productionOrder.setStartedQuantity(
+                productionOrder.getStartedQuantity() + count);
+        productionOrder.setStatus(
+                ProductionOrderStatusConstants.IN_PROGRESS);
+        productionOrderRepository.save(productionOrder);
+        return saved;
+    }
+
+    private void validateBulkIds(
+            List<Long> neckIds,
+            List<Long> bodyIds) {
+        if (neckIds == null || bodyIds == null
+                || neckIds.isEmpty() || bodyIds.isEmpty()) {
+            throw new BusinessException("登録予定を1件以上追加してください。");
+        }
+        if (neckIds.size() != bodyIds.size()) {
+            throw new BusinessException(
+                    "ネックとボディの登録件数が一致していません。");
+        }
+        if (neckIds.stream().anyMatch(java.util.Objects::isNull)
+                || bodyIds.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new BusinessException("登録予定に不正なIDが含まれています。");
+        }
+    }
 }

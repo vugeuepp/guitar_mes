@@ -144,4 +144,71 @@ class AssemblyServiceTest {
         assertTrue(
                 exception.getMessage().contains("計画数に達しています"));
     }
+
+    @Test
+    @DisplayName("一括登録で同じネックを複数回選択できない")
+    void createAssemblies_duplicateNeck_throws() {
+        ProductionOrder order = minimalOrder(3, 0);
+        ProductionSchedule selected = schedule(order, 10L);
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(productionScheduleRepository.findById(10L))
+                .thenReturn(Optional.of(selected));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.createAssemblies(
+                        1L,
+                        10L,
+                        java.util.List.of(30L, 30L),
+                        java.util.List.of(20L, 21L),
+                        "Worker"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "同じネックを複数回選択できません。",
+                exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("一括登録件数が残り数量を超える場合は登録できない")
+    void createAssemblies_overRemainingQuantity_throws() {
+        ProductionOrder order = minimalOrder(2, 1);
+        ProductionSchedule selected = schedule(order, 10L);
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(productionScheduleRepository.findById(10L))
+                .thenReturn(Optional.of(selected));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.createAssemblies(
+                        1L,
+                        10L,
+                        java.util.List.of(30L, 31L),
+                        java.util.List.of(20L, 21L),
+                        "Worker"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "一括登録件数が生産計画の残り数量を超えています。",
+                exception.getMessage());
+    }
+
+    private ProductionOrder minimalOrder(
+            int plannedQuantity,
+            int startedQuantity) {
+        Product product = new Product();
+        product.setId(10L);
+
+        ProductionOrder order = new ProductionOrder();
+        order.setId(1L);
+        order.setProduct(product);
+        order.setPlannedQuantity(plannedQuantity);
+        order.setStartedQuantity(startedQuantity);
+        order.setCompletedQuantity(0);
+        order.setStatus(
+                startedQuantity == 0
+                        ? ProductionOrderStatusConstants.PLANNED
+                        : ProductionOrderStatusConstants.IN_PROGRESS);
+        return order;
+    }
 }

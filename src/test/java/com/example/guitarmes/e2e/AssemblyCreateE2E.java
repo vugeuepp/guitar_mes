@@ -9,7 +9,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.DisplayName;
@@ -35,13 +36,13 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
 
     private Long productionOrderId;
     private Long productionScheduleId;
-    private Long bodyId;
-    private Long neckId;
-    private Long guitarId;
-    private Long assemblyId;
+    private final List<Long> bodyIds = new ArrayList<>();
+    private final List<Long> neckIds = new ArrayList<>();
+    private final List<Long> guitarIds = new ArrayList<>();
+    private final List<Long> assemblyIds = new ArrayList<>();
+    private final List<String> bodySerials = new ArrayList<>();
+    private final List<String> neckSerials = new ArrayList<>();
     private String orderNo;
-    private String bodySerial;
-    private String neckSerial;
 
     @Override
     protected Path getEvidenceDirectory() {
@@ -49,17 +50,19 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("ネック取付によりAssemblyとGuitarを生成できる")
-    void createAssemblyAndGuitar() throws Exception {
+    @DisplayName("2件のネック取付を登録予定から一括登録できる")
+    void createAssembliesAndGuitarsInBulk() throws Exception {
         try {
             prepareTestData();
             openProductionOrderDetail();
             openAssemblyForm();
-            selectComponentsAndWorker();
-            registerAssembly();
-            verifyGuitarDetail();
-            verifyDatabaseState();
+            addFirstPair();
+            removeFirstPair();
+            addFirstPair();
+            addSecondPair();
+            enterWorkerAndRegister();
             verifyProductionOrderUpdated();
+            verifyDatabaseState();
         } finally {
             cleanupSafely();
         }
@@ -68,33 +71,34 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
     private void prepareTestData() throws Exception {
         ProductReference product = findProductReference();
         String suffix = String.valueOf(System.currentTimeMillis());
-
-        orderNo = "E2E-ASM-" + suffix;
-        bodySerial = "E2EB" + suffix;
-        neckSerial = "E2EN" + suffix;
+        orderNo = "E2E-BULK-ASM-" + suffix;
 
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
             try {
                 productionOrderId = insertProductionOrder(
-                        connection,
-                        product.productId(),
-                        orderNo);
+                        connection, product.productId(), orderNo);
                 productionScheduleId = insertProductionSchedule(
-                        connection,
-                        productionOrderId);
-                bodyId = insertBody(
-                        connection,
-                        product,
-                        bodySerial,
-                        productionOrderId,
-                        productionScheduleId);
-                neckId = insertNeck(
-                        connection,
-                        product,
-                        neckSerial,
-                        productionOrderId,
-                        productionScheduleId);
+                        connection, productionOrderId);
+
+                for (int index = 1; index <= 2; index++) {
+                    String bodySerial = "E2EB" + suffix + index;
+                    String neckSerial = "E2EN" + suffix + index;
+                    bodySerials.add(bodySerial);
+                    neckSerials.add(neckSerial);
+                    bodyIds.add(insertBody(
+                            connection,
+                            product,
+                            bodySerial,
+                            productionOrderId,
+                            productionScheduleId));
+                    neckIds.add(insertNeck(
+                            connection,
+                            product,
+                            neckSerial,
+                            productionOrderId,
+                            productionScheduleId));
+                }
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
@@ -102,7 +106,6 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
             }
         }
     }
-
     private ProductReference findProductReference() throws Exception {
         String sql = """
                 SELECT
@@ -217,7 +220,7 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                     planned_start_date,
                     due_date,
                     status
-                ) VALUES (?, ?, 1, 0, 0, ?, ?, ?, 'PLANNED')
+                ) VALUES (?, ?, 2, 0, 0, ?, ?, ?, 'PLANNED')
                 RETURNING id
                 """;
 
@@ -243,7 +246,7 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                     status,
                     created_at,
                     updated_at
-                ) VALUES (?, ?, 1, 'CONFIRMED',
+                ) VALUES (?, ?, 2, 'CONFIRMED',
                           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING id
                 """;
@@ -316,66 +319,85 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                 .containsText("対象日産計画");
 
         assertThat(page.locator("#neckId"))
-                .containsText(neckSerial);
+                .containsText(neckSerials.get(0));
 
         assertThat(page.locator("#bodyId"))
-                .containsText(bodySerial);
+                .containsText(bodySerials.get(0));
 
         captureScreenshot("02-assembly-form.png");
     }
 
-    private void selectComponentsAndWorker() {
-        page.locator("#neckId")
-                .selectOption(String.valueOf(neckId));
-        page.locator("#bodyId")
-                .selectOption(String.valueOf(bodyId));
-        page.locator("#workerName").fill(WORKER_NAME);
-
-        assertThat(page.locator("#neckId"))
-                .hasValue(String.valueOf(neckId));
-        assertThat(page.locator("#bodyId"))
-                .hasValue(String.valueOf(bodyId));
-        assertThat(page.locator("#workerName"))
-                .hasValue(WORKER_NAME);
-        captureScreenshot("03-components-selected.png");
+    private void addFirstPair() {
+        addPair(0);
+        assertThat(page.locator("#pair-count")).hasText("1");
+        assertThat(page.locator("#queue-body tr")).hasCount(1);
+        assertThat(page.locator("#bulk-submit"))
+                .hasText("1件を一括登録");
+        captureScreenshot("03-first-pair-added.png");
     }
 
-    private void registerAssembly() {
-        page.getByRole(
-                AriaRole.BUTTON,
-                new Page.GetByRoleOptions()
-                        .setName("ネック取付を登録"))
-                .click();
+    private void removeFirstPair() {
+        page.locator(".remove-pair").first().click();
+        assertThat(page.locator("#pair-count")).hasText("0");
+        assertThat(page.locator("#queue-body tr")).hasCount(0);
+        assertThat(page.locator("#bulk-submit")).isDisabled();
+        captureScreenshot("04-first-pair-removed.png");
+    }
+
+    private void addSecondPair() {
+        addPair(1);
+        assertThat(page.locator("#pair-count")).hasText("2");
+        assertThat(page.locator("#queue-body tr")).hasCount(2);
+        assertThat(page.locator("#queue-body"))
+                .containsText(neckSerials.get(0));
+        assertThat(page.locator("#queue-body"))
+                .containsText(neckSerials.get(1));
+        assertThat(page.locator("#queue-body"))
+                .containsText(bodySerials.get(0));
+        assertThat(page.locator("#queue-body"))
+                .containsText(bodySerials.get(1));
+        assertThat(page.locator("#bulk-submit"))
+                .hasText("2件を一括登録");
+        captureScreenshot("05-two-pairs-added.png");
+    }
+
+    private void addPair(int index) {
+        page.locator("#neckId")
+                .selectOption(String.valueOf(neckIds.get(index)));
+        page.locator("#bodyId")
+                .selectOption(String.valueOf(bodyIds.get(index)));
+        page.locator("#add-pair").click();
+    }
+
+    private void enterWorkerAndRegister() {
+        page.locator("#workerName").fill(WORKER_NAME);
+        assertThat(page.locator("#workerName")).hasValue(WORKER_NAME);
+        page.locator("#bulk-submit").click();
         page.waitForLoadState();
 
-        Matcher matcher = Pattern
-                .compile(".*/guitars/(\\d+)/view")
-                .matcher(page.url());
-        assertTrue(
-                matcher.matches(),
-                "Guitar詳細画面へ遷移していません: " + page.url());
-        guitarId = Long.valueOf(matcher.group(1));
-    }
+        String expectedDetailUrl =
+                BASE_URL
+                + "/production-orders/"
+                + productionOrderId
+                + "/view";
 
-    private void verifyGuitarDetail() {
-        assertThat(page).hasTitle(Pattern.compile("ギター詳細"));
+        assertTrue(
+                page.url().startsWith(expectedDetailUrl),
+                "生産計画詳細へ遷移していません。"
+                + " expectedPrefix="
+                + expectedDetailUrl
+                + ", actual="
+                + page.url());
         assertThat(page.locator("main.page-container"))
-                .containsText("ネック取付登録済み");
-        assertThat(page.locator("main.page-container"))
-                .containsText(neckSerial);
-        assertThat(page.locator("main.page-container"))
-                .containsText(bodySerial);
-        assertThat(page.locator("main.page-container"))
-                .containsText(WORKER_NAME);
-        captureScreenshot("04-guitar-generated.png");
+                .containsText("2件のネック取付を一括登録しました");
+        captureScreenshot("06-bulk-registered.png");
     }
 
     private void verifyDatabaseState() throws Exception {
         String sql = """
                 SELECT
                     assembly.id AS assembly_id,
-                    guitar.serial_no AS guitar_serial,
-                    guitar.current_process,
+                    guitar.id AS guitar_id,
                     body.status AS body_status,
                     neck.status AS neck_status,
                     production_order.started_quantity,
@@ -389,53 +411,35 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                   ON neck.id = assembly.neck_id
                 JOIN t_production_order production_order
                   ON production_order.id = guitar.production_order_id
-                WHERE assembly.guitar_id = ?
+                WHERE guitar.production_order_id = ?
+                ORDER BY assembly.id
                 """;
 
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, guitarId);
+            statement.setLong(1, productionOrderId);
             try (ResultSet resultSet = statement.executeQuery()) {
-                assertTrue(
-                        resultSet.next(),
-                        "生成されたAssemblyをDBで確認できません。");
-                assemblyId = resultSet.getLong("assembly_id");
-                assertNotNull(resultSet.getString("guitar_serial"));
-                assertTrue(
-                        !resultSet.getString("current_process").isBlank());
-                assertEquals(
-                        "ASSEMBLED",
-                        resultSet.getString("body_status"));
-                assertEquals(
-                        "ASSEMBLED",
-                        resultSet.getString("neck_status"));
-                assertEquals(
-                        1,
-                        resultSet.getInt("started_quantity"));
-                assertEquals(
-                        "IN_PROGRESS",
-                        resultSet.getString("order_status"));
+                int count = 0;
+                while (resultSet.next()) {
+                    assemblyIds.add(resultSet.getLong("assembly_id"));
+                    guitarIds.add(resultSet.getLong("guitar_id"));
+                    assertEquals("ASSEMBLED", resultSet.getString("body_status"));
+                    assertEquals("ASSEMBLED", resultSet.getString("neck_status"));
+                    assertEquals(2, resultSet.getInt("started_quantity"));
+                    assertEquals("IN_PROGRESS", resultSet.getString("order_status"));
+                    count++;
+                }
+                assertEquals(2, count, "Assemblyが2件生成されていません。");
             }
         }
-        captureScreenshot("05-database-verified.png");
+        captureScreenshot("08-database-verified.png");
     }
-
     private void verifyProductionOrderUpdated() {
-        page.navigate(
-                BASE_URL
-                + "/production-orders/"
-                + productionOrderId
-                + "/view");
-        page.waitForLoadState();
-
-        assertThat(page.locator(
-                ".status-badge.status-working"))
+        assertThat(page.locator(".status-badge.status-working"))
                 .hasText("製造中");
         assertThat(page.locator("main.page-container"))
                 .containsText("計画数に達しています");
-        assertThat(page.locator(".guitar-serial-number"))
-                .hasCount(1);
+        assertThat(page.locator(".guitar-serial-number")).hasCount(2);
         assertEquals(0, page.getByRole(
                 AriaRole.BUTTON,
                 new Page.GetByRoleOptions()
@@ -449,36 +453,105 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                 + "&productionScheduleId="
                 + productionScheduleId);
         page.waitForLoadState();
-
         assertThat(page.locator("main.page-container"))
                 .containsText("ネック取付は登録できません");
         assertEquals(
                 0,
-                page.locator("form[action='/assemblies/create']").count());
-        captureScreenshot("06-production-order-updated.png");
+                page.locator("form[action='/assemblies/bulk/create']").count());
+        captureScreenshot("07-production-order-updated.png");
     }
-
     private void cleanupSafely() throws Exception {
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
+
             try {
-                deleteById(connection, "t_assembly", assemblyId);
-                deleteById(connection, "t_guitar", guitarId);
-                deleteById(connection, "t_body", bodyId);
-                deleteById(connection, "t_neck", neckId);
+                deleteAssembliesByComponents(connection);
+                deleteGuitarsByProductionOrder(connection);
+
+                for (Long bodyId : bodyIds) {
+                    deleteById(
+                            connection,
+                            "t_body",
+                            bodyId);
+                }
+
+                for (Long neckId : neckIds) {
+                    deleteById(
+                            connection,
+                            "t_neck",
+                            neckId);
+                }
+
                 deleteById(
                         connection,
                         "t_production_schedule",
                         productionScheduleId);
+
                 deleteById(
                         connection,
                         "t_production_order",
                         productionOrderId);
+
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
                 throw exception;
             }
+        }
+    }
+    
+    private void deleteAssembliesByComponents(
+            Connection connection) throws Exception {
+
+        if (bodyIds.isEmpty() && neckIds.isEmpty()) {
+            return;
+        }
+
+        for (Long bodyId : bodyIds) {
+            String sql = """
+                    DELETE FROM t_assembly
+                    WHERE body_id = ?
+                    """;
+
+            try (PreparedStatement statement =
+                    connection.prepareStatement(sql)) {
+                statement.setLong(1, bodyId);
+                statement.executeUpdate();
+            }
+        }
+
+        for (Long neckId : neckIds) {
+            String sql = """
+                    DELETE FROM t_assembly
+                    WHERE neck_id = ?
+                    """;
+
+            try (PreparedStatement statement =
+                    connection.prepareStatement(sql)) {
+                statement.setLong(1, neckId);
+                statement.executeUpdate();
+            }
+        }
+    }
+    
+    private void deleteGuitarsByProductionOrder(
+            Connection connection) throws Exception {
+
+        if (productionOrderId == null) {
+            return;
+        }
+
+        String sql = """
+                DELETE FROM t_guitar
+                WHERE production_order_id = ?
+                """;
+
+        try (PreparedStatement statement =
+                connection.prepareStatement(sql)) {
+            statement.setLong(
+                    1,
+                    productionOrderId);
+            statement.executeUpdate();
         }
     }
 

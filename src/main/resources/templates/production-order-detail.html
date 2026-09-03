@@ -43,6 +43,13 @@
         </div>
     </div>
 
+	<div th:if="${successMessage}"
+	     class="success-message"
+	     role="status">
+	    <p class="success-message-text"
+	       th:text="${successMessage}">
+	    </p>
+	</div>
     <div th:if="${errorMessage}"
          class="error-message"
          role="alert">
