@@ -43,7 +43,7 @@ public class BodyProcessViewController {
     @GetMapping("/body-processes/end/view")
     public String showEndForm(@RequestParam Long bodyId, Model model) {
         model.addAttribute("body", bodyService.getBodyById(bodyId));
-        model.addAttribute("runningHistory", bodyProcessService.getRunningProcess(bodyId));
+        model.addAttribute("runningHistory", bodyProcessService.getRunningProcessResponse(bodyId));
         return "body-process-end-form";
     }
 
@@ -78,7 +78,7 @@ public class BodyProcessViewController {
     }
     @GetMapping("/body-processes/bulk/end/view")
     public String showBulkEndForm(Model model) {
-        model.addAttribute("histories", bodyProcessService.getRunningProcesses());
+        model.addAttribute("histories", bodyProcessService.getRunningProcessResponses());
         model.addAttribute("processes", bodyProcessService.getBodyProcesses());
         return "body-process-bulk-end-form";
     }

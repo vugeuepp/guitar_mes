@@ -261,6 +261,10 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         assertEquals(
                 0,
                 page.locator("table.bulk-select-table").getByText("工程ID").count());
+        assertThat(page.locator("table.bulk-select-table"))
+                .containsText(firstSerial);
+        assertEquals(0, page.locator("table.bulk-select-table")
+                .getByText("履歴ID").count());
         captureScreenshot("04-body-bulk-end-initial.png");
     }
 

@@ -221,7 +221,7 @@
         </div>
         <div th:if="${not #lists.isEmpty(productionSchedules)}"
              class="table-container">
-			 <!-- production-order-detail.html の日産計画テーブル部分を以下に差し替えてください -->
+			 
 			 <table class="data-table">
 			     <thead>
 			         <tr>
@@ -246,7 +246,7 @@
 			                       th:text="${schedule.status == 'PLANNED' ? '計画中'
 			                           : schedule.status == 'CONFIRMED' ? '確定'
 			                           : schedule.status == 'COMPLETED' ? '完了'
-			                           : '取消'}"></span><td><span th:text="${issuedBodyCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
+			                           : '取消'}"></span><td><span th:text="${issuedBodyCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
                          <td><span th:text="${issuedNeckCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
                          <td><span class="status-badge" th:text="${componentsIssued[schedule.id] ? '発行済み' : '未発行'}"></span></td>
                          <td class="table-action-cell">
@@ -268,7 +268,7 @@
 			                           onsubmit="return confirm('この日産計画のBodyとNeckを一括発行しますか？');">
 			                         <button type="submit" class="btn btn-primary">部品発行</button>
 			                     </form>
-			                                                  <form th:if="${componentsIssued[schedule.id]}"
+			                                                  <form th:if="${neckInstallAvailable[schedule.id]}"
                                    th:action="@{/assemblies/new}"
                                    method="get">
                                  <input type="hidden"
@@ -281,6 +281,11 @@
                                      ネック取付
                                  </button>
                              </form>
+                             <span th:if="${componentsIssued[schedule.id]
+                                          and order.startedQuantity >= order.plannedQuantity}"
+                                   class="list-no-action">
+                                 計画数に達しています
+                             </span>
 <form th:if="${(schedule.status == 'PLANNED' or schedule.status == 'CONFIRMED') and !componentsIssued[schedule.id]}"
 			                           th:action="@{/production-schedules/{id}/cancel(id=${schedule.id})}"
 			                           method="post"

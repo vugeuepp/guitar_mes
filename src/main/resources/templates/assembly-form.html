@@ -129,9 +129,15 @@
 
     </section>
 
+    <section th:if="${productionOrder.startedQuantity >= productionOrder.plannedQuantity}"
+             class="form-section">
+        <div class="error-message" role="alert">
+            この生産計画は計画数に達しています。ネック取付は登録できません。
+        </div>
+    </section>
     <!-- 候補が不足している場合 -->
-    <section th:if="${#lists.isEmpty(necks)
-                     or #lists.isEmpty(bodies)}"
+    <section th:if="${productionOrder.startedQuantity < productionOrder.plannedQuantity
+                     and (#lists.isEmpty(necks) or #lists.isEmpty(bodies))}"
              class="form-section">
 
         <div class="form-section-heading">
@@ -171,7 +177,8 @@
 
     </section>
 
-    <form th:if="${not #lists.isEmpty(necks)
+    <form th:if="${productionOrder.startedQuantity < productionOrder.plannedQuantity
+                  and not #lists.isEmpty(necks)
                   and not #lists.isEmpty(bodies)}"
           th:action="@{/assemblies/create}"
           method="post"
@@ -338,7 +345,8 @@
 
     </form>
 
-    <div th:if="${#lists.isEmpty(necks)
+    <div th:if="${productionOrder.startedQuantity >= productionOrder.plannedQuantity
+                 or #lists.isEmpty(necks)
                  or #lists.isEmpty(bodies)}"
          class="detail-footer-actions">
 

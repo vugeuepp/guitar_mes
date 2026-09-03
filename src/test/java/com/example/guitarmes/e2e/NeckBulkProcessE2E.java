@@ -292,6 +292,10 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
                         .getByText("工程ID")
                         .count());
 
+        assertThat(page.locator("table.bulk-select-table"))
+                .containsText(firstSerial);
+        assertEquals(0, page.locator("table.bulk-select-table")
+                .getByText("履歴ID").count());
         captureScreenshot("04-neck-bulk-end-initial.png");
     }
 

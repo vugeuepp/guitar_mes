@@ -436,6 +436,25 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                 .containsText("計画数に達しています");
         assertThat(page.locator(".guitar-serial-number"))
                 .hasCount(1);
+        assertEquals(0, page.getByRole(
+                AriaRole.BUTTON,
+                new Page.GetByRoleOptions()
+                        .setName("ネック取付")
+                        .setExact(true)).count());
+
+        page.navigate(
+                BASE_URL
+                + "/assemblies/new?productionOrderId="
+                + productionOrderId
+                + "&productionScheduleId="
+                + productionScheduleId);
+        page.waitForLoadState();
+
+        assertThat(page.locator("main.page-container"))
+                .containsText("ネック取付は登録できません");
+        assertEquals(
+                0,
+                page.locator("form[action='/assemblies/create']").count());
         captureScreenshot("06-production-order-updated.png");
     }
 

@@ -1,4 +1,3 @@
-
 package com.example.guitarmes.process;
 
 import java.time.Duration;
@@ -969,5 +968,31 @@ public class ProcessService {
         if (ids.stream().anyMatch(id -> id == null)) {
             throw new BusinessException("対象IDに不正な値が含まれています。");
         }
+    }
+
+    public ProcessRunningResponse getRunningProcessResponseByGuitarId(
+            Long guitarId) {
+        ProcessHistory history = getRunningProcessByGuitarId(guitarId);
+        return history == null ? null : toRunningResponse(history);
+    }
+
+    public List<ProcessRunningResponse> getRunningProcessResponses() {
+        return getRunningProcesses().stream()
+                .map(this::toRunningResponse)
+                .toList();
+    }
+
+    private ProcessRunningResponse toRunningResponse(
+            ProcessHistory history) {
+        Guitar guitar = findGuitarOrThrow(history.getGuitarId());
+        ManufacturingProcess process = findProcessOrThrow(history.getProcessId());
+        return new ProcessRunningResponse(
+                history.getId(),
+                guitar.getId(),
+                guitar.getSerialNo(),
+                process.getId(),
+                process.getProcessName(),
+                history.getWorkerName(),
+                history.getStartTime());
     }
 }

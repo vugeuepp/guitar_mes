@@ -86,12 +86,14 @@ class NeckProcessViewControllerTest {
 
     @Test
     void bulkEndView_providesHistoriesAndProcesses() throws Exception {
-        List<NeckProcessHistory> histories =
-                List.of(new NeckProcessHistory());
+        List<NeckProcessRunningResponse> histories =
+                List.of(new NeckProcessRunningResponse(
+                        1L, 2L, "DN260001", 3L,
+                        "PLEK", "Worker", null));
         List<ManufacturingProcess> processes =
                 List.of(new ManufacturingProcess());
 
-        when(neckProcessService.getRunningProcesses())
+        when(neckProcessService.getRunningProcessResponses())
                 .thenReturn(histories);
         when(neckProcessService.getNeckProcesses())
                 .thenReturn(processes);
