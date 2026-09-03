@@ -59,7 +59,7 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
             addFirstPair();
             removeFirstPair();
             addFirstPair();
-            addSecondPair();
+            addRemainingPairAutomatically();
             enterWorkerAndRegister();
             verifyProductionOrderUpdated();
             verifyDatabaseState();
@@ -324,6 +324,9 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
         assertThat(page.locator("#bodyId"))
                 .containsText(bodySerials.get(0));
 
+        assertThat(page.locator("#auto-pair")).isEnabled();
+        assertThat(page.locator("#remaining-quantity")).hasText("2");
+        assertThat(page.locator("#remaining-after-count")).hasText("2");
         captureScreenshot("02-assembly-form.png");
     }
 
@@ -344,9 +347,14 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
         captureScreenshot("04-first-pair-removed.png");
     }
 
-    private void addSecondPair() {
-        addPair(1);
+    private void addRemainingPairAutomatically() {
+        assertThat(page.locator("#auto-pair")).isEnabled();
+        page.locator("#auto-pair").click();
+
+        assertThat(page.locator("#auto-pair-message"))
+                .hasText("1件を自動で組み合わせました。");
         assertThat(page.locator("#pair-count")).hasText("2");
+        assertThat(page.locator("#remaining-after-count")).hasText("0");
         assertThat(page.locator("#queue-body tr")).hasCount(2);
         assertThat(page.locator("#queue-body"))
                 .containsText(neckSerials.get(0));
@@ -358,9 +366,9 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                 .containsText(bodySerials.get(1));
         assertThat(page.locator("#bulk-submit"))
                 .hasText("2件を一括登録");
-        captureScreenshot("05-two-pairs-added.png");
+        assertThat(page.locator("#auto-pair")).isDisabled();
+        captureScreenshot("05-auto-pair-completed.png");
     }
-
     private void addPair(int index) {
         page.locator("#neckId")
                 .selectOption(String.valueOf(neckIds.get(index)));

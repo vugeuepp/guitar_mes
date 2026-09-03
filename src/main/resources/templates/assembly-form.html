@@ -222,9 +222,21 @@
                 </div>
             </div>
             <div class="form-actions">
-                <button type="button" id="add-pair" class="btn btn-secondary">
+                <button type="button"
+                        id="add-pair"
+                        class="btn btn-secondary">
                     登録予定へ追加
                 </button>
+                <button type="button"
+                        id="auto-pair"
+                        class="btn btn-outline">
+                    自動組み合わせ
+                </button>
+            </div>
+            <div id="auto-pair-message"
+                 class="information-message"
+                 role="status"
+                 hidden>
             </div>
         </section>
         <section class="form-section">
@@ -301,6 +313,8 @@
     const remainingAfter = document.getElementById('remaining-after-count');
     const remainingQuantity = Number(form.dataset.remainingQuantity);
     const submit = document.getElementById('bulk-submit');
+    const autoPair = document.getElementById('auto-pair');
+    const autoPairMessage = document.getElementById('auto-pair-message');
     const pairs = [];
 
     function render() {
@@ -322,9 +336,56 @@
         remainingAfter.textContent = remainingQuantity - pairs.length;
         submit.textContent = `${pairs.length}件を一括登録`;
         submit.disabled = pairs.length === 0;
+        autoPair.disabled = pairs.length >= remainingQuantity;
         empty.hidden = pairs.length > 0;
         container.hidden = pairs.length === 0;
     }
+
+    function availableOptions(select) {
+        return Array.from(select.options)
+                .filter(option => option.value && !option.disabled);
+    }
+
+    function appendPair(neckOption, bodyOption) {
+        pairs.push({
+            neckId: neckOption.value,
+            bodyId: bodyOption.value,
+            neckSerial: neckOption.dataset.serial,
+            bodySerial: bodyOption.dataset.serial
+        });
+        neckOption.disabled = true;
+        bodyOption.disabled = true;
+    }
+
+    autoPair.addEventListener('click', () => {
+        const capacity = remainingQuantity - pairs.length;
+        const availableNecks = availableOptions(neck);
+        const availableBodies = availableOptions(body);
+        const addCount = Math.min(
+                capacity,
+                availableNecks.length,
+                availableBodies.length);
+
+        if (addCount === 0) {
+            autoPairMessage.textContent =
+                    pairs.length >= remainingQuantity
+                            ? '登録予定は残り数量に達しています。'
+                            : '自動組み合わせできるネックまたはボディがありません。';
+            autoPairMessage.hidden = false;
+            return;
+        }
+
+        for (let index = 0; index < addCount; index++) {
+            appendPair(availableNecks[index], availableBodies[index]);
+        }
+
+        autoPairMessage.textContent =
+                `${addCount}件を自動で組み合わせました。`;
+        autoPairMessage.hidden = false;
+        neck.value = '';
+        body.value = '';
+        render();
+    });
 
     document.getElementById('add-pair').addEventListener('click', () => {
         if (pairs.length >= remainingQuantity) {
@@ -343,14 +404,10 @@
             window.alert('同じボディは追加できません。');
             return;
         }
-        pairs.push({
-            neckId: neck.value,
-            bodyId: body.value,
-            neckSerial: neck.selectedOptions[0].dataset.serial,
-            bodySerial: body.selectedOptions[0].dataset.serial
-        });
-        neck.selectedOptions[0].disabled = true;
-        body.selectedOptions[0].disabled = true;
+        appendPair(
+                neck.selectedOptions[0],
+                body.selectedOptions[0]);
+        autoPairMessage.hidden = true;
         neck.value = '';
         body.value = '';
         render();
