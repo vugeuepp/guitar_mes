@@ -146,6 +146,7 @@ public class ProductionOrderViewController {
         Map<Long, Long> issuedBodyCounts = new LinkedHashMap<>();
         Map<Long, Long> issuedNeckCounts = new LinkedHashMap<>();
         Map<Long, Boolean> componentsIssued = new LinkedHashMap<>();
+        Map<Long, Boolean> neckInstallAvailable = new LinkedHashMap<>();
         for (ProductionSchedule schedule : productionSchedules) {
             Long scheduleId = schedule.getId();
             issuedBodyCounts.put(
@@ -156,14 +157,22 @@ public class ProductionOrderViewController {
                     scheduleId,
                     productionScheduleService
                             .getIssuedNeckCount(scheduleId));
-            componentsIssued.put(
+            boolean issued = productionScheduleService
+                    .isComponentsIssued(schedule);
+            componentsIssued.put(scheduleId, issued);
+            ProductionOrder order = schedule.getProductionOrder();
+            boolean belowOrderLimit = order != null
+                    && order.getStartedQuantity() != null
+                    && order.getPlannedQuantity() != null
+                    && order.getStartedQuantity() < order.getPlannedQuantity();
+            neckInstallAvailable.put(
                     scheduleId,
-                    productionScheduleService
-                            .isComponentsIssued(schedule));
+                    issued && belowOrderLimit);
         }
         model.addAttribute("issuedBodyCounts", issuedBodyCounts);
         model.addAttribute("issuedNeckCounts", issuedNeckCounts);
         model.addAttribute("componentsIssued", componentsIssued);
+        model.addAttribute("neckInstallAvailable", neckInstallAvailable);
     }
 
 }

@@ -110,4 +110,38 @@ class AssemblyServiceTest {
         neck.setNeckMaster(order.getProduct().getNeckMaster());
         return neck;
     }
+
+    @Test
+    @DisplayName("計画数到達済みの生産計画ではネック取付を登録できない")
+    void createAssembly_plannedQuantityReached_throws() {
+        ProductionOrder order = new ProductionOrder();
+        order.setId(1L);
+        order.setPlannedQuantity(1);
+        order.setStartedQuantity(1);
+        order.setCompletedQuantity(0);
+        order.setStatus(ProductionOrderStatusConstants.IN_PROGRESS);
+
+        ProductionSchedule selected = schedule(order, 10L);
+        Body body = new Body();
+        body.setId(20L);
+        Neck neck = new Neck();
+        neck.setId(30L);
+
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(productionScheduleRepository.findById(10L))
+                .thenReturn(Optional.of(selected));
+        when(bodyRepository.findById(20L))
+                .thenReturn(Optional.of(body));
+        when(neckRepository.findById(30L))
+                .thenReturn(Optional.of(neck));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.createAssembly(
+                        1L, 10L, 30L, 20L, "Worker"));
+
+        assertTrue(
+                exception.getMessage().contains("計画数に達しています"));
+    }
 }

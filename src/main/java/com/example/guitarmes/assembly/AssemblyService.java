@@ -140,6 +140,7 @@ public class AssemblyService {
                 productionSchedule,
                 targetNeck,
                 targetBody);
+        validateProductionOrder(productionOrder);
 
         /*
          * ネック取付完了時点で、

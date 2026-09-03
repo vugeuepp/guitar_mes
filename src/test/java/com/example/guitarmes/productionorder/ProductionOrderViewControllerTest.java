@@ -94,7 +94,10 @@ class ProductionOrderViewControllerTest {
                         "componentsIssued",
                         hasEntry(10L, true)))
                 .andExpect(model().attribute("allocatedQuantity", 30))
-                .andExpect(model().attribute("unallocatedQuantity", 70));
+                .andExpect(model().attribute("unallocatedQuantity", 70))
+                .andExpect(model().attribute(
+                        "neckInstallAvailable",
+                        hasEntry(10L, true)));
     }
 
     private com.example.guitarmes.productionschedule.ProductionSchedule
