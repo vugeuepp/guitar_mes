@@ -183,7 +183,8 @@
           th:action="@{/assemblies/bulk/create}"
           method="post"
           id="bulk-assembly-form"
-          class="form-container">
+          class="form-container"
+          th:data-remaining-quantity="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">
         <input type="hidden" name="productionOrderId"
                th:value="${productionOrder.id}">
         <input type="hidden" name="productionScheduleId"
@@ -232,9 +233,13 @@
                     <p class="form-section-caption">Registration Queue</p>
                     <h2 class="form-section-title">登録予定</h2>
                 </div>
-                <p class="form-section-description">
-                    <span id="pair-count">0</span>件を登録予定です。
-                </p>
+                <div class="form-section-description">
+                    <p>残り数量: <strong id="remaining-quantity"
+                        th:text="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">0</strong>件</p>
+                    <p>登録予定: <strong id="pair-count">0</strong>件</p>
+                    <p>登録後残数: <strong id="remaining-after-count"
+                        th:text="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">0</strong>件</p>
+                </div>
             </div>
             <div id="queue-empty" class="empty-state">
                 <p>登録予定はありません。</p>
@@ -293,6 +298,8 @@
     const empty = document.getElementById('queue-empty');
     const container = document.getElementById('queue-container');
     const count = document.getElementById('pair-count');
+    const remainingAfter = document.getElementById('remaining-after-count');
+    const remainingQuantity = Number(form.dataset.remainingQuantity);
     const submit = document.getElementById('bulk-submit');
     const pairs = [];
 
@@ -303,6 +310,8 @@
             const row = document.createElement('tr');
             row.innerHTML = `<td>${index + 1}</td><td>${pair.neckSerial}</td>`
                     + `<td>${pair.bodySerial}</td><td>`
+                    + `<button type="button" class="btn btn-outline move-up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button> `
+                    + `<button type="button" class="btn btn-outline move-down" data-index="${index}" ${index === pairs.length - 1 ? 'disabled' : ''}>↓</button> `
                     + `<button type="button" class="btn btn-outline remove-pair" data-index="${index}">削除</button></td>`;
             rows.appendChild(row);
             hidden.insertAdjacentHTML('beforeend',
@@ -310,6 +319,7 @@
                     + `<input type="hidden" name="bodyIds" value="${pair.bodyId}">`);
         });
         count.textContent = pairs.length;
+        remainingAfter.textContent = remainingQuantity - pairs.length;
         submit.textContent = `${pairs.length}件を一括登録`;
         submit.disabled = pairs.length === 0;
         empty.hidden = pairs.length > 0;
@@ -317,6 +327,10 @@
     }
 
     document.getElementById('add-pair').addEventListener('click', () => {
+        if (pairs.length >= remainingQuantity) {
+            window.alert('登録予定は残り数量を超えて追加できません。');
+            return;
+        }
         if (!neck.value || !body.value) {
             window.alert('ネックとボディを選択してください。');
             return;
@@ -343,9 +357,22 @@
     });
 
     rows.addEventListener('click', event => {
-        const button = event.target.closest('.remove-pair');
+        const button = event.target.closest('button[data-index]');
         if (!button) return;
-        const removed = pairs.splice(Number(button.dataset.index), 1)[0];
+        const index = Number(button.dataset.index);
+        if (button.classList.contains('move-up') && index > 0) {
+            [pairs[index - 1], pairs[index]] = [pairs[index], pairs[index - 1]];
+            render();
+            return;
+        }
+        if (button.classList.contains('move-down')
+                && index < pairs.length - 1) {
+            [pairs[index], pairs[index + 1]] = [pairs[index + 1], pairs[index]];
+            render();
+            return;
+        }
+        if (!button.classList.contains('remove-pair')) return;
+        const removed = pairs.splice(index, 1)[0];
         neck.querySelector(`option[value="${removed.neckId}"]`).disabled = false;
         body.querySelector(`option[value="${removed.bodyId}"]`).disabled = false;
         render();
