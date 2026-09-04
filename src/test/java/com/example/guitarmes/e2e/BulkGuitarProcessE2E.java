@@ -60,6 +60,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
     void bulkStartAndEndGuitarProcesses() throws Exception {
         try {
             prepareTestData();
+            openDashboard();
             openGuitarList();
             selectTargetGuitars();
             startProcessesInBulk();
@@ -222,6 +223,29 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
             }
             return resultSet.getLong("id");
         }
+    }
+
+    private void openDashboard() {
+        page.navigate(BASE_URL + "/");
+        page.waitForLoadState();
+        assertThat(page).hasTitle(Pattern.compile("Guitar MES"));
+        assertThat(dashboardGuitarRow(firstSerial)).containsText(productName);
+        assertThat(dashboardGuitarRow(firstSerial)).containsText(productColor);
+        assertThat(dashboardGuitarRow(firstSerial).locator(".process-badge"))
+                .isVisible();
+        assertThat(page.getByRole(
+                AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("ギター一覧へ")
+                        .setExact(true)))
+                .isVisible();
+        assertEquals(
+                0,
+                page.locator(".dashboard-guitar-table thead")
+                        .getByText("ID", new Locator.GetByTextOptions()
+                                .setExact(true))
+                        .count());
+        captureScreenshot("00-dashboard-guitar-list.png");
     }
 
     private void openGuitarList() {
@@ -416,6 +440,16 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
                 assertEquals(2, resultSet.getInt("next_process_count"));
             }
         }
+    }
+
+    private Locator dashboardGuitarRow(String serialNo) {
+        Locator row = page.locator(".dashboard-guitar-table tbody tr")
+                .filter(new Locator.FilterOptions().setHasText(serialNo));
+        assertEquals(
+                1,
+                row.count(),
+                serialNo + "のダッシュボード行が一意に見つかりません。");
+        return row;
     }
 
     private Locator guitarRow(String serialNo) {

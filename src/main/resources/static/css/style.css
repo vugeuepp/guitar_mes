@@ -2952,3 +2952,45 @@ body {
 @media (max-width: 700px) {
     .component-bulk-action-panel { grid-template-columns: 1fr; grid-template-areas: "process" "worker" "guide" "selection"; }
 }
+
+/* ==================================================
+   Phase 5B-0 dashboard guitar list
+   ================================================== */
+.dashboard-guitar-heading {
+    align-items: center;
+}
+.table-container .dashboard-guitar-table {
+    min-width: 1050px;
+    table-layout: fixed;
+}
+.dashboard-guitar-column-serial { width: 145px; }
+.dashboard-guitar-column-product { width: 430px; }
+.dashboard-guitar-column-process { width: 180px; }
+.dashboard-guitar-column-progress { width: 90px; }
+.dashboard-guitar-column-status { width: 125px; }
+.dashboard-guitar-column-action { width: 90px; }
+.dashboard-guitar-table th,
+.dashboard-guitar-table td {
+    vertical-align: middle;
+}
+.dashboard-guitar-product-cell {
+    min-width: 430px;
+    white-space: normal;
+}
+.dashboard-guitar-process-cell,
+.dashboard-guitar-progress-cell,
+.dashboard-guitar-table .status-cell,
+.dashboard-guitar-table .table-action-cell {
+    overflow: visible;
+    text-align: center;
+    text-overflow: clip;
+}
+@media (max-width: 700px) {
+    .dashboard-guitar-heading {
+        align-items: stretch;
+    }
+    .dashboard-guitar-heading .btn {
+        width: 100%;
+        margin-top: 12px;
+    }
+}

@@ -334,100 +334,77 @@
     </div>
 
 </section>
-<h2>現在のギター一覧</h2>
-<div class="table-container">
-
-    <table class="data-table guitar-table">
-
-        <colgroup>
-            <col class="guitar-column-id">
-            <col class="guitar-column-serial">
-            <col class="guitar-column-product">
-            <col class="guitar-column-process">
-            <col class="guitar-column-progress">
-            <col class="guitar-column-status">
-            <col class="guitar-column-action">
-        </colgroup>
-
-        <thead>
-
+<section class="dashboard-section dashboard-guitar-section">
+    <div class="dashboard-section-heading dashboard-guitar-heading">
+        <div>
+            <h2>現在のギター一覧</h2>
+            <p>製造中・完成済みギターの現在状況</p>
+        </div>
+        <a class="btn btn-outline"
+           th:href="@{/guitars/view}">
+            ギター一覧へ
+        </a>
+    </div>
+    <div class="table-container">
+        <table class="data-table dashboard-guitar-table">
+            <colgroup>
+                <col class="dashboard-guitar-column-serial">
+                <col class="dashboard-guitar-column-product">
+                <col class="dashboard-guitar-column-process">
+                <col class="dashboard-guitar-column-progress">
+                <col class="dashboard-guitar-column-status">
+                <col class="dashboard-guitar-column-action">
+            </colgroup>
+            <thead>
             <tr>
-                <th>ID</th>
                 <th>シリアル番号</th>
-                <th>製品名</th>
+                <th>製品</th>
                 <th>現在工程</th>
                 <th>進捗率</th>
                 <th>状態</th>
                 <th>詳細</th>
             </tr>
-
-        </thead>
-
-        <tbody>
-
+            </thead>
+            <tbody>
             <tr th:each="guitar : ${guitars}"
-                th:class="${guitar.currentProcess
-                           == T(com.example.guitarmes.process.common.GuitarProcessConstants).COMPLETED
-                           ? 'completed'
-                           : ''}">
-
-                <td th:text="${guitar.id}">
-                </td>
-
-                <td th:text="${guitar.serialNo}">
-                </td>
-
-                <td class="guitar-product-cell"
-                    th:text="${guitar.productName}">
-                </td>
-
-                <td th:text="${guitar.currentProcess}">
-                </td>
-
-                <td th:text="${guitar.progressRate + '%'}">
-                </td>
-
+                th:classappend="${guitar.currentProcess == '完成'} ? ' completed' : ''">
                 <td>
-
+                    <span class="guitar-serial-number"
+                          th:text="${guitar.serialNo}"></span>
+                </td>
+                <td class="dashboard-guitar-product-cell">
+                    <div class="guitar-product-name"
+                         th:text="${guitar.productName}"
+                         th:title="${guitar.productName}"></div>
+                    <div class="guitar-product-color"
+                         th:text="${guitar.color}"
+                         th:title="${guitar.color}"></div>
+                </td>
+                <td class="dashboard-guitar-process-cell">
+                    <span class="process-badge"
+                          th:classappend="${guitar.currentProcess == '完成'} ? ' process-badge-completed' : ''"
+                          th:text="${guitar.currentProcess}"
+                          th:title="${guitar.currentProcess}"></span>
+                </td>
+                <td class="dashboard-guitar-progress-cell"
+                    th:text="${guitar.progressRate + '%'}"></td>
+                <td class="status-cell">
                     <span th:if="${guitar.hasRunningProcess}"
-                          class="status-badge status-working">
-                        作業中
-                    </span>
-
-                    <span th:if="${!guitar.hasRunningProcess
-                                  and guitar.currentProcess != '完成'}"
-                          class="status-badge status-waiting">
-                        工程待ち
-                    </span>
-
-                    <span th:if="${!guitar.hasRunningProcess
-                                  and guitar.currentProcess == '完成'}"
-                          class="status-badge status-available">
-                        完成
-                    </span>
-
+                          class="status-badge status-working">作業中</span>
+                    <span th:if="${!guitar.hasRunningProcess and guitar.currentProcess != '完成'}"
+                          class="status-badge status-waiting">工程待ち</span>
+                    <span th:if="${!guitar.hasRunningProcess and guitar.currentProcess == '完成'}"
+                          class="status-badge status-available">完成</span>
                 </td>
-
                 <td class="table-action-cell">
-
                     <a class="btn btn-detail"
-                       th:href="@{/guitars/{id}/view(
-                           id=${guitar.id})}">
-
-                        詳細
-
-                    </a>
-
+                       th:href="@{/guitars/{id}/view(id=${guitar.id})}">詳細</a>
                 </td>
-
             </tr>
-
-        </tbody>
-
-    </table>
-
-</div>
-
+            </tbody>
+        </table>
+    </div>
+</section>
 </main>
 </body>
 </html>
