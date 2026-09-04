@@ -41,7 +41,6 @@
         <table class="data-table assembly-management-table">
 
             <colgroup>
-                <col class="assembly-column-id">
                 <col class="assembly-column-guitar">
                 <col class="assembly-column-neck">
                 <col class="assembly-column-body">
@@ -52,7 +51,6 @@
 
             <thead>
             <tr>
-                <th>ID</th>
                 <th>ギター</th>
                 <th>ネック</th>
                 <th>ボディ</th>
@@ -66,28 +64,34 @@
 
             <tr th:each="assembly : ${assemblies}">
 
-                <td th:text="${assembly.assemblyId}">
+                <td class="assembly-guitar-cell">
+                    <div class="assembly-serial"
+                         th:text="${assembly.guitarSerial}"></div>
+                    <div class="assembly-product-name"
+                         th:text="${assembly.productName}"
+                         th:title="${assembly.productName}"></div>
+                    <div class="assembly-product-color"
+                         th:text="${assembly.productColor}"
+                         th:title="${assembly.productColor}"></div>
                 </td>
 
                 <td>
-                    <span class="assembly-serial"
-                          th:text="${assembly.guitarSerial}">
-                    </span>
+                    <span class="assembly-component-serial"
+                          th:text="${assembly.neckSerial}"></span>
                 </td>
 
-                <td th:text="${assembly.neckSerial}">
+                <td>
+                    <span class="assembly-component-serial"
+                          th:text="${assembly.bodySerial}"></span>
                 </td>
 
-                <td th:text="${assembly.bodySerial}">
-                </td>
+                <td class="assembly-worker-cell"
+                    th:text="${assembly.workerName}"></td>
 
-                <td th:text="${assembly.workerName}">
-                </td>
+                <td class="assembly-date-cell"
+                    th:text="${assembly.assemblyDateText}"></td>
 
-                <td th:text="${assembly.assemblyDateText}">
-                </td>
-
-                <td class="list-action-cell">
+                <td class="list-action-cell assembly-detail-cell">
 
                     <a class="btn btn-detail"
                        th:href="@{/assemblies/{id}/view(id=${assembly.assemblyId})}">

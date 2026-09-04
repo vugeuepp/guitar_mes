@@ -170,11 +170,26 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         page.waitForLoadState();
         assertThat(page).hasTitle(Pattern.compile("ボディ管理一覧"));
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("先に対象工程を選択してください");
+                .containsText("対象工程を選択すると、一致する個体だけを選択できます。");
         assertThat(bodyCheckbox(firstSerial)).isDisabled();
         assertThat(bodyCheckbox(secondSerial)).isDisabled();
         assertThat(bodyCheckbox(otherSerial)).isDisabled();
         assertThat(page.locator("#selected-count")).hasText("0");
+        assertThat(bodyRow(firstSerial).locator(".component-model-name"))
+                .hasText("E2E Bulk Body");
+        assertThat(bodyRow(firstSerial).locator(".process-badge"))
+                .isVisible();
+        Number checkboxWidth = (Number) bodyRow(firstSerial)
+                .locator(".bulk-checkbox-cell")
+                .evaluate("element => element.getBoundingClientRect().width");
+        Number modelWidth = (Number) bodyRow(firstSerial)
+                .locator(".component-model-cell")
+                .evaluate("element => element.getBoundingClientRect().width");
+        assertTrue(checkboxWidth.doubleValue()
+                        < modelWidth.doubleValue() * 0.2,
+                "チェックボックス列はモデル列の20%未満である必要があります。");
+        assertThat(bodyRow(firstSerial).locator(".component-model-secondary"))
+                .hasText("E2E Color");
         assertThat(page.locator("#processId"))
                 .containsText(INSPECTION);
         assertThat(page.locator("#processId"))

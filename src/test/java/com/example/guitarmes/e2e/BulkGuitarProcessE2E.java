@@ -45,6 +45,8 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
     private String firstSerial;
     private String secondSerial;
     private String otherSerial;
+    private String productName;
+    private String productColor;
     private ProcessReference firstProcess;
     private ProcessReference secondProcess;
 
@@ -58,6 +60,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
     void bulkStartAndEndGuitarProcesses() throws Exception {
         try {
             prepareTestData();
+            openDashboard();
             openGuitarList();
             selectTargetGuitars();
             startProcessesInBulk();
@@ -121,7 +124,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
 
     private ProductReference findProductReference() throws Exception {
         String sql = """
-                SELECT id
+                SELECT id, product_name, color
                 FROM m_product
                 ORDER BY id
                 LIMIT 1
@@ -132,6 +135,8 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
             if (!resultSet.next()) {
                 throw new IllegalStateException("E2Eで使用できるProductがありません。");
             }
+            productName = resultSet.getString("product_name");
+            productColor = resultSet.getString("color");
             return new ProductReference(resultSet.getLong("id"));
         }
     }
@@ -220,6 +225,29 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         }
     }
 
+    private void openDashboard() {
+        page.navigate(BASE_URL + "/");
+        page.waitForLoadState();
+        assertThat(page).hasTitle(Pattern.compile("Guitar MES"));
+        assertThat(dashboardGuitarRow(firstSerial)).containsText(productName);
+        assertThat(dashboardGuitarRow(firstSerial)).containsText(productColor);
+        assertThat(dashboardGuitarRow(firstSerial).locator(".process-badge"))
+                .isVisible();
+        assertThat(page.getByRole(
+                AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("ギター一覧へ")
+                        .setExact(true)))
+                .isVisible();
+        assertEquals(
+                0,
+                page.locator(".dashboard-guitar-table thead")
+                        .getByText("ID", new Locator.GetByTextOptions()
+                                .setExact(true))
+                        .count());
+        captureScreenshot("00-dashboard-guitar-list.png");
+    }
+
     private void openGuitarList() {
         page.navigate(BASE_URL + "/guitars/view");
         page.waitForLoadState();
@@ -227,8 +255,49 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasTitle(Pattern.compile("ギター管理一覧"));
         assertThat(page.locator("main.page-container")).containsText(firstSerial);
         assertThat(page.locator("main.page-container")).containsText(secondSerial);
+        assertThat(guitarRow(firstSerial).locator(".guitar-product-name"))
+                .hasText(productName);
+        assertThat(guitarRow(firstSerial).locator(".guitar-product-color"))
+                .hasText(productColor);
+        assertThat(page.locator(".process-badge").first()).isVisible();
+        Number checkboxWidth = (Number) page.locator(
+                ".bulk-checkbox-cell").first().evaluate(
+                        "element => element.getBoundingClientRect().width");
+        Number productWidth = (Number) page.locator(
+                ".guitar-management-product-cell").first().evaluate(
+                        "element => element.getBoundingClientRect().width");
+        assertTrue(checkboxWidth.doubleValue()
+                        < productWidth.doubleValue() * 0.2,
+                "チェックボックス列は製品列の20%未満である必要があります。");
+        assertTrue(productWidth.doubleValue() >= 420.0,
+                "製品列は420px以上である必要があります。");
+        Number checkboxInputWidth = (Number) page.locator(
+                ".bulk-checkbox-cell input").first().evaluate(
+                        "element => element.getBoundingClientRect().width");
+        assertTrue(checkboxInputWidth.doubleValue() <= 20.0,
+                "チェックボックス本体は20px以下である必要があります。");
+        Number panelRight = (Number) page.locator(
+                ".guitar-bulk-action-panel").evaluate(
+                        "element => element.getBoundingClientRect().right");
+        Number submitRight = (Number) page.getByRole(
+                AriaRole.BUTTON,
+                new Page.GetByRoleOptions().setName("一括工程開始"))
+                .evaluate("element => element.getBoundingClientRect().right");
+        assertTrue(submitRight.doubleValue() <= panelRight.doubleValue() + 1.0,
+                "一括工程開始ボタンは操作パネル内に収まる必要があります。");
+        Number processWidth = (Number) page.locator("#processId").evaluate(
+                "element => element.getBoundingClientRect().width");
+        Number workerWidth = (Number) page.locator("#workerName").evaluate(
+                "element => element.getBoundingClientRect().width");
+        assertTrue(Math.abs(processWidth.doubleValue()
+                        - workerWidth.doubleValue()) <= 2.0,
+                "対象工程と作業者の入力欄は同程度の幅である必要があります。");
+        assertThat(page.locator(".bulk-selection-summary"))
+                .containsText("選択中");
+        assertThat(page.locator(".bulk-selection-summary"))
+                .containsText("0件");
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("先に対象工程を選択してください");
+                .containsText("対象工程を選択すると、一致するギターだけを選択できます。");
         assertThat(guitarRow(firstSerial).locator("input.row-checkbox")).isDisabled();
         assertThat(guitarRow(secondSerial).locator("input.row-checkbox")).isDisabled();
         assertThat(guitarRow(otherSerial).locator("input.row-checkbox")).isDisabled();
@@ -371,6 +440,16 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
                 assertEquals(2, resultSet.getInt("next_process_count"));
             }
         }
+    }
+
+    private Locator dashboardGuitarRow(String serialNo) {
+        Locator row = page.locator(".dashboard-guitar-table tbody tr")
+                .filter(new Locator.FilterOptions().setHasText(serialNo));
+        assertEquals(
+                1,
+                row.count(),
+                serialNo + "のダッシュボード行が一意に見つかりません。");
+        return row;
     }
 
     private Locator guitarRow(String serialNo) {

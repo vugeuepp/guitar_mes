@@ -7,6 +7,7 @@ public class GuitarProgressResponse {
     private String serialNo;
 
     private String productName;
+    private String color;
 
     private String currentProcess;
 
@@ -20,6 +21,7 @@ public class GuitarProgressResponse {
             Long id,
             String serialNo,
             String productName,
+            String color,
             String currentProcess,
             int progressRate,
             boolean hasRunningProcess,
@@ -28,6 +30,7 @@ public class GuitarProgressResponse {
         this.id = id;
         this.serialNo = serialNo;
         this.productName = productName;
+        this.color = color;
         this.currentProcess = currentProcess;
         this.progressRate = progressRate;
         this.hasRunningProcess =
@@ -64,6 +67,16 @@ public class GuitarProgressResponse {
             String productName) {
 
         this.productName = productName;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(
+            String color) {
+
+        this.color = color;
     }
 
     public String getCurrentProcess() {

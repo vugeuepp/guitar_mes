@@ -80,6 +80,15 @@ public class AssemblyService {
         AssemblyResponse response = new AssemblyResponse();
         response.setAssemblyId(assembly.getId());
         response.setGuitarSerial(assembly.getGuitar().getSerialNo());
+        if (assembly.getGuitar().getProduct() != null) {
+            response.setProductName(
+                    assembly.getGuitar().getProduct().getProductName());
+            response.setProductColor(
+                    assembly.getGuitar().getProduct().getColor());
+        } else {
+            response.setProductName("-");
+            response.setProductColor("-");
+        }
         response.setNeckSerial(assembly.getNeck().getSerialNo());
         response.setBodySerial(assembly.getBody().getSerialNo());
         response.setWorkerName(assembly.getWorkerName());

@@ -2695,3 +2695,344 @@ body {
     }
     .detail-section-actions .btn { width: 100%; }
 }
+
+/* ==================================================
+   Phase 5B-0 management table column rules
+   ================================================== */
+.management-column-checkbox {
+    width: 52px;
+}
+.table-container .guitar-management-table {
+    min-width: 1280px;
+    table-layout: fixed;
+}
+.guitar-management-column-serial {
+    width: 145px;
+}
+.guitar-management-column-product {
+    width: 430px;
+}
+.guitar-management-column-process {
+    width: 180px;
+}
+.guitar-management-column-progress {
+    width: 90px;
+}
+.guitar-management-column-status {
+    width: 125px;
+}
+.guitar-management-column-operation {
+    width: 135px;
+}
+.guitar-management-column-detail {
+    width: 90px;
+}
+.guitar-management-table th:first-child,
+.guitar-management-table td:first-child {
+    width: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    padding-right: 8px;
+    padding-left: 8px;
+    text-align: center;
+}
+.guitar-management-product-cell {
+    min-width: 430px;
+    white-space: normal;
+}
+.guitar-product-model {
+    overflow: hidden;
+    color: var(--app-black);
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.guitar-product-name {
+    margin-top: 4px;
+    overflow: hidden;
+    color: var(--app-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.guitar-process-cell,
+.guitar-management-table .status-cell,
+.guitar-operation-cell,
+.guitar-management-table .table-action-cell {
+    overflow: visible;
+    text-overflow: clip;
+}
+.process-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 30px;
+    padding: 5px 11px;
+    overflow: hidden;
+    color: #333338;
+    background-color: #eeeeef;
+    border: 1px solid #d6d6d9;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.process-badge-completed {
+    color: #3f4742;
+    background-color: #f0f2f1;
+    border-color: #d5dad7;
+}
+
+/* Phase 5B-0 guitar bulk action panel */
+.guitar-bulk-action-panel {
+    display: grid;
+    grid-template-columns: minmax(320px, 1.6fr) minmax(180px, .8fr) minmax(190px, .7fr);
+    grid-template-areas:
+        "process worker selection"
+        "guide guide selection";
+    gap: 12px 16px;
+    align-items: start;
+}
+.guitar-bulk-action-panel .bulk-process-field { grid-area: process; }
+.guitar-bulk-action-panel .bulk-worker-field { grid-area: worker; }
+.guitar-bulk-action-panel .bulk-process-guidance {
+    grid-area: guide;
+    margin: 0;
+}
+.bulk-selection-action {
+    grid-area: selection;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 8px;
+    align-self: stretch;
+    min-width: 0;
+}
+.bulk-selection-heading {
+    color: var(--app-black);
+    font-size: .9rem;
+    font-weight: 700;
+}
+.bulk-selection-action .bulk-selection-count {
+    min-width: 0;
+    padding: 0;
+    font-size: .9rem;
+}
+.bulk-selection-action .btn {
+    width: 100%;
+    align-self: end;
+}
+@media (max-width: 900px) {
+    .guitar-bulk-action-panel {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            "process worker"
+            "guide selection";
+    }
+}
+@media (max-width: 700px) {
+    .guitar-bulk-action-panel {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "process"
+            "worker"
+            "guide"
+            "selection";
+    }
+}
+
+/* Phase 5B-0 balanced guitar bulk controls */
+.guitar-bulk-action-panel {
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(190px, .55fr);
+    grid-template-areas:
+        "process worker selection"
+        "guide guide selection";
+}
+.bulk-selection-action {
+    grid-template-rows: auto 42px;
+    align-content: start;
+}
+.bulk-selection-summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 22px;
+}
+.bulk-selection-summary .bulk-selection-heading,
+.bulk-selection-summary .bulk-selection-count {
+    white-space: nowrap;
+}
+.bulk-selection-action .btn {
+    align-self: start;
+}
+@media (max-width: 900px) {
+    .guitar-bulk-action-panel {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            "process worker"
+            "guide selection";
+    }
+}
+@media (max-width: 700px) {
+    .guitar-bulk-action-panel {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "process"
+            "worker"
+            "guide"
+            "selection";
+    }
+}
+
+/* Phase 5B-0 product information hierarchy */
+.guitar-product-name {
+    display: -webkit-box;
+    margin-top: 0;
+    overflow: hidden;
+    color: var(--app-black);
+    font-size: 0.96rem;
+    font-weight: 800;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.guitar-product-color {
+    margin-top: 5px;
+    overflow: hidden;
+    color: var(--app-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Phase 5B-0 Body and Neck list layout */
+.component-bulk-action-panel {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(190px, .55fr);
+    grid-template-areas: "process worker selection" "guide guide selection";
+    gap: 12px 16px;
+    align-items: start;
+}
+.component-bulk-action-panel .bulk-process-field { grid-area: process; }
+.component-bulk-action-panel .bulk-worker-field { grid-area: worker; }
+.component-bulk-action-panel .bulk-process-guidance { grid-area: guide; margin: 0; }
+.component-bulk-action-panel .bulk-selection-action { grid-area: selection; }
+.table-container .body-management-table,
+.table-container .neck-management-table { min-width: 1180px; table-layout: fixed; }
+.component-column-serial { width: 145px; }
+.component-column-model { width: 390px; }
+.component-column-process { width: 180px; }
+.component-column-status { width: 125px; }
+.component-column-operation { width: 135px; }
+.component-column-history { width: 120px; }
+.body-management-table th:first-child, .body-management-table td:first-child,
+.neck-management-table th:first-child, .neck-management-table td:first-child {
+    width: 52px; min-width: 52px; max-width: 52px; padding-right: 8px; padding-left: 8px; text-align: center;
+}
+.component-serial-number { color: var(--app-black); font-weight: 800; white-space: nowrap; }
+.component-model-cell { min-width: 390px; white-space: normal; }
+.component-model-name {
+    display: -webkit-box; overflow: hidden; color: var(--app-black); font-size: .94rem; font-weight: 800; line-height: 1.35; text-overflow: ellipsis; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.component-model-secondary { margin-top: 5px; overflow: hidden; color: var(--app-muted); font-size: .82rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.component-process-cell, .component-operation-cell, .component-history-cell,
+.body-management-table .status-cell, .neck-management-table .status-cell { overflow: visible; text-overflow: clip; text-align: center; }
+.component-operation-cell .btn, .component-history-cell .btn { white-space: nowrap; }
+@media (max-width: 900px) {
+    .component-bulk-action-panel { grid-template-columns: minmax(0,1fr) minmax(0,1fr); grid-template-areas: "process worker" "guide selection"; }
+}
+@media (max-width: 700px) {
+    .component-bulk-action-panel { grid-template-columns: 1fr; grid-template-areas: "process" "worker" "guide" "selection"; }
+}
+
+/* ==================================================
+   Phase 5B-0 production-order guitars and assemblies
+   ================================================== */
+.table-container .production-order-guitar-table {
+    min-width: 980px;
+}
+.production-order-guitar-column-serial { width: 150px; }
+.production-order-guitar-column-process { width: 190px; }
+.production-order-guitar-column-product { width: auto; }
+.production-order-guitar-column-action { width: 90px; }
+.production-order-guitar-product-cell {
+    min-width: 480px;
+    white-space: normal;
+}
+.production-order-guitar-process-cell,
+.production-order-guitar-table .table-action-cell {
+    overflow: visible;
+    text-align: center;
+    text-overflow: clip;
+}
+.table-container .assembly-management-table {
+    min-width: 1060px;
+    table-layout: fixed;
+}
+.assembly-column-guitar,
+.assembly-column-neck,
+.assembly-column-body { width: 180px; }
+.assembly-column-worker { width: 180px; }
+.assembly-column-date { width: 220px; }
+.assembly-column-detail { width: 90px; }
+.assembly-management-table th,
+.assembly-management-table td { vertical-align: middle; }
+.assembly-management-table th:last-child,
+.assembly-management-table td:last-child { text-align: center; }
+.assembly-serial {
+    color: var(--app-black);
+    font-weight: 800;
+}
+.assembly-component-serial { color: var(--app-text); font-weight: 700; }
+.assembly-worker-cell,
+.assembly-date-cell { overflow: visible; text-overflow: clip; }
+.assembly-date-cell { white-space: nowrap; }
+.assembly-detail-cell { width: 90px; }
+
+/* ==================================================
+   Phase 5B-0 assembly product identification
+   ================================================== */
+.table-container .assembly-management-table {
+    min-width: 1240px;
+}
+.assembly-column-guitar { width: 360px; }
+.assembly-column-neck { width: 170px; }
+.assembly-column-body { width: 170px; }
+.assembly-column-worker { width: 160px; }
+.assembly-column-date { width: 210px; }
+.assembly-column-detail { width: 90px; }
+.assembly-guitar-cell {
+    min-width: 360px;
+    white-space: normal;
+}
+.assembly-product-name {
+    display: -webkit-box;
+    margin-top: 5px;
+    overflow: hidden;
+    color: var(--app-text);
+    font-size: 0.84rem;
+    font-weight: 650;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.assembly-product-color {
+    margin-top: 3px;
+    overflow: hidden;
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
