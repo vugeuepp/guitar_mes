@@ -294,6 +294,12 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
 
         assertThat(page.locator("main.page-container"))
                 .containsText("ネック取付");
+        assertThat(page.getByRole(
+                AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("ギター一覧へ")
+                        .setExact(true)))
+                .isVisible();
 
         captureScreenshot(
                 "01-production-order-detail.png");
