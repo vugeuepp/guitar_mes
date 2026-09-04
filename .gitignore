@@ -42,3 +42,6 @@ uploads/
 
 # macOS
 .DS_Store
+
+# Local inventory
+/guitar_mes_file_component.txt

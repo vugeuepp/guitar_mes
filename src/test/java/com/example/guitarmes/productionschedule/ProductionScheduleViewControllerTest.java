@@ -276,4 +276,15 @@ class ProductionScheduleViewControllerTest {
         order.setId(1L);
         return order;
     }
+
+    @Test
+    @DisplayName("yyyy/MM/dd形式の日産計画日を変換できる")
+    void create_bindsSlashDateFormat() throws Exception {
+        mockMvc.perform(post("/production-orders/1/schedules/create")
+                        .param("scheduleDate", "2026/09/03")
+                        .param("plannedQuantity", "20"))
+                .andExpect(status().is3xxRedirection());
+        verify(productionScheduleService).createProductionSchedule(
+                1L, LocalDate.of(2026, 9, 3), 20);
+    }
 }
