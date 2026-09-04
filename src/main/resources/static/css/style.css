@@ -2954,43 +2954,85 @@ body {
 }
 
 /* ==================================================
-   Phase 5B-0 dashboard guitar list
+   Phase 5B-0 production-order guitars and assemblies
    ================================================== */
-.dashboard-guitar-heading {
-    align-items: center;
+.table-container .production-order-guitar-table {
+    min-width: 980px;
 }
-.table-container .dashboard-guitar-table {
-    min-width: 1050px;
-    table-layout: fixed;
-}
-.dashboard-guitar-column-serial { width: 145px; }
-.dashboard-guitar-column-product { width: 430px; }
-.dashboard-guitar-column-process { width: 180px; }
-.dashboard-guitar-column-progress { width: 90px; }
-.dashboard-guitar-column-status { width: 125px; }
-.dashboard-guitar-column-action { width: 90px; }
-.dashboard-guitar-table th,
-.dashboard-guitar-table td {
-    vertical-align: middle;
-}
-.dashboard-guitar-product-cell {
-    min-width: 430px;
+.production-order-guitar-column-serial { width: 150px; }
+.production-order-guitar-column-process { width: 190px; }
+.production-order-guitar-column-product { width: auto; }
+.production-order-guitar-column-action { width: 90px; }
+.production-order-guitar-product-cell {
+    min-width: 480px;
     white-space: normal;
 }
-.dashboard-guitar-process-cell,
-.dashboard-guitar-progress-cell,
-.dashboard-guitar-table .status-cell,
-.dashboard-guitar-table .table-action-cell {
+.production-order-guitar-process-cell,
+.production-order-guitar-table .table-action-cell {
     overflow: visible;
     text-align: center;
     text-overflow: clip;
 }
-@media (max-width: 700px) {
-    .dashboard-guitar-heading {
-        align-items: stretch;
-    }
-    .dashboard-guitar-heading .btn {
-        width: 100%;
-        margin-top: 12px;
-    }
+.table-container .assembly-management-table {
+    min-width: 1060px;
+    table-layout: fixed;
+}
+.assembly-column-guitar,
+.assembly-column-neck,
+.assembly-column-body { width: 180px; }
+.assembly-column-worker { width: 180px; }
+.assembly-column-date { width: 220px; }
+.assembly-column-detail { width: 90px; }
+.assembly-management-table th,
+.assembly-management-table td { vertical-align: middle; }
+.assembly-management-table th:last-child,
+.assembly-management-table td:last-child { text-align: center; }
+.assembly-serial {
+    color: var(--app-black);
+    font-weight: 800;
+}
+.assembly-component-serial { color: var(--app-text); font-weight: 700; }
+.assembly-worker-cell,
+.assembly-date-cell { overflow: visible; text-overflow: clip; }
+.assembly-date-cell { white-space: nowrap; }
+.assembly-detail-cell { width: 90px; }
+
+/* ==================================================
+   Phase 5B-0 assembly product identification
+   ================================================== */
+.table-container .assembly-management-table {
+    min-width: 1240px;
+}
+.assembly-column-guitar { width: 360px; }
+.assembly-column-neck { width: 170px; }
+.assembly-column-body { width: 170px; }
+.assembly-column-worker { width: 160px; }
+.assembly-column-date { width: 210px; }
+.assembly-column-detail { width: 90px; }
+.assembly-guitar-cell {
+    min-width: 360px;
+    white-space: normal;
+}
+.assembly-product-name {
+    display: -webkit-box;
+    margin-top: 5px;
+    overflow: hidden;
+    color: var(--app-text);
+    font-size: 0.84rem;
+    font-weight: 650;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.assembly-product-color {
+    margin-top: 3px;
+    overflow: hidden;
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

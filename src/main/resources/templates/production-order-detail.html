@@ -409,15 +409,19 @@
                                   th:text="${guitar.serialNo}">
                             </span>
                         </td>
-
-                        <td th:text="${guitar.currentProcess}">
+                        <td class="production-order-guitar-process-cell">
+                            <span class="process-badge"
+                                  th:classappend="${guitar.currentProcess == '完成'} ? ' process-badge-completed' : ''"
+                                  th:text="${guitar.currentProcess}"
+                                  th:title="${guitar.currentProcess}"></span>
                         </td>
-
-                        <td th:text="${guitar.product.modelNo
-                                + ' / '
-                                + guitar.product.productName
-                                + ' / '
-                                + guitar.product.color}">
+                        <td class="production-order-guitar-product-cell">
+                            <div class="guitar-product-name"
+                                 th:text="${guitar.product.productName}"
+                                 th:title="${guitar.product.productName}"></div>
+                            <div class="guitar-product-color"
+                                 th:text="${guitar.product.color}"
+                                 th:title="${guitar.product.color}"></div>
                         </td>
 
                         <td class="table-action-cell">

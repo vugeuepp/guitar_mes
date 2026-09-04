@@ -43,6 +43,8 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
     private final List<String> bodySerials = new ArrayList<>();
     private final List<String> neckSerials = new ArrayList<>();
     private String orderNo;
+    private String productName;
+    private String productColor;
 
     @Override
     protected Path getEvidenceDirectory() {
@@ -61,8 +63,10 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
             addFirstPair();
             addRemainingPairAutomatically();
             enterWorkerAndRegister();
+            verifyGeneratedGuitarPresentation();
             verifyProductionOrderUpdated();
             verifyDatabaseState();
+            verifyAssemblyListPresentation();
         } finally {
             cleanupSafely();
         }
@@ -70,6 +74,8 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
 
     private void prepareTestData() throws Exception {
         ProductReference product = findProductReference();
+        productName = product.productName();
+        productColor = product.color();
         String suffix = String.valueOf(System.currentTimeMillis());
         orderNo = "E2E-BULK-ASM-" + suffix;
 
@@ -405,6 +411,52 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
         assertThat(page.locator("main.page-container"))
                 .containsText("2件のネック取付を一括登録しました");
         captureScreenshot("06-bulk-registered.png");
+    }
+
+    private void verifyGeneratedGuitarPresentation() {
+        assertThat(page.locator(".production-order-guitar-table"))
+                .containsText(productName);
+        assertThat(page.locator(".production-order-guitar-table"))
+                .containsText(productColor);
+        assertThat(page.locator(
+                ".production-order-guitar-table .process-badge").first())
+                .isVisible();
+        assertThat(page.locator(
+                ".production-order-guitar-product-cell").first())
+                .containsText(productName);
+        assertEquals(
+                0,
+                page.locator(".production-order-guitar-table")
+                        .getByText(productName + " / " + productColor)
+                        .count());
+        captureScreenshot("06a-generated-guitars.png");
+    }
+
+    private void verifyAssemblyListPresentation() {
+        page.navigate(BASE_URL + "/assemblies/view");
+        page.waitForLoadState();
+        assertThat(page).hasTitle(Pattern.compile("ネック取付実績一覧"));
+        assertThat(page.locator(".assembly-management-table"))
+                .containsText(bodySerials.get(0));
+        assertThat(page.locator(".assembly-management-table"))
+                .containsText(neckSerials.get(0));
+        assertThat(page.locator(".assembly-management-table"))
+                .containsText(WORKER_NAME);
+        assertThat(page.locator(".assembly-guitar-cell").first())
+                .containsText(productName);
+        assertThat(page.locator(".assembly-guitar-cell").first())
+                .containsText(productColor);
+        assertThat(page.locator(".assembly-product-name").first())
+                .hasText(productName);
+        assertThat(page.locator(".assembly-product-color").first())
+                .hasText(productColor);
+        assertEquals(
+                0,
+                page.locator(".assembly-management-table thead th")
+                        .filter(new com.microsoft.playwright.Locator.FilterOptions()
+                                .setHasText("ID"))
+                        .count());
+        captureScreenshot("09-assembly-list.png");
     }
 
     private void verifyDatabaseState() throws Exception {

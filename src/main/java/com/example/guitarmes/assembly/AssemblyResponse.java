@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 public class AssemblyResponse {
 	private Long assemblyId;
 	private String guitarSerial;
+	private String productName;
+	private String productColor;
 	private String neckSerial;
 	private String bodySerial;
 	private String workerName;
@@ -22,6 +24,18 @@ public class AssemblyResponse {
 	}
 	public void setGuitarSerial(String guitarSerial) {
 		this.guitarSerial = guitarSerial;
+	}
+	public String getProductName() {
+		return productName;
+	}
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+	public String getProductColor() {
+		return productColor;
+	}
+	public void setProductColor(String productColor) {
+		this.productColor = productColor;
 	}
 	public String getNeckSerial() {
 		return neckSerial;
