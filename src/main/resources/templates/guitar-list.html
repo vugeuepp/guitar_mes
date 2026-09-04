@@ -38,8 +38,60 @@
          th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="error-message" role="alert"
          th:text="${errorMessage}"></div>
+
+    <section class="guitar-search-panel" aria-label="ギター検索・フィルタ">
+        <form class="guitar-search-form" method="get" th:action="@{/guitars/view}">
+            <div class="form-group guitar-search-serial">
+                <label class="form-label" for="serial">シリアル番号</label>
+                <input class="form-input" id="serial" name="serial"
+                       type="search" th:value="${serial}"
+                       placeholder="例: DY260021">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="product">製品</label>
+                <select class="form-select" id="product" name="product">
+                    <option value="">すべて</option>
+                    <option th:each="option : ${productOptions}"
+                            th:value="${option}" th:text="${option}"
+                            th:selected="${option == selectedProduct}"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="currentProcess">現在工程</label>
+                <select class="form-select" id="currentProcess" name="currentProcess">
+                    <option value="">すべて</option>
+                    <option th:each="process : ${processes}"
+                            th:value="${process.processName}"
+                            th:text="${process.processName}"
+                            th:selected="${process.processName == selectedCurrentProcess}"></option>
+                    <option value="完成" th:selected="${selectedCurrentProcess == '完成'}">完成</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="status">状態</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">すべて</option>
+                    <option value="WAITING" th:selected="${selectedStatus == 'WAITING'}">工程待ち</option>
+                    <option value="WORKING" th:selected="${selectedStatus == 'WORKING'}">作業中</option>
+                    <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">完成</option>
+                </select>
+            </div>
+            <div class="guitar-search-actions">
+                <button class="btn btn-primary" type="submit">検索</button>
+                <a class="btn btn-outline" th:href="@{/guitars/view}">クリア</a>
+            </div>
+        </form>
+        <div class="guitar-search-result" aria-live="polite">
+            <span th:if="${filterApplied}">検索結果</span>
+            <span th:unless="${filterApplied}">全件</span>
+            <strong th:text="${resultCount}">0</strong><span>件</span>
+        </div>
+    </section>
     <div th:if="${#lists.isEmpty(guitars)}" class="empty-state">
-        <p>生成済みのギター個体はありません。</p>
+        <p th:if="${filterApplied}">条件に一致するギターはありません。</p>
+        <p th:unless="${filterApplied}">生成済みのギター個体はありません。</p>
+        <a th:if="${filterApplied}" class="btn btn-outline"
+           th:href="@{/guitars/view}">検索条件をクリア</a>
     </div>
     <form th:if="${not #lists.isEmpty(guitars)}"
           th:action="@{/processes/bulk/start}" method="post"

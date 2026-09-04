@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -226,6 +227,77 @@ public class GuitarService {
         }
 
         return responses;
+    }
+
+    /**
+     * 一覧表示用Guitarを検索条件で絞り込む。
+     */
+    public List<GuitarProgressResponse> filterGuitarProgressList(
+            List<GuitarProgressResponse> guitars,
+            String serial,
+            String product,
+            String currentProcess,
+            String status) {
+        String serialCondition = normalize(serial);
+        String productCondition = normalize(product);
+        String processCondition = normalize(currentProcess);
+        String statusCondition = normalize(status);
+        return guitars.stream()
+                .filter(guitar -> serialCondition.isEmpty()
+                        || normalize(guitar.getSerialNo())
+                                .contains(serialCondition))
+                .filter(guitar -> productCondition.isEmpty()
+                        || Objects.equals(
+                                productCondition,
+                                normalize(guitar.getProductName())))
+                .filter(guitar -> processCondition.isEmpty()
+                        || Objects.equals(
+                                processCondition,
+                                normalize(guitar.getCurrentProcess())))
+                .filter(guitar -> statusCondition.isEmpty()
+                        || Objects.equals(
+                                statusCondition,
+                                getDisplayStatus(guitar)))
+                .toList();
+    }
+
+    /** 一覧の製品選択肢を重複なしで返す。 */
+    public List<String> getProductOptions(
+            List<GuitarProgressResponse> guitars) {
+        return guitars.stream()
+                .map(GuitarProgressResponse::getProductName)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty() && !"-".equals(value))
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    /** 検索条件が1つ以上指定されているか判定する。 */
+    public boolean hasSearchCondition(
+            String serial,
+            String product,
+            String currentProcess,
+            String status) {
+        return !normalize(serial).isEmpty()
+                || !normalize(product).isEmpty()
+                || !normalize(currentProcess).isEmpty()
+                || !normalize(status).isEmpty();
+    }
+
+    private String getDisplayStatus(GuitarProgressResponse guitar) {
+        if (guitar.isHasRunningProcess()) {
+            return "working";
+        }
+        if (COMPLETED.equals(guitar.getCurrentProcess())) {
+            return "completed";
+        }
+        return "waiting";
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
     }
 
     /**

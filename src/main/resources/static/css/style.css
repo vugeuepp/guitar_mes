@@ -3036,3 +3036,52 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ==================================================
+   Phase 5B guitar search and filters
+   ================================================== */
+.guitar-search-panel {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 18px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-left: 5px solid var(--app-red);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+}
+.guitar-search-form {
+    display: grid;
+    grid-template-columns: minmax(190px, .8fr) minmax(280px, 1.35fr)
+                           minmax(190px, .8fr) minmax(150px, .65fr) auto;
+    gap: 14px;
+    align-items: end;
+    flex: 1;
+    min-width: 0;
+}
+.guitar-search-actions { display: flex; gap: 8px; }
+.guitar-search-result {
+    min-width: 92px;
+    color: var(--app-muted);
+    font-size: .85rem;
+    text-align: right;
+    white-space: nowrap;
+}
+.guitar-search-result strong {
+    margin-left: 7px;
+    color: var(--app-black);
+    font-size: 1.25rem;
+}
+@media (max-width: 1200px) {
+    .guitar-search-panel { align-items: stretch; flex-direction: column; }
+    .guitar-search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .guitar-search-actions { align-items: end; }
+    .guitar-search-result { text-align: left; }
+}
+@media (max-width: 700px) {
+    .guitar-search-form { grid-template-columns: 1fr; }
+    .guitar-search-actions .btn { flex: 1; }
+}

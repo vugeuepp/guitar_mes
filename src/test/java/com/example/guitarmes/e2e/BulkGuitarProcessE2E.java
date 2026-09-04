@@ -61,6 +61,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         try {
             prepareTestData();
             openDashboard();
+            verifyGuitarSearchAndFilters();
             openGuitarList();
             selectTargetGuitars();
             startProcessesInBulk();
@@ -246,6 +247,53 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
                                 .setExact(true))
                         .count());
         captureScreenshot("00-dashboard-guitar-list.png");
+    }
+
+    private void verifyGuitarSearchAndFilters() {
+        page.navigate(BASE_URL + "/guitars/view");
+        page.waitForLoadState();
+        assertThat(page.locator(".guitar-search-panel")).isVisible();
+        page.locator("#serial").fill(firstSerial.substring(0, 12));
+        page.getByRole(AriaRole.BUTTON,
+                new Page.GetByRoleOptions().setName("検索").setExact(true))
+                .click();
+        page.waitForLoadState();
+        assertThat(page.locator(".guitar-management-table tbody tr"))
+                .hasCount(1);
+        assertThat(guitarRow(firstSerial)).containsText(productName);
+        assertThat(page.locator(".guitar-search-result"))
+                .containsText("検索結果");
+        assertThat(page.locator(".guitar-search-result"))
+                .containsText("1件");
+
+        page.locator("#serial").fill("");
+        page.locator("#currentProcess")
+                .selectOption(firstProcess.processName());
+        page.locator("#status").selectOption("WAITING");
+        page.getByRole(AriaRole.BUTTON,
+                new Page.GetByRoleOptions().setName("検索").setExact(true))
+                .click();
+        page.waitForLoadState();
+        assertThat(guitarRow(firstSerial)).isVisible();
+        assertThat(guitarRow(secondSerial)).isVisible();
+        assertEquals(
+                0,
+                page.locator(".guitar-management-table tbody tr")
+                        .filter(new Locator.FilterOptions()
+                                .setHasText(otherSerial))
+                        .count(),
+                "異なる工程のギターは検索結果に含まれない必要があります。");
+        assertThat(page.locator("#currentProcess"))
+                .hasValue(firstProcess.processName());
+        assertThat(page.locator("#status")).hasValue("WAITING");
+        captureScreenshot("00a-guitar-search-filter.png");
+
+        page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions().setName("クリア").setExact(true))
+                .click();
+        page.waitForLoadState();
+        assertThat(page.locator("#serial")).hasValue("");
+        assertThat(page.locator("#status")).hasValue("");
     }
 
     private void openGuitarList() {

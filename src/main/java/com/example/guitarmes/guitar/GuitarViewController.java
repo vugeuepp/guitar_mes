@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.assembly.AssemblyResponse;
 import com.example.guitarmes.assembly.AssemblyService;
@@ -27,9 +28,34 @@ public class GuitarViewController {
 	}
 
 	@GetMapping("/guitars/view")
-	public String guitarList(Model model) {
-		model.addAttribute("guitars", guitarService.getGuitarProgressList(processService, assemblyService));
+	public String guitarList(
+            @RequestParam(required = false) String serial,
+            @RequestParam(required = false) String product,
+            @RequestParam(required = false) String currentProcess,
+            @RequestParam(required = false) String status,
+            Model model) {
+        var allGuitars = guitarService.getGuitarProgressList(
+                processService,
+                assemblyService);
+        var guitars = guitarService.filterGuitarProgressList(
+                allGuitars,
+                serial,
+                product,
+                currentProcess,
+                status);
+        model.addAttribute("guitars", guitars);
         model.addAttribute("processes", processService.getAvailableGuitarProcesses());
+        model.addAttribute("productOptions", guitarService.getProductOptions(allGuitars));
+        model.addAttribute("serial", serial == null ? "" : serial);
+        model.addAttribute("selectedProduct", product == null ? "" : product);
+        model.addAttribute("selectedCurrentProcess", currentProcess == null ? "" : currentProcess);
+        model.addAttribute("selectedStatus", status == null ? "" : status);
+        model.addAttribute("filterApplied", guitarService.hasSearchCondition(
+                serial,
+                product,
+                currentProcess,
+                status));
+        model.addAttribute("resultCount", guitars.size());
 		return "guitar-list";
 	}
 	
