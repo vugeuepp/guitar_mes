@@ -9,7 +9,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.DisplayName;
@@ -55,9 +54,9 @@ class GuitarProcessE2E extends PlaywrightTestBase {
             prepareTestData();
             openProductionOrderDetail();
             openAssemblyForm();
-            selectComponentsAndWorker();
+            addAssemblyPairAndWorker();
             registerAssembly();
-            verifyGuitarDetail();
+            openGeneratedGuitarDetail();
             verifyDatabaseState();
             verifyProductionOrderUpdated();
             executeProcess(
@@ -318,37 +317,75 @@ class GuitarProcessE2E extends PlaywrightTestBase {
         captureScreenshot("02-assembly-form.png");
     }
 
-    private void selectComponentsAndWorker() {
+    private void addAssemblyPairAndWorker() {
         page.locator("#neckId")
                 .selectOption(String.valueOf(neckId));
         page.locator("#bodyId")
                 .selectOption(String.valueOf(bodyId));
-        page.locator("#workerName").fill(WORKER_NAME);
+        page.locator("#add-pair").click();
 
-        assertThat(page.locator("#neckId"))
-                .hasValue(String.valueOf(neckId));
-        assertThat(page.locator("#bodyId"))
-                .hasValue(String.valueOf(bodyId));
+        assertThat(page.locator("#pair-count")).hasText("1");
+        assertThat(page.locator("#queue-body tr")).hasCount(1);
+        assertThat(page.locator("#queue-body"))
+                .containsText(neckSerial);
+        assertThat(page.locator("#queue-body"))
+                .containsText(bodySerial);
+
+        page.locator("#workerName").fill(WORKER_NAME);
         assertThat(page.locator("#workerName"))
                 .hasValue(WORKER_NAME);
+        assertThat(page.locator("#bulk-submit"))
+                .hasText("1件を一括登録");
         captureScreenshot("03-components-selected.png");
     }
 
     private void registerAssembly() {
-        page.getByRole(
-                AriaRole.BUTTON,
-                new Page.GetByRoleOptions()
-                        .setName("ネック取付を登録"))
-                .click();
+        page.locator("#bulk-submit").click();
         page.waitForLoadState();
 
-        Matcher matcher = Pattern
-                .compile(".*/guitars/(\\d+)/view")
-                .matcher(page.url());
+        String expectedDetailUrl =
+                BASE_URL
+                + "/production-orders/"
+                + productionOrderId
+                + "/view";
         assertTrue(
-                matcher.matches(),
-                "Guitar詳細画面へ遷移していません: " + page.url());
-        guitarId = Long.valueOf(matcher.group(1));
+                page.url().startsWith(expectedDetailUrl),
+                "生産計画詳細へ遷移していません: " + page.url());
+        assertThat(page.locator("main.page-container"))
+                .containsText("1件のネック取付を一括登録しました");
+    }
+
+    private void openGeneratedGuitarDetail() throws Exception {
+        loadGeneratedIds();
+        page.navigate(BASE_URL + "/guitars/" + guitarId + "/view");
+        page.waitForLoadState();
+        verifyGuitarDetail();
+    }
+
+    private void loadGeneratedIds() throws Exception {
+        String sql = """
+                SELECT
+                    assembly.id AS assembly_id,
+                    guitar.id AS guitar_id
+                FROM t_assembly assembly
+                JOIN t_guitar guitar
+                  ON guitar.id = assembly.guitar_id
+                WHERE guitar.production_order_id = ?
+                """;
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, productionOrderId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                assertTrue(
+                        resultSet.next(),
+                        "生成されたAssemblyとGuitarを確認できません。");
+                assemblyId = resultSet.getLong("assembly_id");
+                guitarId = resultSet.getLong("guitar_id");
+                assertFalse(
+                        resultSet.next(),
+                        "Guitarが複数生成されています。");
+            }
+        }
     }
 
     private void verifyGuitarDetail() {
@@ -590,9 +627,9 @@ class GuitarProcessE2E extends PlaywrightTestBase {
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
             try {
-                deleteProcessHistories(connection);
-                deleteById(connection, "t_assembly", assemblyId);
-                deleteById(connection, "t_guitar", guitarId);
+                deleteProcessHistoriesByProductionOrder(connection);
+                deleteAssembliesByProductionOrder(connection);
+                deleteGuitarsByProductionOrder(connection);
                 deleteById(connection, "t_body", bodyId);
                 deleteById(connection, "t_neck", neckId);
                 deleteById(
@@ -612,14 +649,54 @@ class GuitarProcessE2E extends PlaywrightTestBase {
     }
 
 
-    private void deleteProcessHistories(Connection connection)
-            throws Exception {
-        if (guitarId == null) {
+    private void deleteProcessHistoriesByProductionOrder(
+            Connection connection) throws Exception {
+        if (productionOrderId == null) {
+            return;
+        }
+        String sql = """
+                DELETE FROM t_process_history
+                WHERE guitar_id IN (
+                    SELECT id
+                    FROM t_guitar
+                    WHERE production_order_id = ?
+                )
+                """;
+        try (PreparedStatement statement =
+                connection.prepareStatement(sql)) {
+            statement.setLong(1, productionOrderId);
+            statement.executeUpdate();
+        }
+    }
+
+    private void deleteAssembliesByProductionOrder(
+            Connection connection) throws Exception {
+        if (productionOrderId == null) {
+            return;
+        }
+        String sql = """
+                DELETE FROM t_assembly
+                WHERE guitar_id IN (
+                    SELECT id
+                    FROM t_guitar
+                    WHERE production_order_id = ?
+                )
+                """;
+        try (PreparedStatement statement =
+                connection.prepareStatement(sql)) {
+            statement.setLong(1, productionOrderId);
+            statement.executeUpdate();
+        }
+    }
+
+    private void deleteGuitarsByProductionOrder(
+            Connection connection) throws Exception {
+        if (productionOrderId == null) {
             return;
         }
         try (PreparedStatement statement = connection.prepareStatement(
-                "DELETE FROM t_process_history WHERE guitar_id = ?")) {
-            statement.setLong(1, guitarId);
+                "DELETE FROM t_guitar WHERE production_order_id = ?")) {
+            statement.setLong(1, productionOrderId);
             statement.executeUpdate();
         }
     }

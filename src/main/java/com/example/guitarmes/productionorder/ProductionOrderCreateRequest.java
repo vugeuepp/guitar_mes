@@ -14,8 +14,10 @@ public class ProductionOrderCreateRequest {
     @DateTimeFormat(pattern = "yyyy-MM")
     private YearMonth planMonth;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate plannedStartDate;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dueDate;
 
     public ProductionOrderCreateRequest() {

@@ -20,6 +20,32 @@ tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.tx
 -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
 test
 
+# 全体テスト（ログあり）
+PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+DAY=$(date '+%Y%m%d')
+RUN_ID=$(date '+%Y%m%d-%H%M%S')
+LOGDIR="$PROJECT/logs/test-logs/$DAY"
+LOGFILE="$LOGDIR/console-$RUN_ID.log"
+mkdir -p "$LOGDIR"
+(
+  set -o pipefail
+  "$PROJECT/mvnw" \
+    -f "$PROJECT/pom.xml" \
+    -Dstyle.color=always \
+    test \
+    2>&1 | tee "$LOGFILE"
+)
+STATUS=$?
+echo
+echo "終了コード: $STATUS"
+echo "ログ: $LOGFILE"
+if [ "$STATUS" -ne 0 ]; then
+  echo "通常テスト全件に失敗しました。"
+else
+  echo "通常テスト全件は正常に完了しました。"
+fi
+
+
 E2E全体
 /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
 -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
@@ -28,36 +54,29 @@ E2E全体
 '-Dtest=*E2E' \
 test
 
-◼︎E2E 
+◼︎E2E （画面なし）
 PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+DAY=$(date '+%Y%m%d')
 RUN_ID=$(date '+%Y%m%d-%H%M%S')
-
-LOGDIR="$PROJECT/logs/test-logs/$RUN_ID"
+LOGDIR="$PROJECT/logs/test-logs/$DAY"
 LOGFILE="$LOGDIR/console-$RUN_ID.log"
-
 mkdir -p "$LOGDIR"
-
 (
   set -o pipefail
-
   "$PROJECT/mvnw" \
     -f "$PROJECT/pom.xml" \
     -Dstyle.color=always \
-    -Dplaywright.headless=false \
-    -Dplaywright.slowMo=1000 \
-    -Dtest=BulkGuitarProcessE2E \
+    -Dplaywright.headless=true \
+    -Dtest='*E2E' \
     test \
     2>&1 | tee "$LOGFILE"
 )
-
 STATUS=$?
-
 echo
 echo "終了コード: $STATUS"
 echo "ログ: $LOGFILE"
-
 if [ "$STATUS" -ne 0 ]; then
-  echo "BulkGuitarProcessE2Eに失敗しました。ログを共有してください。"
+  echo "E2E全件テストに失敗しました。"
 else
-  echo "BulkGuitarProcessE2Eは正常に完了しました。"
+  echo "E2E全件テストは正常に完了しました。"
 fi

@@ -6,6 +6,16 @@
           content="width=device-width, initial-scale=1.0">
     <title>日産計画登録</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        .date-entry { position: relative; width: 100%; }
+        .date-entry .date-text { box-sizing: border-box; width: 100%; padding-right: 3rem; }
+        .date-calendar-button { position: absolute; top: 0; right: 0; bottom: 0; z-index: 2; display: flex; width: 3rem; align-items: center; justify-content: center; padding: 0; border: 0; border-left: 1px solid #d5d7da; background: transparent; color: #111827; cursor: pointer; }
+        .date-calendar-button:hover { background: #f3f4f6; }
+        .date-calendar-button:focus-visible { outline: 2px solid #2563eb; outline-offset: -2px; }
+        .date-calendar-button svg { width: 1rem; height: 1rem; }
+        .date-picker-anchor { position: absolute; top: 0; right: 0; width: 3rem; height: 100%; border: 0; opacity: 0; pointer-events: none; }
+    </style>
 </head>
 <body>
 <div th:replace="~{fragments/header :: header('日産計画登録')}"></div>
@@ -83,11 +93,12 @@
                     <label for="scheduleDate" class="form-label">
                         日産計画日 <span class="form-required">必須</span>
                     </label>
-                    <input type="date"
-                           id="scheduleDate"
-                           th:field="*{scheduleDate}"
-                           class="form-input"
-                           required>
+                    <div class="date-entry">
+                        <input type="text" id="scheduleDate" name="scheduleDate" class="form-input date-text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="yyyy/MM/dd" th:value="${request.scheduleDate == null ? '' : #temporals.format(request.scheduleDate, 'yyyy/MM/dd')}" required>
+                        <button type="button" id="scheduleDateButton" class="date-calendar-button" aria-label="日産計画日をカレンダーから選択"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg></button>
+                        <input type="date" id="scheduleDatePicker" class="date-picker-anchor" th:min="${minimumScheduleDate}" th:max="${maximumScheduleDate}" tabindex="-1" aria-hidden="true">
+                    </div>
+                    <p class="form-help">yyyy/MM/dd、yyyy-MM-dd、yyyyMMddで入力できます。</p>
                 </div>
                 <div class="form-group">
                     <label for="plannedQuantity" class="form-label">
@@ -120,5 +131,49 @@
         </div>
     </form>
 </main>
+
+<script>
+(() => {
+    function normalizeDate(value) {
+        const digits = value.replace(/[^0-9]/g, "");
+        if (digits.length !== 8) return null;
+        const year = Number(digits.slice(0, 4));
+        const month = Number(digits.slice(4, 6));
+        const day = Number(digits.slice(6, 8));
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) return null;
+        return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
+    }
+    const toIso = value => value.replaceAll("/", "-");
+    const toSlash = value => value.replaceAll("-", "/");
+    function validateDate(text, picker) {
+        const normalized = normalizeDate(text.value);
+        if (normalized == null) {
+            text.setCustomValidity("日付はyyyy/MM/dd形式で正しく入力してください。");
+            return null;
+        }
+        const iso = toIso(normalized);
+        if ((picker.min && iso < picker.min) || (picker.max && iso > picker.max)) {
+            text.setCustomValidity("日付が入力可能範囲外です。");
+            return null;
+        }
+        text.value = normalized; picker.value = iso; text.setCustomValidity(""); return iso;
+    }
+    document.querySelectorAll(".date-entry").forEach(entry => {
+        const text = entry.querySelector(".date-text");
+        const picker = entry.querySelector(".date-picker-anchor");
+        const button = entry.querySelector(".date-calendar-button");
+        text.addEventListener("input", () => { text.value = text.value.replace(/[^0-9\/-]/g, "").slice(0, 10); text.setCustomValidity(""); });
+        text.addEventListener("blur", () => validateDate(text, picker));
+        picker.addEventListener("change", () => { text.value = toSlash(picker.value); text.setCustomValidity(""); });
+        button.addEventListener("click", () => {
+            const normalized = normalizeDate(text.value);
+            picker.value = normalized == null ? "" : toIso(normalized);
+            if (typeof picker.showPicker === "function") picker.showPicker(); else picker.click();
+        });
+        validateDate(text, picker);
+    });
+})();
+</script>
 </body>
 </html>

@@ -159,6 +159,25 @@ public class ProductionOrderService {
             throw new BusinessException(
                     "対象月を入力してください。");
         }
+        if (plannedStartDate == null) {
+            throw new BusinessException(
+                    "生産開始予定日を入力してください。");
+        }
+        if (dueDate == null) {
+            throw new BusinessException(
+                    "納期を入力してください。");
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate maximumDate = today.plusYears(5);
+        if (plannedStartDate.isBefore(today)) {
+            throw new BusinessException(
+                    "生産開始予定日は当日以降にしてください。");
+        }
+        if (plannedStartDate.isAfter(maximumDate)
+                || dueDate.isAfter(maximumDate)) {
+            throw new BusinessException(
+                    "日付は当日から5年以内で入力してください。");
+        }
 
         if (plannedStartDate != null
                 && dueDate != null

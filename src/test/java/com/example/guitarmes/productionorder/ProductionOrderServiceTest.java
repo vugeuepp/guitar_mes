@@ -248,8 +248,113 @@ class ProductionOrderServiceTest {
         request.setProductId(10L);
         request.setPlannedQuantity(20);
         request.setPlanMonth(YearMonth.of(2026, 9));
-        request.setPlannedStartDate(LocalDate.of(2026, 9, 1));
-        request.setDueDate(LocalDate.of(2026, 9, 30));
+        request.setPlannedStartDate(LocalDate.now().plusDays(1));
+        request.setDueDate(LocalDate.now().plusDays(30));
         return request;
+    }
+
+    @Test
+    @DisplayName("過去の開始予定日は更新を拒否する")
+    void update_pastStartDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().minusDays(1));
+        request.setDueDate(LocalDate.now().plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals(
+                "生産開始予定日は当日以降にしてください。",
+                ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("5年を超える開始予定日は更新を拒否する")
+    void update_tooFarFuture_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().plusYears(5).plusDays(1));
+        request.setDueDate(LocalDate.now().plusYears(5).plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals(
+                "日付は当日から5年以内で入力してください。",
+                ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("開始予定日が未入力なら更新を拒否する")
+    void update_nullStartDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(null);
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("生産開始予定日を入力してください。", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("納期が未入力なら更新を拒否する")
+    void update_nullDueDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setDueDate(null);
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("納期を入力してください。", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("当日の開始予定日は更新できる")
+    void update_todayStartDate_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now());
+        request.setDueDate(LocalDate.now());
+        stubOrder(order);
+        when(productRepository.findById(10L))
+                .thenReturn(Optional.of(order.getProduct()));
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.updateProductionOrder(1L, request);
+        assertEquals(LocalDate.now(), result.getPlannedStartDate());
+        assertEquals(LocalDate.now(), result.getDueDate());
+    }
+
+    @Test
+    @DisplayName("5年後の境界日は更新できる")
+    void update_maximumDate_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        LocalDate maximum = LocalDate.now().plusYears(5);
+        request.setPlannedStartDate(maximum);
+        request.setDueDate(maximum);
+        stubOrder(order);
+        when(productRepository.findById(10L))
+                .thenReturn(Optional.of(order.getProduct()));
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.updateProductionOrder(1L, request);
+        assertEquals(maximum, result.getPlannedStartDate());
+        assertEquals(maximum, result.getDueDate());
+    }
+
+    @Test
+    @DisplayName("5年を超える納期は更新を拒否する")
+    void update_dueDateTooFarFuture_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().plusDays(1));
+        request.setDueDate(LocalDate.now().plusYears(5).plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("日付は当日から5年以内で入力してください。", ex.getMessage());
     }
 }

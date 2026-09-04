@@ -1,8 +1,16 @@
 package com.example.guitarmes.productionschedule;
+import java.beans.PropertyEditorSupport;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -209,6 +217,7 @@ public class ProductionScheduleViewController {
                         .getProductionOrderById(productionOrderId));
         model.addAttribute("request", request);
         addAllocationAttributes(productionOrderId, model);
+        addScheduleDateRangeAttributes(productionOrderId, model);
     }
 
     private void addEditFormAttributes(
@@ -229,6 +238,7 @@ public class ProductionScheduleViewController {
                 productionSchedule);
         model.addAttribute("request", request);
         addAllocationAttributes(productionOrderId, model);
+        addScheduleDateRangeAttributes(productionOrderId, model);
     }
 
     private void addAllocationAttributes(
@@ -243,6 +253,33 @@ public class ProductionScheduleViewController {
                 "unallocatedQuantity",
                 productionScheduleService
                         .getUnallocatedQuantity(productionOrderId));
+    }
+
+    private void addScheduleDateRangeAttributes(Long productionOrderId, Model model) {
+        YearMonth planMonth = productionOrderService
+                .getProductionOrderById(productionOrderId)
+                .getPlanMonth();
+        model.addAttribute("minimumScheduleDate", planMonth.atDay(1));
+        model.addAttribute("maximumScheduleDate", planMonth.atEndOfMonth());
+    }
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(LocalDate.class, new FlexibleLocalDateEditor());
+    }
+    private static class FlexibleLocalDateEditor extends PropertyEditorSupport {
+        private static final List<DateTimeFormatter> FORMATTERS = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("uuuu/MM/dd"),
+                DateTimeFormatter.BASIC_ISO_DATE);
+        @Override
+        public void setAsText(String text) {
+            if (text == null || text.isBlank()) { setValue(null); return; }
+            for (DateTimeFormatter formatter : FORMATTERS) {
+                try { setValue(LocalDate.parse(text.trim(), formatter)); return; }
+                catch (DateTimeParseException ignored) { }
+            }
+            throw new IllegalArgumentException("日付はyyyy/MM/dd形式で入力してください。");
+        }
     }
 
     private String returnToProductionOrderDetail(

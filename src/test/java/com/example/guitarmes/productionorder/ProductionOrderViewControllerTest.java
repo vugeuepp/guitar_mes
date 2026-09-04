@@ -128,4 +128,72 @@ class ProductionOrderViewControllerTest {
         order.setId(1L);
         return order;
     }
+
+    @Test
+    @DisplayName("新規登録画面の日付初期値は当日と7日後")
+    void showCreateForm_setsDateDefaults() throws Exception {
+        when(productService.getProducts()).thenReturn(List.of(new Product()));
+        mockMvc.perform(get("/production-orders/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("production-order-form"))
+                .andExpect(model().attribute(
+                        "request",
+                        allOf(
+                                hasProperty("plannedStartDate", is(LocalDate.now())),
+                                hasProperty("dueDate", is(LocalDate.now().plusDays(7))))))
+                .andExpect(model().attribute("minimumPlanDate", LocalDate.now()))
+                .andExpect(model().attribute(
+                        "maximumPlanDate",
+                        LocalDate.now().plusYears(5)));
+    }
+
+    @Test
+    @DisplayName("yyyyスラッシュMMスラッシュdd形式を日付へ変換できる")
+    void create_bindsSlashDateFormat() throws Exception {
+        mockMvc.perform(post("/production-orders/create")
+                        .param("productId", "10")
+                        .param("plannedQuantity", "5")
+                        .param("planMonth", "2026-09")
+                        .param("plannedStartDate", "2026/09/03")
+                        .param("dueDate", "2026/09/10"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/production-orders/view"));
+        verify(productionOrderService).createProductionOrder(
+                10L,
+                5,
+                YearMonth.of(2026, 9),
+                LocalDate.of(2026, 9, 3),
+                LocalDate.of(2026, 9, 10));
+    }
+
+    @Test
+    @DisplayName("yyyy-MM-dd形式を日付へ変換できる")
+    void create_bindsIsoDateFormat() throws Exception {
+        performCreateWithDates("2026-09-03", "2026-09-10");
+    }
+
+    @Test
+    @DisplayName("yyyyMMdd形式を日付へ変換できる")
+    void create_bindsBasicDateFormat() throws Exception {
+        performCreateWithDates("20260903", "20260910");
+    }
+
+    private void performCreateWithDates(
+            String plannedStartDate,
+            String dueDate) throws Exception {
+        mockMvc.perform(post("/production-orders/create")
+                        .param("productId", "10")
+                        .param("plannedQuantity", "5")
+                        .param("planMonth", "2026-09")
+                        .param("plannedStartDate", plannedStartDate)
+                        .param("dueDate", dueDate))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/production-orders/view"));
+        verify(productionOrderService).createProductionOrder(
+                10L,
+                5,
+                YearMonth.of(2026, 9),
+                LocalDate.of(2026, 9, 3),
+                LocalDate.of(2026, 9, 10));
+    }
 }

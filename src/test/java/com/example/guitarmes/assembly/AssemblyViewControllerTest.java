@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -94,5 +95,26 @@ class AssemblyViewControllerTest {
                 .andExpect(redirectedUrl("/guitars/99/view"));
         verify(assemblyService).createAssembly(
                 1L, 10L, 30L, 20L, "Worker");
+    }
+
+    @Test
+    @DisplayName("複数のネック取付を一括登録できる")
+    void createAssemblies_bulk_success() throws Exception {
+        when(assemblyService.createAssemblies(
+                1L, 10L, List.of(30L, 31L),
+                List.of(20L, 21L), "Worker"))
+                .thenReturn(List.of(new Assembly(), new Assembly()));
+
+        mockMvc.perform(post("/assemblies/bulk/create")
+                        .param("productionOrderId", "1")
+                        .param("productionScheduleId", "10")
+                        .param("neckIds", "30", "31")
+                        .param("bodyIds", "20", "21")
+                        .param("workerName", "Worker"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/production-orders/1/view"))
+                .andExpect(flash().attribute(
+                        "successMessage",
+                        "2件のネック取付を一括登録しました。"));
     }
 }

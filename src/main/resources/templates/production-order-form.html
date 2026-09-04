@@ -9,6 +9,43 @@
     </title>
     <link rel="stylesheet"
           th:href="@{/css/style.css}">
+    <style>
+        .date-entry { position: relative; width: 100%; }
+        .date-entry .date-text { box-sizing: border-box; width: 100%; padding-right: 3rem; }
+        .date-calendar-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            display: flex;
+            width: 3rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-left: 1px solid #d5d7da;
+            background: transparent;
+            color: #111827;
+            cursor: pointer;
+        }
+        .date-calendar-button:hover { background: #f3f4f6; }
+        .date-calendar-button:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: -2px;
+        }
+        .date-calendar-button svg { width: 1rem; height: 1rem; }
+        .date-picker-anchor {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3rem;
+            height: 100%;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 <div th:replace=
@@ -192,6 +229,7 @@
                            id="planMonth"
                            name="planMonth"
                            class="form-input"
+                           th:value="${request.planMonth}"
                            required>
                 </div>
                 <div class="form-group">
@@ -227,10 +265,28 @@
                         開始予定日
                     </label>
 
-                    <input type="date"
-                           id="plannedStartDate"
-                           name="plannedStartDate"
-                           class="form-input">
+                    <div class="date-entry">
+                        <input type="text" id="plannedStartDate" name="plannedStartDate"
+                               class="form-input date-text" inputmode="numeric"
+                               maxlength="10"
+                               autocomplete="off"
+                               placeholder="yyyy/MM/dd"
+                               th:value="${#temporals.format(request.plannedStartDate, 'yyyy/MM/dd')}" required>
+                        <button type="button"
+                                id="plannedStartDateButton"
+                                class="date-calendar-button"
+                                aria-label="開始予定日をカレンダーから選択">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                <path d="M16 3v4M8 3v4M3 10h18"></path>
+                            </svg>
+                        </button>
+                        <input type="date" id="plannedStartDatePicker"
+                               class="date-picker-anchor"
+                               th:min="${minimumPlanDate}" th:max="${maximumPlanDate}"
+                               tabindex="-1" aria-hidden="true">
+                    </div>
+                    <p class="form-help">yyyy/MM/dd、yyyy-MM-dd、yyyyMMddで入力できます。</p>
                 </div>
 
                 <div class="form-group">
@@ -239,10 +295,27 @@
                         納期
                     </label>
 
-                    <input type="date"
-                           id="dueDate"
-                           name="dueDate"
-                           class="form-input">
+                    <div class="date-entry">
+                        <input type="text" id="dueDate" name="dueDate"
+                               class="form-input date-text" inputmode="numeric"
+                               maxlength="10"
+                               autocomplete="off"
+                               placeholder="yyyy/MM/dd"
+                               th:value="${#temporals.format(request.dueDate, 'yyyy/MM/dd')}" required>
+                        <button type="button"
+                                id="dueDateButton"
+                                class="date-calendar-button"
+                                aria-label="納期をカレンダーから選択">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                                <path d="M16 3v4M8 3v4M3 10h18"></path>
+                            </svg>
+                        </button>
+                        <input type="date" id="dueDatePicker"
+                               class="date-picker-anchor"
+                               th:min="${request.plannedStartDate}" th:max="${maximumPlanDate}"
+                               tabindex="-1" aria-hidden="true">
+                    </div>
 
                     <p class="form-help">
                         開始予定日以降の日付を指定してください。
@@ -752,6 +825,86 @@
         }
     );
 
+    const plannedStartDateInput = document.getElementById("plannedStartDate");
+    const dueDateInput = document.getElementById("dueDate");
+    const plannedStartDatePicker = document.getElementById("plannedStartDatePicker");
+    const dueDatePicker = document.getElementById("dueDatePicker");
+
+    function normalizeDate(value) {
+        const digits = value.replace(/[^0-9]/g, "");
+        if (digits.length !== 8) return null;
+        const year = Number(digits.slice(0, 4));
+        const month = Number(digits.slice(4, 6));
+        const day = Number(digits.slice(6, 8));
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month
+                || date.getUTCDate() !== day) return null;
+        return `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
+    }
+    const toIso = value => value.replaceAll("/", "-");
+    const toSlash = value => value.replaceAll("-", "/");
+
+    function validateDate(input, picker) {
+        const normalized = normalizeDate(input.value);
+        if (normalized == null) {
+            input.setCustomValidity("日付はyyyy/MM/dd形式で正しく入力してください。");
+            return null;
+        }
+        const iso = toIso(normalized);
+        if ((picker.min && iso < picker.min) || (picker.max && iso > picker.max)) {
+            input.setCustomValidity("日付が入力可能範囲外です。");
+            return null;
+        }
+        input.value = normalized;
+        picker.value = iso;
+        input.setCustomValidity("");
+        return iso;
+    }
+
+    function connectDate(text, picker, button) {
+        text.addEventListener("input", () => {
+            text.value = text.value
+                    .replace(/[^0-9\/-]/g, "")
+                    .slice(0, 10);
+            text.setCustomValidity("");
+        });
+        validateDate(text, picker);
+        text.addEventListener("blur", () => validateDate(text, picker));
+        picker.addEventListener("change", () => {
+            text.value = toSlash(picker.value);
+            text.setCustomValidity("");
+            updateDueMinimum();
+        });
+        button.addEventListener("click", () => {
+            const normalized = normalizeDate(text.value);
+            if (normalized == null) {
+                picker.value = "";
+            } else {
+                picker.value = toIso(normalized);
+            }
+            picker.showPicker();
+        });
+    }
+
+    function updateDueMinimum() {
+        const start = validateDate(plannedStartDateInput, plannedStartDatePicker);
+        if (start != null) dueDatePicker.min = start;
+        validateDate(dueDateInput, dueDatePicker);
+    }
+
+    connectDate(
+        plannedStartDateInput,
+        plannedStartDatePicker,
+        document.getElementById("plannedStartDateButton")
+    );
+    connectDate(
+        dueDateInput,
+        dueDatePicker,
+        document.getElementById("dueDateButton")
+    );
+    plannedStartDateInput.addEventListener("change", updateDueMinimum);
+    updateDueMinimum();
+
     /*
      * 登録時の最終検証
      */
@@ -783,10 +936,15 @@
                         "dueDate"
                     ).value;
 
-                if (plannedStartDate !== ""
-                        && dueDate !== ""
-                        && dueDate
-                            < plannedStartDate) {
+                const plannedStartDateIso =
+                    validateDate(plannedStartDateInput, plannedStartDatePicker);
+                const dueDateIso =
+                    validateDate(dueDateInput, dueDatePicker);
+                if (plannedStartDateIso == null || dueDateIso == null) {
+                    event.preventDefault();
+                    return;
+                }
+                if (dueDateIso < plannedStartDateIso) {
 
                     event.preventDefault();
 

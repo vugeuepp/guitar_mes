@@ -3,6 +3,8 @@ package com.example.guitarmes.assembly;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -156,5 +158,22 @@ public class AssemblyViewController {
                         .getAssemblyById(id));
 
         return "assembly-detail";
+    }
+
+    @PostMapping("/assemblies/bulk/create")
+    public String createAssemblies(
+            @ModelAttribute BulkAssemblyCreateRequest request,
+            RedirectAttributes redirectAttributes) {
+        int count = assemblyService.createAssemblies(
+                request.getProductionOrderId(),
+                request.getProductionScheduleId(),
+                request.getNeckIds(),
+                request.getBodyIds(),
+                request.getWorkerName()).size();
+        redirectAttributes.addFlashAttribute(
+                "successMessage",
+                count + "件のネック取付を一括登録しました。");
+        return "redirect:/production-orders/"
+                + request.getProductionOrderId() + "/view";
     }
 }

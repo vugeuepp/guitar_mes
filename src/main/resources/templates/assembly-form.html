@@ -180,171 +180,108 @@
     <form th:if="${productionOrder.startedQuantity < productionOrder.plannedQuantity
                   and not #lists.isEmpty(necks)
                   and not #lists.isEmpty(bodies)}"
-          th:action="@{/assemblies/create}"
+          th:action="@{/assemblies/bulk/create}"
           method="post"
-          class="form-container">
-
-        <input type="hidden"
-               name="productionOrderId"
+          id="bulk-assembly-form"
+          class="form-container"
+          th:data-remaining-quantity="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">
+        <input type="hidden" name="productionOrderId"
                th:value="${productionOrder.id}">
-        <input type="hidden"
-               name="productionScheduleId"
+        <input type="hidden" name="productionScheduleId"
                th:value="${productionSchedule.id}">
-
         <section class="form-section">
-
             <div class="form-section-heading">
-
                 <div>
-                    <p class="form-section-caption">
-                        Components
-                    </p>
-
-                    <h2 class="form-section-title">
-                        使用部材
-                    </h2>
+                    <p class="form-section-caption">Components</p>
+                    <h2 class="form-section-title">登録予定へ追加</h2>
                 </div>
-
                 <p class="form-section-description">
-                    この生産計画に対応するネックと
-                    ボディを選択してください。
+                    ネックとボディを組み合わせて登録予定へ追加してください。
                 </p>
-
             </div>
-
             <div class="form-grid">
-
                 <div class="form-group">
-
-                    <label for="neckId"
-                           class="form-label">
-                        ネック
-
-                        <span class="form-required">
-                            必須
-                        </span>
-                    </label>
-
-                    <select id="neckId"
-                            name="neckId"
-                            class="form-select"
-                            required>
-
-                        <option value="">
-                            選択してください
-                        </option>
-
+                    <label for="neckId" class="form-label">ネック</label>
+                    <select id="neckId" class="form-select">
+                        <option value="">選択してください</option>
                         <option th:each="neck : ${necks}"
                                 th:value="${neck.id}"
-                                th:text="${neck.serialNo
-                                    + ' / '
-                                    + neck.modelName}">
-                        </option>
-
+                                th:data-serial="${neck.serialNo}"
+                                th:text="${neck.serialNo + ' / ' + neck.modelName}"></option>
                     </select>
-
                 </div>
-
                 <div class="form-group">
-
-                    <label for="bodyId"
-                           class="form-label">
-                        ボディ
-
-                        <span class="form-required">
-                            必須
-                        </span>
-                    </label>
-
-                    <select id="bodyId"
-                            name="bodyId"
-                            class="form-select"
-                            required>
-
-                        <option value="">
-                            選択してください
-                        </option>
-
+                    <label for="bodyId" class="form-label">ボディ</label>
+                    <select id="bodyId" class="form-select">
+                        <option value="">選択してください</option>
                         <option th:each="body : ${bodies}"
                                 th:value="${body.id}"
-                                th:text="${body.serialNo
-                                    + ' / '
-                                    + body.modelName
-                                    + ' / '
-                                    + body.color}">
-                        </option>
-
+                                th:data-serial="${body.serialNo}"
+                                th:text="${body.serialNo + ' / ' + body.modelName + ' / ' + body.color}"></option>
                     </select>
-
                 </div>
-
             </div>
-
+            <div class="form-actions">
+                <button type="button"
+                        id="add-pair"
+                        class="btn btn-secondary">
+                    登録予定へ追加
+                </button>
+                <button type="button"
+                        id="auto-pair"
+                        class="btn btn-outline">
+                    自動組み合わせ
+                </button>
+            </div>
+            <div id="auto-pair-message"
+                 class="information-message"
+                 role="status"
+                 hidden>
+            </div>
         </section>
-
         <section class="form-section">
-
             <div class="form-section-heading">
-
                 <div>
-                    <p class="form-section-caption">
-                        Worker Information
-                    </p>
-
-                    <h2 class="form-section-title">
-                        作業情報
-                    </h2>
+                    <p class="form-section-caption">Registration Queue</p>
+                    <h2 class="form-section-title">登録予定</h2>
                 </div>
-
-                <p class="form-section-description">
-                    ネック取付を行う作業者を入力してください。
-                </p>
-
-            </div>
-
-            <div class="form-grid">
-
-                <div class="form-group">
-
-                    <label for="workerName"
-                           class="form-label">
-                        作業者
-
-                        <span class="form-required">
-                            必須
-                        </span>
-                    </label>
-
-                    <input type="text"
-                           id="workerName"
-                           name="workerName"
-                           class="form-input"
-                           required>
-
+                <div class="form-section-description">
+                    <p>残り数量: <strong id="remaining-quantity"
+                        th:text="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">0</strong>件</p>
+                    <p>登録予定: <strong id="pair-count">0</strong>件</p>
+                    <p>登録後残数: <strong id="remaining-after-count"
+                        th:text="${productionOrder.plannedQuantity - productionOrder.startedQuantity}">0</strong>件</p>
                 </div>
-
             </div>
-
+            <div id="queue-empty" class="empty-state">
+                <p>登録予定はありません。</p>
+            </div>
+            <div id="queue-container" class="table-container" hidden>
+                <table class="data-table bulk-assembly-table">
+                    <thead><tr><th>No.</th><th>ネック</th><th>ボディ</th><th>操作</th></tr></thead>
+                    <tbody id="queue-body"></tbody>
+                </table>
+            </div>
+            <div id="queue-hidden-inputs"></div>
         </section>
-
+        <section class="form-section">
+            <div class="form-group">
+                <label for="workerName" class="form-label">作業者</label>
+                <input type="text" id="workerName" name="workerName"
+                       class="form-input" required>
+            </div>
+        </section>
         <div class="form-actions">
-
             <a class="btn btn-outline"
-               th:href=
-               "@{/production-orders/{id}/view(
-                   id=${productionOrder.id})}">
+               th:href="@{/production-orders/{id}/view(id=${productionOrder.id})}">
                 キャンセル
             </a>
-
-            <button type="submit"
-                    class="btn btn-primary">
-                ネック取付を登録
+            <button type="submit" id="bulk-submit"
+                    class="btn btn-primary" disabled>
+                0件を一括登録
             </button>
-
         </div>
-
     </form>
-
     <div th:if="${productionOrder.startedQuantity >= productionOrder.plannedQuantity
                  or #lists.isEmpty(necks)
                  or #lists.isEmpty(bodies)}"
@@ -361,5 +298,148 @@
 
 </main>
 
+
+<script>
+(() => {
+    const form = document.getElementById('bulk-assembly-form');
+    if (!form) return;
+    const neck = document.getElementById('neckId');
+    const body = document.getElementById('bodyId');
+    const rows = document.getElementById('queue-body');
+    const hidden = document.getElementById('queue-hidden-inputs');
+    const empty = document.getElementById('queue-empty');
+    const container = document.getElementById('queue-container');
+    const count = document.getElementById('pair-count');
+    const remainingAfter = document.getElementById('remaining-after-count');
+    const remainingQuantity = Number(form.dataset.remainingQuantity);
+    const submit = document.getElementById('bulk-submit');
+    const autoPair = document.getElementById('auto-pair');
+    const autoPairMessage = document.getElementById('auto-pair-message');
+    const pairs = [];
+
+    function render() {
+        rows.innerHTML = '';
+        hidden.innerHTML = '';
+        pairs.forEach((pair, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${index + 1}</td><td>${pair.neckSerial}</td>`
+                    + `<td>${pair.bodySerial}</td><td>`
+                    + `<button type="button" class="btn btn-outline move-up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button> `
+                    + `<button type="button" class="btn btn-outline move-down" data-index="${index}" ${index === pairs.length - 1 ? 'disabled' : ''}>↓</button> `
+                    + `<button type="button" class="btn btn-outline remove-pair" data-index="${index}">削除</button></td>`;
+            rows.appendChild(row);
+            hidden.insertAdjacentHTML('beforeend',
+                    `<input type="hidden" name="neckIds" value="${pair.neckId}">`
+                    + `<input type="hidden" name="bodyIds" value="${pair.bodyId}">`);
+        });
+        count.textContent = pairs.length;
+        remainingAfter.textContent = remainingQuantity - pairs.length;
+        submit.textContent = `${pairs.length}件を一括登録`;
+        submit.disabled = pairs.length === 0;
+        autoPair.disabled = pairs.length >= remainingQuantity;
+        empty.hidden = pairs.length > 0;
+        container.hidden = pairs.length === 0;
+    }
+
+    function availableOptions(select) {
+        return Array.from(select.options)
+                .filter(option => option.value && !option.disabled);
+    }
+
+    function appendPair(neckOption, bodyOption) {
+        pairs.push({
+            neckId: neckOption.value,
+            bodyId: bodyOption.value,
+            neckSerial: neckOption.dataset.serial,
+            bodySerial: bodyOption.dataset.serial
+        });
+        neckOption.disabled = true;
+        bodyOption.disabled = true;
+    }
+
+    autoPair.addEventListener('click', () => {
+        const capacity = remainingQuantity - pairs.length;
+        const availableNecks = availableOptions(neck);
+        const availableBodies = availableOptions(body);
+        const addCount = Math.min(
+                capacity,
+                availableNecks.length,
+                availableBodies.length);
+
+        if (addCount === 0) {
+            autoPairMessage.textContent =
+                    pairs.length >= remainingQuantity
+                            ? '登録予定は残り数量に達しています。'
+                            : '自動組み合わせできるネックまたはボディがありません。';
+            autoPairMessage.hidden = false;
+            return;
+        }
+
+        for (let index = 0; index < addCount; index++) {
+            appendPair(availableNecks[index], availableBodies[index]);
+        }
+
+        autoPairMessage.textContent =
+                `${addCount}件を自動で組み合わせました。`;
+        autoPairMessage.hidden = false;
+        neck.value = '';
+        body.value = '';
+        render();
+    });
+
+    document.getElementById('add-pair').addEventListener('click', () => {
+        if (pairs.length >= remainingQuantity) {
+            window.alert('登録予定は残り数量を超えて追加できません。');
+            return;
+        }
+        if (!neck.value || !body.value) {
+            window.alert('ネックとボディを選択してください。');
+            return;
+        }
+        if (pairs.some(pair => pair.neckId === neck.value)) {
+            window.alert('同じネックは追加できません。');
+            return;
+        }
+        if (pairs.some(pair => pair.bodyId === body.value)) {
+            window.alert('同じボディは追加できません。');
+            return;
+        }
+        appendPair(
+                neck.selectedOptions[0],
+                body.selectedOptions[0]);
+        autoPairMessage.hidden = true;
+        neck.value = '';
+        body.value = '';
+        render();
+    });
+
+    rows.addEventListener('click', event => {
+        const button = event.target.closest('button[data-index]');
+        if (!button) return;
+        const index = Number(button.dataset.index);
+        if (button.classList.contains('move-up') && index > 0) {
+            [pairs[index - 1], pairs[index]] = [pairs[index], pairs[index - 1]];
+            render();
+            return;
+        }
+        if (button.classList.contains('move-down')
+                && index < pairs.length - 1) {
+            [pairs[index], pairs[index + 1]] = [pairs[index + 1], pairs[index]];
+            render();
+            return;
+        }
+        if (!button.classList.contains('remove-pair')) return;
+        const removed = pairs.splice(index, 1)[0];
+        neck.querySelector(`option[value="${removed.neckId}"]`).disabled = false;
+        body.querySelector(`option[value="${removed.bodyId}"]`).disabled = false;
+        render();
+    });
+
+    form.addEventListener('submit', event => {
+        if (pairs.length === 0) event.preventDefault();
+    });
+    render();
+})();
+</script>
 </body>
 </html>

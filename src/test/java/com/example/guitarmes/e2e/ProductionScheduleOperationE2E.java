@@ -207,7 +207,7 @@ class ProductionScheduleOperationE2E extends PlaywrightTestBase {
         assertThat(page).hasTitle(
                 Pattern.compile("日産計画編集"));
         assertThat(page.locator("#scheduleDate"))
-                .hasValue(originalDate.toString());
+                .hasValue(originalDate.toString().replace('-', '/'));
         assertThat(page.locator("#plannedQuantity"))
                 .hasValue("4");
 

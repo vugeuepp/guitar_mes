@@ -43,6 +43,13 @@
         </div>
     </div>
 
+	<div th:if="${successMessage}"
+	     class="success-message"
+	     role="status">
+	    <p class="success-message-text"
+	       th:text="${successMessage}">
+	    </p>
+	</div>
     <div th:if="${errorMessage}"
          class="error-message"
          role="alert">
@@ -181,7 +188,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section production-schedule-section">
         <div class="detail-section-heading">
             <div>
                 <p class="detail-section-caption">
@@ -199,7 +206,7 @@
                 日産計画を登録
             </a>
         </div>
-        <div class="production-progress-grid">
+        <div class="production-progress-grid production-schedule-summary">
             <div class="production-progress-card">
                 <div class="production-progress-label">割当済数</div>
                 <div class="production-progress-value">
@@ -220,7 +227,7 @@
             <p>日産計画はまだ登録されていません。</p>
         </div>
         <div th:if="${not #lists.isEmpty(productionSchedules)}"
-             class="table-container">
+             class="table-container production-schedule-table-container">
 			 
 			 <table class="data-table">
 			     <thead>
@@ -249,7 +256,7 @@
 			                           : '取消'}"></span><td><span th:text="${issuedBodyCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
                          <td><span th:text="${issuedNeckCounts[schedule.id]}"></span><span th:text="${' / ' + schedule.plannedQuantity + '台'}"></span></td>
                          <td><span class="status-badge" th:text="${componentsIssued[schedule.id] ? '発行済み' : '未発行'}"></span></td>
-                         <td class="table-action-cell">
+                         <td class="table-action-cell production-schedule-action-cell">
 			                 <div class="page-toolbar-actions">
 			                     <a th:if="${schedule.status == 'PLANNED'}"
 			                        class="btn btn-detail"
@@ -349,12 +356,15 @@
                 </h2>
             </div>
 
-            <div class="detail-section-count">
-                <span th:text="${#lists.size(guitars)}">
-                </span>
-                <span>
-                    台
-                </span>
+            <div class="detail-section-actions">
+                <div class="detail-section-count">
+                    <span th:text="${#lists.size(guitars)}"></span>
+                    <span>台</span>
+                </div>
+                <a class="btn btn-outline"
+                   th:href="@{/guitars/view}">
+                    ギター一覧へ
+                </a>
             </div>
         </div>
 

@@ -1,11 +1,17 @@
 package com.example.guitarmes.productionorder;
 
+import java.beans.PropertyEditorSupport;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,9 +52,14 @@ public class ProductionOrderViewController {
     @GetMapping("/production-orders/new")
     public String showCreateForm(Model model) {
         model.addAttribute("products", productService.getProducts());
-        model.addAttribute(
-                "request",
-                new ProductionOrderCreateRequest());
+        ProductionOrderCreateRequest request =
+                new ProductionOrderCreateRequest();
+        LocalDate today = LocalDate.now();
+        request.setPlanMonth(java.time.YearMonth.from(today));
+        request.setPlannedStartDate(today);
+        request.setDueDate(today.plusDays(7));
+        model.addAttribute("request", request);
+        addDateRangeAttributes(model);
         return "production-order-form";
     }
 
@@ -83,6 +94,7 @@ public class ProductionOrderViewController {
                 "order",
                 productionOrderService.getProductionOrderById(id));
         model.addAttribute("products", productService.getProducts());
+        addDateRangeAttributes(model);
         return "production-order-edit-form";
     }
 
@@ -100,6 +112,7 @@ public class ProductionOrderViewController {
                     "order",
                     productionOrderService.getProductionOrderById(id));
             model.addAttribute("products", productService.getProducts());
+            addDateRangeAttributes(model);
             model.addAttribute("errorMessage", exception.getMessage());
             return "production-order-edit-form";
         }
@@ -175,4 +188,44 @@ public class ProductionOrderViewController {
         model.addAttribute("neckInstallAvailable", neckInstallAvailable);
     }
 
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(
+                LocalDate.class,
+                new FlexibleLocalDateEditor());
+    }
+
+    private void addDateRangeAttributes(Model model) {
+        LocalDate today = LocalDate.now();
+        model.addAttribute("minimumPlanDate", today);
+        model.addAttribute("maximumPlanDate", today.plusYears(5));
+    }
+
+    private static class FlexibleLocalDateEditor
+            extends PropertyEditorSupport {
+        private static final List<DateTimeFormatter> FORMATTERS = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("uuuu/MM/dd"),
+                DateTimeFormatter.BASIC_ISO_DATE);
+
+        @Override
+        public void setAsText(String text) {
+            if (text == null || text.isBlank()) {
+                setValue(null);
+                return;
+            }
+            String value = text.trim();
+            for (DateTimeFormatter formatter : FORMATTERS) {
+                try {
+                    setValue(LocalDate.parse(value, formatter));
+                    return;
+                } catch (DateTimeParseException ignored) {
+                    // 次の対応形式を試す。
+                }
+            }
+            throw new IllegalArgumentException(
+                    "日付はyyyy/MM/dd形式で入力してください。");
+        }
+    }
 }
