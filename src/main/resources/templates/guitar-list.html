@@ -44,11 +44,11 @@
     <form th:if="${not #lists.isEmpty(guitars)}"
           th:action="@{/processes/bulk/start}" method="post"
           class="bulk-process-form" id="bulk-start-form">
-        <section class="bulk-action-panel">
+        <section class="bulk-action-panel guitar-bulk-action-panel">
             <p class="form-help bulk-process-guidance">
-                先に対象工程を選択してください。選択した工程と一致するギターだけを一括選択できます。
+                対象工程を選択すると、一致するギターだけを選択できます。
             </p>
-            <div class="form-group">
+            <div class="form-group bulk-process-field">
                 <label class="form-label" for="processId">対象工程</label>
                 <select id="processId" name="processId" class="form-select" required>
                     <option value="">選択してください</option>
@@ -58,15 +58,33 @@
                             th:attr="data-process-name=${process.processName}"></option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group bulk-worker-field">
                 <label class="form-label" for="workerName">作業者</label>
-                <input id="workerName" name="workerName" class="form-input" required>
+                <input id="workerName" name="workerName" class="form-input"
+                       placeholder="作業者名を入力" required>
             </div>
-            <div class="bulk-selection-count">選択中: <strong id="selected-count">0</strong>件</div>
-            <button type="submit" class="btn btn-primary">一括工程開始</button>
+            <div class="bulk-selection-action">
+                <div class="bulk-selection-summary">
+                    <span class="bulk-selection-heading">選択中</span>
+                    <span class="bulk-selection-count">
+                        <strong id="selected-count">0</strong>件
+                    </span>
+                </div>
+                <button type="submit" class="btn btn-primary">一括工程開始</button>
+            </div>
         </section>
         <div class="table-container">
             <table class="data-table guitar-management-table bulk-select-table">
+                <colgroup>
+                    <col class="management-column-checkbox">
+                    <col class="guitar-management-column-serial">
+                    <col class="guitar-management-column-product">
+                    <col class="guitar-management-column-process">
+                    <col class="guitar-management-column-progress">
+                    <col class="guitar-management-column-status">
+                    <col class="guitar-management-column-operation">
+                    <col class="guitar-management-column-detail">
+                </colgroup>
                 <thead><tr>
                     <th><input type="checkbox" id="select-all" aria-label="全件選択"></th>
                     <th>シリアル番号</th><th>製品</th><th>現在工程</th>
@@ -84,8 +102,20 @@
                     </td>
                     
                     <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span></td>
-                    <td class="guitar-management-product-cell" th:text="${guitar.productName}"></td>
-                    <td th:text="${guitar.currentProcess}"></td>
+                    <td class="guitar-management-product-cell">
+                        <div class="guitar-product-name"
+                             th:text="${guitar.productName}"
+                             th:title="${guitar.productName}"></div>
+                        <div class="guitar-product-color"
+                             th:text="${guitar.color}"
+                             th:title="${guitar.color}"></div>
+                    </td>
+                    <td class="guitar-process-cell">
+                        <span class="process-badge"
+                              th:classappend="${guitar.currentProcess == '完成'} ? ' process-badge-completed' : ''"
+                              th:text="${guitar.currentProcess}"
+                              th:title="${guitar.currentProcess}"></span>
+                    </td>
                     <td th:text="${guitar.progressRate + '%'}"></td>
                     <td class="status-cell">
                         <span th:if="${guitar.hasRunningProcess}" class="status-badge status-working">作業中</span>

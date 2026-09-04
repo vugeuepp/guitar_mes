@@ -201,12 +201,14 @@ public class GuitarService {
                                     guitarId);
 
             String productName = "-";
+            String color = "-";
 
             if (guitar.getProduct() != null) {
 
                 productName =
                         guitar.getProduct()
                                 .getProductName();
+                color = guitar.getProduct().getColor();
             }
 
             GuitarProgressResponse response =
@@ -214,6 +216,7 @@ public class GuitarService {
                             guitar.getId(),
                             guitar.getSerialNo(),
                             productName,
+                            color,
                             guitar.getCurrentProcess(),
                             progressRate,
                             hasRunningProcess,

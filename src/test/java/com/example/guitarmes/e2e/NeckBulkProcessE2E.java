@@ -193,11 +193,24 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
 
         assertThat(page).hasTitle(Pattern.compile("ネック管理一覧"));
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("先に対象工程を選択してください");
+                .containsText("対象工程を選択すると、一致する個体だけを選択できます。");
         assertThat(neckCheckbox(firstSerial)).isDisabled();
         assertThat(neckCheckbox(secondSerial)).isDisabled();
         assertThat(neckCheckbox(otherSerial)).isDisabled();
         assertThat(page.locator("#selected-count")).hasText("0");
+        assertThat(neckRow(firstSerial).locator(".component-model-name"))
+                .hasText("E2E Bulk Neck");
+        assertThat(neckRow(firstSerial).locator(".process-badge"))
+                .isVisible();
+        Number checkboxWidth = (Number) neckRow(firstSerial)
+                .locator(".bulk-checkbox-cell")
+                .evaluate("element => element.getBoundingClientRect().width");
+        Number modelWidth = (Number) neckRow(firstSerial)
+                .locator(".component-model-cell")
+                .evaluate("element => element.getBoundingClientRect().width");
+        assertTrue(checkboxWidth.doubleValue()
+                        < modelWidth.doubleValue() * 0.2,
+                "チェックボックス列はモデル列の20%未満である必要があります。");
         assertThat(page.locator("#processId")).containsText(PLEK);
         assertThat(page.locator("#processId")).containsText(PARTS);
 
