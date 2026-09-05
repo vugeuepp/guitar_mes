@@ -1,6 +1,27 @@
 tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.txt /Users/naokiyamada/git/guitar-mes/guitar_mes/src
 ./mvnw \ -Dtest=ProductionScheduleIssueE2E \ test
 
+＃gitのステータス保存コマンド
+  echo "===== CURRENT BRANCH ====="
+  git branch --show-current
+
+  echo
+  echo "===== STATUS ====="
+  git status --short
+
+  echo
+  echo "===== LOCAL BRANCHES ====="
+  git branch -vv
+
+  echo
+  echo "===== LAST 20 COMMITS ====="
+  git log --oneline --decorate -20
+
+  echo
+  echo "===== REMOTES ====="
+  git remote -v
+} > /Users/naokiyamada/git/guitar-mes/guitar_mes/引き継ぎ書類/git_status_snapshot.txt 
+
 ヘッドレス実行
 /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
   -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
