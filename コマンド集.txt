@@ -22,24 +22,6 @@ tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.tx
   git remote -v
 } > /Users/naokiyamada/git/guitar-mes/guitar_mes/引き継ぎ書類/git_status_snapshot.txt 
 
-ヘッドレス実行
-/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
-  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
-  -Dtest=ProductionScheduleIssueE2E \
-  test
-  
-  ブラウザ試験遅く
-  /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
-  -f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
-  -Dplaywright.headless=false \
-  -Dplaywright.slowMo=1000 \
-  -Dtest=ProductionScheduleIssueE2E \
-  test
-  
-  通常テスト
-  /Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
--f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
-test
 
 # 全体テスト（ログあり）
 PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
@@ -66,16 +48,42 @@ else
   echo "通常テスト全件は正常に完了しました。"
 fi
 
+＃E2E単体
+PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+DAY=$(date '+%Y%m%d')
+RUN_ID=$(date '+%Y%m%d-%H%M%S')
+LOGDIR="$PROJECT/logs/test-logs/$DAY"
+LOGFILE="$LOGDIR/console-$RUN_ID.log"
 
-E2E全体
-/Users/naokiyamada/git/guitar-mes/guitar_mes/mvnw \
--f /Users/naokiyamada/git/guitar-mes/guitar_mes/pom.xml \
- -Dplaywright.headless=false \
- -Dplaywright.slowMo=1000 \
-'-Dtest=*E2E' \
-test
+mkdir -p "$LOGDIR"
 
-◼︎E2E （画面なし）
+(
+  set -o pipefail
+
+  "$PROJECT/mvnw" \
+    -f "$PROJECT/pom.xml" \
+    -Dstyle.color=always \
+    -Dplaywright.headless=true \
+    -Dtest=NeckSearchE2E \
+    test \
+    2>&1 | tee "$LOGFILE"
+)
+
+STATUS=$?
+
+echo
+echo "終了コード: $STATUS"
+echo "ログ: $LOGFILE"
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "NeckSearchE2Eに失敗しました。"
+else
+  echo "NeckSearchE2Eは正常に完了しました。"
+fi
+
+
+
+＃E2E 全体（画面なし）
 PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
 DAY=$(date '+%Y%m%d')
 RUN_ID=$(date '+%Y%m%d-%H%M%S')
@@ -101,3 +109,65 @@ if [ "$STATUS" -ne 0 ]; then
 else
   echo "E2E全件テストは正常に完了しました。"
 fi
+
+＃ファイルをまとめるコマンド
+{
+  PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+  OUT=~/Downloads/phase5b_neck_search_bundle.txt
+
+  : > "$OUT"
+
+  append_file() {
+    FILE="$1"
+
+    echo "================================================================================" >> "$OUT"
+
+    if [ -f "$PROJECT/$FILE" ]; then
+      echo "FILE: $(basename "$FILE")" >> "$OUT"
+      echo "PATH: $PROJECT/$FILE" >> "$OUT"
+      echo "================================================================================" >> "$OUT"
+      cat "$PROJECT/$FILE" >> "$OUT"
+    else
+      echo "MISSING: $(basename "$FILE")" >> "$OUT"
+      echo "PATH: $PROJECT/$FILE" >> "$OUT"
+      echo "================================================================================" >> "$OUT"
+    fi
+
+    echo >> "$OUT"
+  }
+
+  echo "################################################################################" >> "$OUT"
+  echo "# src" >> "$OUT"
+  echo "################################################################################" >> "$OUT"
+  echo >> "$OUT"
+
+  append_file \
+    "src/main/java/com/example/guitarmes/neck/NeckService.java"
+
+  append_file \
+    "src/main/java/com/example/guitarmes/neck/NeckViewController.java"
+
+  echo "################################################################################" >> "$OUT"
+  echo "# test" >> "$OUT"
+  echo "################################################################################" >> "$OUT"
+  echo >> "$OUT"
+
+  append_file \
+    "src/test/java/com/example/guitarmes/e2e/NeckBulkProcessE2E.java"
+
+  append_file \
+    "src/test/java/com/example/guitarmes/neck/NeckViewControllerTest.java"
+
+  echo "################################################################################" >> "$OUT"
+  echo "# HTML" >> "$OUT"
+  echo "################################################################################" >> "$OUT"
+  echo >> "$OUT"
+
+  append_file \
+    "src/main/resources/templates/neck-list.html"
+
+  append_file \
+    "src/main/resources/static/css/style.css"
+
+  echo "Created: $OUT"
+}

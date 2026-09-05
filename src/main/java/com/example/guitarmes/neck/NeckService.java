@@ -20,14 +20,11 @@ import com.example.guitarmes.productionschedule.ProductionSchedule;
 
 @Service
 public class NeckService {
-
     private final NeckRepository neckRepository;
     private final NeckMasterRepository neckMasterRepository;
 
-    public NeckService(
-            NeckRepository neckRepository,
+    public NeckService(NeckRepository neckRepository,
             NeckMasterRepository neckMasterRepository) {
-
         this.neckRepository = neckRepository;
         this.neckMasterRepository = neckMasterRepository;
     }
@@ -36,142 +33,99 @@ public class NeckService {
         return neckRepository.findAll();
     }
 
-    public Neck getNeckById(Long id) {
-        return findNeckOrThrow(id);
+    public List<Neck> filterNecks(List<Neck> necks, String serial,
+            String model, String currentProcess, String status) {
+        String serialCondition = normalize(serial);
+        String modelCondition = normalize(model);
+        String processCondition = normalize(currentProcess);
+        String statusCondition = normalize(status);
+        return necks.stream()
+                .filter(neck -> serialCondition.isEmpty()
+                        || normalize(neck.getSerialNo()).contains(serialCondition))
+                .filter(neck -> modelCondition.isEmpty()
+                        || normalize(neck.getModelName()).contains(modelCondition))
+                .filter(neck -> processCondition.isEmpty()
+                        || normalize(neck.getCurrentProcess()).equals(processCondition))
+                .filter(neck -> statusCondition.isEmpty()
+                        || normalize(neck.getStatus()).equals(statusCondition))
+                .toList();
     }
+
+    public boolean hasSearchCondition(String serial, String model,
+            String currentProcess, String status) {
+        return !normalize(serial).isEmpty()
+                || !normalize(model).isEmpty()
+                || !normalize(currentProcess).isEmpty()
+                || !normalize(status).isEmpty();
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    public Neck getNeckById(Long id) { return findNeckOrThrow(id); }
 
     public Neck createNeck(Long neckMasterId) {
-
-        NeckMaster neckMaster =
-                neckMasterRepository.findById(neckMasterId)
-                        .orElseThrow(() ->
-                                new NotFoundException(
-                                        "指定されたネックマスタが存在しません。"));
-
+        NeckMaster neckMaster = neckMasterRepository.findById(neckMasterId)
+                .orElseThrow(() -> new NotFoundException(
+                        "指定されたネックマスタが存在しません。"));
         Neck neck = new Neck();
-
         neck.setSerialNo(generateSerialNo());
         neck.setNeckMaster(neckMaster);
-
-        // 移行期間中は旧フィールドにも値を保存する
         neck.setModelName(neckMaster.getModelName());
-
         neck.setCurrentProcess(PLEK);
         neck.setStatus(WAITING);
-
         return neckRepository.save(neck);
     }
-    
+
     private String generateSerialNo() {
-    	String year = String.valueOf(LocalDate.now().getYear()).substring(2);
-    	
-    	String prefix = "DN" + year;
-    	
-    	Neck lastNeck = neckRepository.findTopBySerialNoStartingWithOrderBySerialNoDesc(prefix).orElse(null);
-    	
-    	int nextNumber = 1;
-    	
-    	if (lastNeck != null) {
-    		String lastSerial = lastNeck.getSerialNo();
-    		nextNumber = Integer.parseInt(lastSerial.substring(4)) + 1;
-    	}
-    	
-    	return prefix + String.format("%04d", nextNumber);
+        String year = String.valueOf(LocalDate.now().getYear()).substring(2);
+        String prefix = "DN" + year;
+        Neck lastNeck = neckRepository
+                .findTopBySerialNoStartingWithOrderBySerialNoDesc(prefix).orElse(null);
+        int nextNumber = 1;
+        if (lastNeck != null) {
+            nextNumber = Integer.parseInt(lastNeck.getSerialNo().substring(4)) + 1;
+        }
+        return prefix + String.format("%04d", nextNumber);
     }
 
-    public List<Neck> getAvailableNecks() {
-        return neckRepository.findByStatus(AVAILABLE);
-    }
-
-    public long getAvailableNeckCount() {
-        return getAvailableNecks().size();
-    }
+    public List<Neck> getAvailableNecks() { return neckRepository.findByStatus(AVAILABLE); }
+    public long getAvailableNeckCount() { return getAvailableNecks().size(); }
 
     private Neck findNeckOrThrow(Long id) {
-        return neckRepository.findById(id)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                "指定されたネックが存在しません。"));
+        return neckRepository.findById(id).orElseThrow(() ->
+                new NotFoundException("指定されたネックが存在しません。"));
     }
-    public List<ComponentStatusCountResponse>
-    getStatusCounts() {
 
-		List<ComponentStatusCountResponse> responses =
-		        new ArrayList<>();
-		
-		responses.add(
-		        createStatusCount(
-		                WAITING,
-		                "工程待ち",
-		                "status-waiting"));
-		
-		responses.add(
-		        createStatusCount(
-		                WORKING,
-		                "作業中",
-		                "status-working"));
-		
-		responses.add(
-		        createStatusCount(
-		                AVAILABLE,
-		                "組立待ち",
-		                "status-available"));
-		
-		responses.add(
-		        createStatusCount(
-		                RETURNED,
-		                "塗装前工程へ差し戻し",
-		                "status-returned"));
-		
-		responses.add(
-		        createStatusCount(
-		                ASSEMBLED,
-		                "組立済み",
-		                "status-assembled"));
-		
-		responses.add(
-		        createStatusCount(
-		                REJECTED,
-		                "製造終了",
-		                "status-rejected"));
-		
-		return responses;
-		}
-		
-		private ComponentStatusCountResponse
-		    createStatusCount(
-		            String status,
-		            String displayName,
-		            String cssClass) {
-		
-		return new ComponentStatusCountResponse(
-		        status,
-		        displayName,
-		        neckRepository.countByStatus(status),
-		        cssClass);
-	}
-	public List<Neck> getAvailableNecksByProduct(
-	        Product product) {
+    public List<ComponentStatusCountResponse> getStatusCounts() {
+        List<ComponentStatusCountResponse> responses = new ArrayList<>();
+        responses.add(createStatusCount(WAITING, "工程待ち", "status-waiting"));
+        responses.add(createStatusCount(WORKING, "作業中", "status-working"));
+        responses.add(createStatusCount(AVAILABLE, "組立待ち", "status-available"));
+        responses.add(createStatusCount(RETURNED, "塗装前工程へ差し戻し", "status-returned"));
+        responses.add(createStatusCount(ASSEMBLED, "組立済み", "status-assembled"));
+        responses.add(createStatusCount(REJECTED, "製造終了", "status-rejected"));
+        return responses;
+    }
 
-	    if (product == null) {
-	        throw new BusinessException(
-	                "製品が指定されていません。");
-	    }
+    private ComponentStatusCountResponse createStatusCount(
+            String status, String displayName, String cssClass) {
+        return new ComponentStatusCountResponse(status, displayName,
+                neckRepository.countByStatus(status), cssClass);
+    }
 
-	    if (product.getNeckMaster() == null) {
-	        throw new BusinessException(
-	                "製品に対応するネックマスタが"
-	                + "設定されていません。");
-	    }
+    public List<Neck> getAvailableNecksByProduct(Product product) {
+        if (product == null) throw new BusinessException("製品が指定されていません。");
+        if (product.getNeckMaster() == null) {
+            throw new BusinessException("製品に対応するネックマスタが設定されていません。");
+        }
+        return neckRepository.findByStatusAndNeckMaster_Id(
+                AVAILABLE, product.getNeckMaster().getId());
+    }
 
-	    return neckRepository
-	            .findByStatusAndNeckMaster_Id(
-	                    AVAILABLE,
-	                    product.getNeckMaster()
-	                            .getId());
-	}
-
-    public Neck createNeck(Long neckMasterId, Product product, ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
+    public Neck createNeck(Long neckMasterId, Product product,
+            ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
         Neck neck = createNeck(neckMasterId);
         neck.setProduct(product);
         neck.setProductionOrder(productionOrder);
@@ -180,31 +134,25 @@ public class NeckService {
     }
 
     public List<Neck> getAvailableNecksByProductionSchedule(
-            ProductionOrder productionOrder,
-            ProductionSchedule productionSchedule) {
+            ProductionOrder productionOrder, ProductionSchedule productionSchedule) {
         validateScheduleSelection(productionOrder, productionSchedule);
         Product product = productionOrder.getProduct();
         if (product == null || product.getNeckMaster() == null) {
-            throw new BusinessException(
-                    "対象製品に対応するネックマスタが設定されていません。");
+            throw new BusinessException("対象製品に対応するネックマスタが設定されていません。");
         }
         return neckRepository
                 .findByStatusAndProductionOrder_IdAndProductionSchedule_IdAndNeckMaster_Id(
-                        AVAILABLE,
-                        productionOrder.getId(),
-                        productionSchedule.getId(),
+                        AVAILABLE, productionOrder.getId(), productionSchedule.getId(),
                         product.getNeckMaster().getId());
     }
 
-    private void validateScheduleSelection(
-            ProductionOrder productionOrder,
+    private void validateScheduleSelection(ProductionOrder productionOrder,
             ProductionSchedule productionSchedule) {
         if (productionOrder == null || productionSchedule == null
                 || productionSchedule.getProductionOrder() == null
                 || !productionOrder.getId().equals(
                         productionSchedule.getProductionOrder().getId())) {
-            throw new BusinessException(
-                    "日産計画が生産計画と一致していません。");
+            throw new BusinessException("日産計画が生産計画と一致していません。");
         }
     }
 }

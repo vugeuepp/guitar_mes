@@ -1,107 +1,40 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><title>ネック管理一覧</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
-<body><div th:replace="~{fragments/header :: header('ネック管理一覧')}"></div>
+<head>
+<meta charset="UTF-8">
+<title>ネック管理一覧</title>
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header('ネック管理一覧')}"></div>
 <main class="page-container">
 <div class="page-toolbar"><p class="page-toolbar-description">ネック個体の工程を複数選択して一括処理できます。</p><div class="page-toolbar-actions"><a class="btn btn-primary" th:href="@{/necks/new}">新規ネック登録</a><a class="btn btn-process-end" th:href="@{/neck-processes/bulk/end/view}">一括工程終了</a></div></div>
-<div th:if="${successMessage}" class="success-message" role="status" th:text="${successMessage}"></div><div th:if="${errorMessage}" class="error-message" role="alert" th:text="${errorMessage}"></div>
-<form id="bulk-start-form" th:action="@{/neck-processes/bulk/start}" method="post" class="bulk-process-form">
+<div th:if="${successMessage}" class="success-message" role="status" th:text="${successMessage}"></div>
+<div th:if="${errorMessage}" class="error-message" role="alert" th:text="${errorMessage}"></div>
+<section class="guitar-search-panel" aria-label="ネック検索・フィルタ">
+<form class="guitar-search-form" method="get" th:action="@{/necks/view}">
+<div class="form-group"><label class="form-label" for="serial">シリアル番号</label><input class="form-input" id="serial" name="serial" type="search" th:value="${serial}" placeholder="例: DN260001"></div>
+<div class="form-group"><label class="form-label" for="modelName">モデル名</label><input class="form-input" id="modelName" name="modelName" type="search" th:value="${modelName}" placeholder="モデル名を入力"></div>
+<div class="form-group"><label class="form-label" for="currentProcess">現在工程</label><select class="form-select" id="currentProcess" name="currentProcess"><option value="">すべて</option><option th:each="process : ${neckProcesses}" th:value="${process.processName}" th:text="${process.processName}" th:selected="${process.processName == selectedCurrentProcess}"></option><option value="組立待ち" th:selected="${selectedCurrentProcess == '組立待ち'}">組立待ち</option><option value="塗装前工程へ差し戻し" th:selected="${selectedCurrentProcess == '塗装前工程へ差し戻し'}">塗装前工程へ差し戻し</option></select></div>
+<div class="form-group"><label class="form-label" for="status">状態</label><select class="form-select" id="status" name="status"><option value="">すべて</option><option value="WAITING" th:selected="${selectedStatus == 'WAITING'}">工程待ち</option><option value="WORKING" th:selected="${selectedStatus == 'WORKING'}">作業中</option><option value="AVAILABLE" th:selected="${selectedStatus == 'AVAILABLE'}">組立待ち</option><option value="RETURNED" th:selected="${selectedStatus == 'RETURNED'}">塗装前工程へ差し戻し</option><option value="ASSEMBLED" th:selected="${selectedStatus == 'ASSEMBLED'}">組立済み</option><option value="REJECTED" th:selected="${selectedStatus == 'REJECTED'}">製造終了</option></select></div>
+<div class="guitar-search-actions"><button class="btn btn-primary" type="submit">検索</button><a class="btn btn-outline" th:href="@{/necks/view}">クリア</a></div>
+</form>
+<div class="guitar-search-result" aria-live="polite"><span th:if="${filterApplied}">検索結果</span><span th:unless="${filterApplied}">全件</span><strong th:text="${resultCount}">0</strong><span>件</span></div>
+</section>
+<div th:if="${#lists.isEmpty(necks)}" class="empty-state"><p th:if="${filterApplied}">条件に一致するネックはありません。</p><p th:unless="${filterApplied}">登録されているネックはありません。</p><a th:if="${filterApplied}" class="btn btn-outline" th:href="@{/necks/view}">検索条件をクリア</a></div>
+<form th:if="${not #lists.isEmpty(necks)}" id="bulk-start-form" th:action="@{/neck-processes/bulk/start}" method="post" class="bulk-process-form">
 <section class="bulk-action-panel component-bulk-action-panel"><div class="form-group bulk-process-field"><label class="form-label" for="processId">対象工程</label><select id="processId" name="processId" class="form-select" required><option value="">選択してください</option><option th:each="process : ${neckProcesses}" th:value="${process.id}" th:text="${process.processName}" th:attr="data-process-name=${process.processName}"></option></select></div><div class="form-group bulk-worker-field"><label class="form-label" for="workerName">作業者</label><input id="workerName" name="workerName" class="form-input" placeholder="作業者名を入力" required></div><div class="bulk-selection-action"><div class="bulk-selection-summary"><span class="bulk-selection-heading">選択中</span><span class="bulk-selection-count"><strong id="selected-count">0</strong>件</span></div><button type="submit" class="btn btn-primary">一括工程開始</button></div><p class="form-help bulk-process-guidance">対象工程を選択すると、一致する個体だけを選択できます。</p></section>
-<div th:if="${#lists.isEmpty(necks)}" class="empty-state">登録されているネックはありません。</div>
-<div th:if="${not #lists.isEmpty(necks)}" class="table-container"><table class="data-table neck-management-table bulk-select-table"><colgroup><col class="management-column-checkbox"><col class="component-column-serial"><col class="component-column-model"><col class="component-column-process"><col class="component-column-status"><col class="component-column-operation"><col class="component-column-history"></colgroup><thead><tr><th><input type="checkbox" id="select-all" aria-label="全件選択"></th><th>シリアル番号</th><th>モデル名</th><th>現在工程</th><th>状態</th><th>工程操作</th><th>履歴</th></tr></thead><tbody><tr th:each="item : ${necks}" th:attr="data-process-name=${item.currentProcess}"><td class="bulk-checkbox-cell"><input type="checkbox" class="row-checkbox" name="neckIds" th:value="${item.id}" th:disabled="${item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK'}" th:attr="aria-label=${item.serialNo + 'を選択'},data-base-eligible=${!(item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK')}"></td><td><span class="component-serial-number" th:text="${item.serialNo}"></span></td><td class="component-model-cell"><div class="component-model-name" th:text="${item.modelName}" th:title="${item.modelName}"></div></td><td class="component-process-cell"><span class="process-badge" th:text="${item.currentProcess}" th:title="${item.currentProcess}"></span></td><td class="status-cell"><span class="status-badge" th:classappend="${@statusDisplay.getCssClass(item.status)}" th:text="${@statusDisplay.getLabel(item.status)}"></span></td><td class="component-operation-cell"><a th:if="${item.status == 'WORKING'}" class="btn btn-process-end" th:href="@{/neck-processes/end/view(neckId=${item.id})}">工程終了</a><a th:if="${item.status == 'WAITING' or item.status == 'WAITING_INSPECTION' or item.status == 'REWORK'}" class="btn btn-primary" th:href="@{/neck-processes/start/view(neckId=${item.id})}">工程開始</a><span th:if="${item.status == 'AVAILABLE' or item.status == 'ASSEMBLED' or item.status == 'REJECTED' or item.status == 'RETURNED'}">操作不可</span></td><td class="component-history-cell"><a class="btn btn-detail" th:href="@{/necks/{id}/process-history(id=${item.id})}">工程履歴</a></td></tr></tbody></table></div></form></main>
+<div class="table-container"><table class="data-table neck-management-table bulk-select-table"><colgroup><col class="management-column-checkbox"><col class="component-column-serial"><col class="component-column-model"><col class="component-column-process"><col class="component-column-status"><col class="component-column-operation"><col class="component-column-history"></colgroup><thead><tr><th><input type="checkbox" id="select-all" aria-label="全件選択"></th><th>シリアル番号</th><th>モデル名</th><th>現在工程</th><th>状態</th><th>工程操作</th><th>履歴</th></tr></thead><tbody><tr th:each="item : ${necks}" th:attr="data-process-name=${item.currentProcess}"><td class="bulk-checkbox-cell"><input type="checkbox" class="row-checkbox" name="neckIds" th:value="${item.id}" th:disabled="${item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK'}" th:attr="aria-label=${item.serialNo + 'を選択'},data-base-eligible=${!(item.status != 'WAITING' and item.status != 'WAITING_INSPECTION' and item.status != 'REWORK')}"></td><td><span class="component-serial-number" th:text="${item.serialNo}"></span></td><td class="component-model-cell"><div class="component-model-name" th:text="${item.modelName}" th:title="${item.modelName}"></div></td><td class="component-process-cell"><span class="process-badge" th:text="${item.currentProcess}" th:title="${item.currentProcess}"></span></td><td class="status-cell"><span class="status-badge" th:classappend="${@statusDisplay.getCssClass(item.status)}" th:text="${@statusDisplay.getLabel(item.status)}"></span></td><td class="component-operation-cell"><a th:if="${item.status == 'WORKING'}" class="btn btn-process-end" th:href="@{/neck-processes/end/view(neckId=${item.id})}">工程終了</a><a th:if="${item.status == 'WAITING' or item.status == 'WAITING_INSPECTION' or item.status == 'REWORK'}" class="btn btn-primary" th:href="@{/neck-processes/start/view(neckId=${item.id})}">工程開始</a><span th:if="${item.status == 'AVAILABLE' or item.status == 'ASSEMBLED' or item.status == 'REJECTED' or item.status == 'RETURNED'}">操作不可</span></td><td class="component-history-cell"><a class="btn btn-detail" th:href="@{/necks/{id}/process-history(id=${item.id})}">工程履歴</a></td></tr></tbody></table></div></form></main>
 <script th:inline="none">
 (() => {
-    const processSelect = document.getElementById('processId');
-    const workerName = document.getElementById('workerName');
-    const submitButton = document.querySelector(
-        '#bulk-start-form button[type="submit"], #bulk-start-form button:not([type])');
-    const selectAll = document.getElementById('select-all');
-    const boxes = Array.from(document.querySelectorAll('.row-checkbox'));
-    const selectedCount = document.getElementById('selected-count');
-
-    if (!processSelect || !workerName || !submitButton
-            || !selectAll || !selectedCount) {
-        return;
-    }
-
-    const processOptions = Array.from(processSelect.options)
-        .filter(option => option.value !== '');
-
-    const hasEligibleTarget = processName => boxes.some(box => {
-        const row = box.closest('tr');
-        const baseEligible = box.dataset.baseEligible === 'true';
-        return baseEligible && row.dataset.processName === processName;
-    });
-
-    processOptions.forEach(option => {
-        const processName = option.dataset.processName
-            || option.textContent.trim();
-        option.hidden = !hasEligibleTarget(processName);
-        option.disabled = option.hidden;
-    });
-
-    const availableOptions = processOptions.filter(option => !option.hidden);
-    const placeholder = processSelect.options[0];
-
-    if (availableOptions.length === 0) {
-        placeholder.textContent = '一括開始可能な工程はありません';
-        processSelect.disabled = true;
-        workerName.disabled = true;
-        submitButton.disabled = true;
-    } else {
-        placeholder.textContent = '選択してください';
-        processSelect.disabled = false;
-        workerName.disabled = false;
-        submitButton.disabled = false;
-    }
-
-    const updateSelectionState = () => {
-        const enabledBoxes = boxes.filter(box => !box.disabled);
-        const checkedBoxes = enabledBoxes.filter(box => box.checked);
-
-        selectedCount.textContent = checkedBoxes.length;
-        selectAll.disabled = enabledBoxes.length === 0;
-        selectAll.checked = enabledBoxes.length > 0
-            && checkedBoxes.length === enabledBoxes.length;
-        selectAll.indeterminate = checkedBoxes.length > 0
-            && checkedBoxes.length < enabledBoxes.length;
-    };
-
-    const applyProcessFilter = () => {
-        const selectedOption = processSelect.selectedOptions[0];
-        const processName = selectedOption?.dataset.processName
-            || selectedOption?.textContent.trim()
-            || '';
-        const processSelected = processSelect.value !== '';
-
-        boxes.forEach(box => {
-            const row = box.closest('tr');
-            const baseEligible = box.dataset.baseEligible === 'true';
-            const matchesProcess = processSelected
-                && row.dataset.processName === processName;
-
-            box.checked = false;
-            box.disabled = !(baseEligible && matchesProcess);
-            row.classList.toggle(
-                'is-disabled',
-                !(baseEligible && matchesProcess));
-        });
-
-        selectAll.checked = false;
-        selectAll.indeterminate = false;
-        updateSelectionState();
-    };
-
-    processSelect.addEventListener('change', applyProcessFilter);
-    selectAll.addEventListener('change', () => {
-        boxes.filter(box => !box.disabled)
-            .forEach(box => box.checked = selectAll.checked);
-        updateSelectionState();
-    });
-    boxes.forEach(box => {
-        box.addEventListener('change', updateSelectionState);
-    });
-
-    applyProcessFilter();
+ const processSelect=document.getElementById('processId'), workerName=document.getElementById('workerName'), submitButton=document.querySelector('#bulk-start-form button[type="submit"]'), selectAll=document.getElementById('select-all'), boxes=Array.from(document.querySelectorAll('.row-checkbox')), selectedCount=document.getElementById('selected-count');
+ if(!processSelect||!workerName||!submitButton||!selectAll||!selectedCount)return;
+ const options=Array.from(processSelect.options).filter(o=>o.value!=='');
+ const hasTarget=name=>boxes.some(b=>b.dataset.baseEligible==='true'&&b.closest('tr').dataset.processName===name);
+ options.forEach(o=>{const n=o.dataset.processName||o.textContent.trim();o.hidden=!hasTarget(n);o.disabled=o.hidden;});
+ const placeholder=processSelect.options[0]; if(options.filter(o=>!o.hidden).length===0){placeholder.textContent='一括開始可能な工程はありません';processSelect.disabled=true;workerName.disabled=true;submitButton.disabled=true;}
+ const update=()=>{const enabled=boxes.filter(b=>!b.disabled),checked=enabled.filter(b=>b.checked);selectedCount.textContent=checked.length;selectAll.disabled=enabled.length===0;selectAll.checked=enabled.length>0&&checked.length===enabled.length;selectAll.indeterminate=checked.length>0&&checked.length<enabled.length;};
+ const apply=()=>{const o=processSelect.selectedOptions[0],name=o?.dataset.processName||o?.textContent.trim()||'',selected=processSelect.value!=='';boxes.forEach(b=>{const ok=b.dataset.baseEligible==='true'&&selected&&b.closest('tr').dataset.processName===name;b.checked=false;b.disabled=!ok;b.closest('tr').classList.toggle('is-disabled',!ok);});update();};
+ processSelect.addEventListener('change',apply);selectAll.addEventListener('change',()=>{boxes.filter(b=>!b.disabled).forEach(b=>b.checked=selectAll.checked);update();});boxes.forEach(b=>b.addEventListener('change',update));apply();
 })();
 </script></body></html>

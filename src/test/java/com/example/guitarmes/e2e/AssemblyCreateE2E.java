@@ -442,13 +442,21 @@ class AssemblyCreateE2E extends PlaywrightTestBase {
                 .containsText(neckSerials.get(0));
         assertThat(page.locator(".assembly-management-table"))
                 .containsText(WORKER_NAME);
-        assertThat(page.locator(".assembly-guitar-cell").first())
+        com.microsoft.playwright.Locator targetRow = page
+                .locator(".assembly-management-table tbody tr")
+                .filter(new com.microsoft.playwright.Locator.FilterOptions()
+                        .setHasText(neckSerials.get(0)));
+        assertEquals(
+                1,
+                targetRow.count(),
+                "E2Eで作成したネック取付実績が一意に見つかりません。");
+        assertThat(targetRow.locator(".assembly-guitar-cell"))
                 .containsText(productName);
-        assertThat(page.locator(".assembly-guitar-cell").first())
+        assertThat(targetRow.locator(".assembly-guitar-cell"))
                 .containsText(productColor);
-        assertThat(page.locator(".assembly-product-name").first())
+        assertThat(targetRow.locator(".assembly-product-name"))
                 .hasText(productName);
-        assertThat(page.locator(".assembly-product-color").first())
+        assertThat(targetRow.locator(".assembly-product-color"))
                 .hasText(productColor);
         assertEquals(
                 0,
