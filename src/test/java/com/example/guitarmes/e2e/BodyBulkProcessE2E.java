@@ -296,7 +296,8 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         assertTrue(labels.contains("不合格"));
         assertFalse(labels.contains("完了"));
 
-        page.locator("#select-all").check();
+        historyCheckbox(historyIds.get(0)).check();
+        historyCheckbox(historyIds.get(1)).check();
         assertThat(page.locator("#selected-count")).hasText("2");
         page.locator("#result").selectOption("PASSED");
         captureScreenshot("05-body-histories-selected.png");
