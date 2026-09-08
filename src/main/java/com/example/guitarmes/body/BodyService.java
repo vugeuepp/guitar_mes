@@ -36,6 +36,37 @@ public class BodyService {
         return bodyRepository.findAll();
     }
 
+    /** 未指定・空・未知のカテゴリは対応中へ正規化する。 */
+    public String normalizeCategory(String category) {
+        String normalized = normalize(category);
+        if ("attention".equals(normalized) || "passed".equals(normalized)) {
+            return normalized;
+        }
+        return "active";
+    }
+
+    /** Bodyの状態から一覧カテゴリを導出して絞り込む。 */
+    public List<Body> filterByCategory(List<Body> bodies, String category) {
+        String normalizedCategory = normalizeCategory(category);
+        return bodies.stream()
+                .filter(body -> belongsToCategory(body, normalizedCategory))
+                .toList();
+    }
+
+    private boolean belongsToCategory(Body body, String category) {
+        String status = body == null ? "" : normalize(body.getStatus());
+        return switch (category) {
+        case "attention" -> normalize(REWORK).equals(status)
+                || normalize(RETURNED).equals(status);
+        case "passed" -> normalize(AVAILABLE).equals(status)
+                || normalize(ASSEMBLED).equals(status)
+                || normalize(REJECTED).equals(status);
+        default -> normalize(WAITING_INSPECTION).equals(status)
+                || normalize(WAITING).equals(status)
+                || normalize(WORKING).equals(status);
+        };
+    }
+
     public List<Body> filterBodies(List<Body> bodies, String serial,
             String model, String currentProcess, String status) {
         String serialCondition = normalize(serial);

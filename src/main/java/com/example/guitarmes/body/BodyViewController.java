@@ -6,12 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.guitarmes.master.body.BodyMasterService;
 import com.example.guitarmes.body.process.BodyProcessService;
+import com.example.guitarmes.master.body.BodyMasterService;
 
 @Controller
 public class BodyViewController {
-
     private final BodyService bodyService;
     private final BodyMasterService bodyMasterService;
     private final BodyProcessService bodyProcessService;
@@ -20,7 +19,6 @@ public class BodyViewController {
             BodyService bodyService,
             BodyMasterService bodyMasterService,
             BodyProcessService bodyProcessService) {
-
         this.bodyService = bodyService;
         this.bodyMasterService = bodyMasterService;
         this.bodyProcessService = bodyProcessService;
@@ -28,14 +26,26 @@ public class BodyViewController {
 
     @GetMapping("/bodies/view")
     public String bodyList(
+            @RequestParam(defaultValue = "active") String category,
             @RequestParam(required = false) String serial,
             @RequestParam(required = false) String modelName,
             @RequestParam(required = false) String currentProcess,
             @RequestParam(required = false) String status,
             Model model) {
         var allBodies = bodyService.getBodies();
+        String selectedCategory = bodyService.normalizeCategory(category);
+        var activeBodies = bodyService.filterByCategory(allBodies, "active");
+        var attentionBodies = bodyService.filterByCategory(allBodies, "attention");
+        var passedBodies = bodyService.filterByCategory(allBodies, "passed");
+        var categoryBodies = bodyService.filterByCategory(
+                allBodies, selectedCategory);
         var bodies = bodyService.filterBodies(
-                allBodies, serial, modelName, currentProcess, status);
+                categoryBodies, serial, modelName, currentProcess, status);
+
+        model.addAttribute("category", selectedCategory);
+        model.addAttribute("activeCount", activeBodies.size());
+        model.addAttribute("attentionCount", attentionBodies.size());
+        model.addAttribute("passedCount", passedBodies.size());
         model.addAttribute("bodies", bodies);
         model.addAttribute("bodyProcesses", bodyProcessService.getBodyProcesses());
         model.addAttribute("serial", serial == null ? "" : serial);
@@ -51,19 +61,13 @@ public class BodyViewController {
 
     @GetMapping("/bodies/new")
     public String newBodyForm(Model model) {
-
-        model.addAttribute(
-                "bodyMasters",
-                bodyMasterService.getBodyMasters());
-
+        model.addAttribute("bodyMasters", bodyMasterService.getBodyMasters());
         return "body-form";
     }
 
     @PostMapping("/bodies/create")
     public String createBody(@RequestParam Long bodyMasterId) {
-
         bodyService.createBody(bodyMasterId);
-
         return "redirect:/bodies/view";
     }
 }
