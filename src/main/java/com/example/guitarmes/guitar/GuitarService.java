@@ -229,6 +229,20 @@ public class GuitarService {
         return responses;
     }
 
+    /** 未指定・未知のカテゴリは製造中に戻す。 */
+    public String normalizeCategory(String category) {
+        return "completed".equals(category) ? "completed" : "active";
+    }
+
+    /** 完成判定は工程名だけを使用する。nullの工程も製造中に含める。 */
+    public List<GuitarProgressResponse> filterByCategory(
+            List<GuitarProgressResponse> guitars, String category) {
+        boolean completed = "completed".equals(normalizeCategory(category));
+        return guitars.stream()
+                .filter(guitar -> COMPLETED.equals(guitar.getCurrentProcess()) == completed)
+                .toList();
+    }
+
     /**
      * 一覧表示用Guitarを検索条件で絞り込む。
      */

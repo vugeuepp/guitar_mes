@@ -3085,3 +3085,55 @@ body {
     .guitar-search-form { grid-template-columns: 1fr; }
     .guitar-search-actions .btn { flex: 1; }
 }
+
+/* Guitar一覧: カテゴリタブと一覧を一つのパネルとして表示 */
+.guitar-category-list { margin-bottom: 18px; }
+.guitar-category-tabs {
+    display: flex;
+    gap: 6px;
+    padding-left: 0;
+    position: relative;
+    z-index: 1;
+}
+.guitar-category-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 20px;
+    border: 1px solid var(--app-border);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: #e9eaed;
+    color: var(--app-muted);
+    text-decoration: none;
+    position: relative;
+}
+.guitar-category-tab:hover { color: var(--app-black); background: #f3f3f5; }
+.guitar-category-tab.is-active {
+    background: var(--app-surface);
+    color: var(--app-red);
+    font-weight: 700;
+    box-shadow: inset 0 3px 0 var(--app-red);
+}
+.guitar-category-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--app-surface);
+}
+.guitar-category-tab:focus-visible { outline: 3px solid var(--app-black); outline-offset: 3px; z-index: 2; }
+.guitar-category-content {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 0 8px 8px 8px;
+    padding: 12px;
+}
+.guitar-category-content > .table-container { margin: 0; }
+.guitar-category-content .data-table { margin-bottom: 0; }
+.guitar-category-content > .empty-state { margin: 0; border: 0; box-shadow: none; }
+@media (max-width: 700px) {
+    .guitar-category-tab { padding: 12px 14px; }
+}

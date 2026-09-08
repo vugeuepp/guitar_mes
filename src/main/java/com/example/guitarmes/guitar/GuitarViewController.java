@@ -29,6 +29,7 @@ public class GuitarViewController {
 
 	@GetMapping("/guitars/view")
 	public String guitarList(
+            @RequestParam(defaultValue = "active") String category,
             @RequestParam(required = false) String serial,
             @RequestParam(required = false) String product,
             @RequestParam(required = false) String currentProcess,
@@ -37,24 +38,32 @@ public class GuitarViewController {
         var allGuitars = guitarService.getGuitarProgressList(
                 processService,
                 assemblyService);
+        String selectedCategory = guitarService.normalizeCategory(category);
+        var activeGuitars = guitarService.filterByCategory(allGuitars, "active");
+        var completedGuitars = guitarService.filterByCategory(allGuitars, "completed");
+        var categoryGuitars = "completed".equals(selectedCategory) ? completedGuitars : activeGuitars;
+        String effectiveStatus = "completed".equals(selectedCategory) ? "" : status;
+        model.addAttribute("category", selectedCategory);
+        model.addAttribute("activeCount", activeGuitars.size());
+        model.addAttribute("completedCount", completedGuitars.size());
         var guitars = guitarService.filterGuitarProgressList(
-                allGuitars,
+                categoryGuitars,
                 serial,
                 product,
                 currentProcess,
-                status);
+                effectiveStatus);
         model.addAttribute("guitars", guitars);
         model.addAttribute("processes", processService.getAvailableGuitarProcesses());
         model.addAttribute("productOptions", guitarService.getProductOptions(allGuitars));
         model.addAttribute("serial", serial == null ? "" : serial);
         model.addAttribute("selectedProduct", product == null ? "" : product);
         model.addAttribute("selectedCurrentProcess", currentProcess == null ? "" : currentProcess);
-        model.addAttribute("selectedStatus", status == null ? "" : status);
+        model.addAttribute("selectedStatus", effectiveStatus == null ? "" : effectiveStatus);
         model.addAttribute("filterApplied", guitarService.hasSearchCondition(
                 serial,
                 product,
                 currentProcess,
-                status));
+                effectiveStatus));
         model.addAttribute("resultCount", guitars.size());
 		return "guitar-list";
 	}

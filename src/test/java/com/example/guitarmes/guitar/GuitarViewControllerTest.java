@@ -37,6 +37,9 @@ class GuitarViewControllerTest {
     @Test
     void listContainsSearchConditionsAndResults() throws Exception {
         List<GuitarProgressResponse> all = List.of();
+        when(guitarService.normalizeCategory("active")).thenReturn("active");
+        when(guitarService.filterByCategory(all, "active")).thenReturn(all);
+        when(guitarService.filterByCategory(all, "completed")).thenReturn(all);
         when(guitarService.getGuitarProgressList(
                 processService,
                 assemblyService)).thenReturn(all);
