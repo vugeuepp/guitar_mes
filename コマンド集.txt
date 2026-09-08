@@ -2,6 +2,7 @@ tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.tx
 ./mvnw \ -Dtest=ProductionScheduleIssueE2E \ test
 
 ＃gitのステータス保存コマンド
+{
   echo "===== CURRENT BRANCH ====="
   git branch --show-current
 

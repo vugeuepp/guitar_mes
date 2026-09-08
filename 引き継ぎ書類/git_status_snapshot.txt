@@ -2,8 +2,8 @@
 feature/phase5b-search-filter
 
 ===== STATUS =====
-?? "\345\274\225\343\201\215\347\266\231\343\201\216\346\233\270\351\241\236/260904_Guitar_MES_\344\273\212\346\227\245\343\201\256\343\201\276\343\201\250\343\202\201\343\203\273\345\274\225\343\201\215\347\266\231\343\201\216\343\203\241\343\203\242.md"
-?? "\345\274\225\343\201\215\347\266\231\343\201\216\346\233\270\351\241\236/git_status_snapshot.txt"
+ M "\343\202\263\343\203\236\343\203\263\343\203\211\351\233\206.txt"
+ M "\345\274\225\343\201\215\347\266\231\343\201\216\346\233\270\351\241\236/git_status_snapshot.txt"
 
 ===== LOCAL BRANCHES =====
   260806ダッシュボード作成          bbe4a69 [origin/260806ダッシュボード作成] 工程平均時間の算出
@@ -12,7 +12,7 @@ feature/phase5b-search-filter
   feature/mockmvc-test              8f7789a [origin/feature/mockmvc-test] テスト追加: ボディネックマスタ画面のMockMvcテストを追加
   feature/phase4c-guitar-ui         2f46cec [origin/feature/phase4c-guitar-ui] ネック取付制御と画面表示改善を追加
   feature/phase5a-bulk-neck-install 372d12d [origin/feature/phase5a-bulk-neck-install] UI改修
-* feature/phase5b-search-filter     14abb36 [origin/feature/phase5b-search-filter] UI改善: 一覧画面の視認性向上とギター検索機能を追加
+* feature/phase5b-search-filter     e0335f4 [origin/feature/phase5b-search-filter] 検索機能展開
   feature/phase5b-table-layout      020c42a [origin/feature/phase5b-table-layout] UI改善: ギター・部材・実績一覧の表示を統一
   feature/playwright-e2e            7b91ce0 [origin/feature/playwright-e2e] 作業メモ
   feature/production-schedule       732c208 [origin/feature/production-schedule] 完了
@@ -25,7 +25,9 @@ feature/phase5b-search-filter
   製品マスタ作成                    58d12d1 [origin/製品マスタ作成] ボディマスタ、ネックマスタ作成、工程分割
 
 ===== LAST 20 COMMITS =====
-14abb36 (HEAD -> feature/phase5b-search-filter, origin/feature/phase5b-search-filter) UI改善: 一覧画面の視認性向上とギター検索機能を追加
+e0335f4 (HEAD -> feature/phase5b-search-filter, origin/feature/phase5b-search-filter) 検索機能展開
+d37b012 書類等
+14abb36 UI改善: 一覧画面の視認性向上とギター検索機能を追加
 24d73e6 (origin/main, origin/HEAD, main) Merge pull request #16 from vugeuepp/feature/phase5b-table-layout
 020c42a (origin/feature/phase5b-table-layout, feature/phase5b-table-layout) UI改善: ギター・部材・実績一覧の表示を統一
 430ee2a UI改善: ダッシュボードのギター一覧を改善
@@ -43,8 +45,6 @@ c1e65ce UI改善: 日付入力UIを生産計画と日産計画画面へ横展開
 2f46cec (origin/feature/phase4c-guitar-ui, feature/phase4c-guitar-ui) ネック取付制御と画面表示改善を追加
 1df928c 内部ID整理
 c4f444a ギター一覧画面作業完了フロー見直し。
-e0086ac Merge pull request #13 from vugeuepp/feature/bulk-guitar-process
-8ab79ce (origin/feature/bulk-guitar-process, feature/bulk-guitar-process) 残ファイル
 
 ===== REMOTES =====
 origin	https://github.com/vugeuepp/guitar_mes.git (fetch)
