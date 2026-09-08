@@ -25,10 +25,9 @@
     <!-- 説明・主要操作 -->
     <div class="page-toolbar">
 
-        <p class="page-toolbar-description">
-            製品仕様ごとの生産計画と、
-            着手・完成状況を確認できます。
-        </p>
+        <p class="page-toolbar-description" th:text="${category == 'active'}
+            ? '現在進行中または着手予定の生産計画を確認できます。'
+            : (${category == 'completed'} ? '完了した生産計画と実績を確認できます。' : '取消された生産計画を確認できます。')"></p>
 
         <div class="page-toolbar-actions">
 
@@ -45,6 +44,7 @@
 
     <section class="guitar-search-panel" aria-label="生産計画検索・フィルタ">
         <form class="guitar-search-form" method="get" th:action="@{/production-orders/view}">
+            <input type="hidden" name="category" th:value="${category}">
             <div class="form-group"><label class="form-label" for="orderNo">生産指示番号</label>
                 <input class="form-input" id="orderNo" name="orderNo" type="search" th:value="${orderNo}" placeholder="番号の一部を入力"></div>
             <div class="form-group"><label class="form-label" for="product">製品名・モデル番号</label>
@@ -57,25 +57,45 @@
                 <input class="form-input" id="dueTo" name="dueTo" type="search" th:value="${dueTo}" placeholder="yyyy-MM-dd"></div>
             <div class="form-group"><label class="form-label" for="status">状態</label>
                 <select class="form-select" id="status" name="status"><option value="">すべて</option>
-                    <option value="PLANNED" th:selected="${selectedStatus == 'PLANNED'}">計画中</option>
-                    <option value="IN_PROGRESS" th:selected="${selectedStatus == 'IN_PROGRESS'}">製造中</option>
-                    <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">完了</option>
-                    <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">取消</option>
+                    <option th:if="${categoryStatuses.contains('PLANNED')}" value="PLANNED" th:selected="${selectedStatus == 'PLANNED'}">計画中</option>
+                    <option th:if="${categoryStatuses.contains('IN_PROGRESS')}" value="IN_PROGRESS" th:selected="${selectedStatus == 'IN_PROGRESS'}">製造中</option>
+                    <option th:if="${categoryStatuses.contains('COMPLETED')}" value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">完了</option>
+                    <option th:if="${categoryStatuses.contains('CANCELLED')}" value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">取消</option>
+                    <option th:if="${!#strings.isEmpty(selectedStatus) and !categoryStatuses.contains(selectedStatus)}"
+                            th:value="${selectedStatus}" selected
+                            th:text="${@productionOrderDisplay.getLabel(selectedStatus)}"></option>
                 </select></div>
             <div class="guitar-search-actions"><button class="btn btn-primary" type="submit">検索</button>
-                <a class="btn btn-outline" th:href="@{/production-orders/view}">クリア</a></div>
+                <a class="btn btn-outline" th:href="@{/production-orders/view(category=${category})}">クリア</a></div>
         </form>
         <div th:unless="${searchError}" class="guitar-search-result" aria-live="polite">
             <span th:if="${filterApplied}">検索結果</span><span th:unless="${filterApplied}">全件</span>
             <strong th:text="${resultCount}">0</strong><span>件</span>
         </div>
     </section>
+    <div class="guitar-category-list">
+        <nav class="guitar-category-tabs" aria-label="生産計画の分類">
+            <a id="category-active" class="guitar-category-tab"
+               th:classappend="${category == 'active'} ? 'is-active' : ''"
+               th:attr="aria-current=${category == 'active' ? 'page' : null}"
+               th:href="@{/production-orders/view(category='active')}">進行中 <span class="category-count" th:text="${activeCount}">0</span><span>件</span></a>
+            <a id="category-completed" class="guitar-category-tab"
+               th:classappend="${category == 'completed'} ? 'is-active' : ''"
+               th:attr="aria-current=${category == 'completed' ? 'page' : null}"
+               th:href="@{/production-orders/view(category='completed')}">完了 <span class="category-count" th:text="${completedCount}">0</span><span>件</span></a>
+            <a id="category-cancelled" class="guitar-category-tab"
+               th:classappend="${category == 'cancelled'} ? 'is-active' : ''"
+               th:attr="aria-current=${category == 'cancelled' ? 'page' : null}"
+               th:href="@{/production-orders/view(category='cancelled')}">取消 <span class="category-count" th:text="${cancelledCount}">0</span><span>件</span></a>
+        </nav>
+        <div class="guitar-category-content">
     <div th:if="${searchError}" class="error-message" role="alert" th:text="${searchError}"></div>
     <div th:if="${#lists.isEmpty(orders) and searchError == null}" class="empty-state">
         <p th:if="${filterApplied}">条件に一致する生産計画はありません。</p>
-        <p th:unless="${filterApplied}">生産計画はまだ登録されていません。</p>
-        <a th:if="${filterApplied}" class="btn btn-outline" th:href="@{/production-orders/view}">検索条件をクリア</a>
-        <a th:unless="${filterApplied}" class="btn btn-primary" th:href="@{/production-orders/new}">最初の生産計画を登録</a>
+        <p th:unless="${filterApplied}" th:text="${category == 'active'} ? '進行中の生産計画はありません。'
+            : (${category == 'completed'} ? '完了した生産計画はありません。' : '取消された生産計画はありません。')"></p>
+        <a th:if="${filterApplied}" class="btn btn-outline" th:href="@{/production-orders/view(category=${category})}">検索条件をクリア</a>
+        <a th:unless="${filterApplied}" class="btn btn-primary" th:href="@{/production-orders/new}">生産計画を登録</a>
     </div>
 
     <!-- 生産計画一覧 -->
@@ -224,6 +244,8 @@
 
     </div>
 
+        </div>
+    </div>
 </main>
 
 </body>

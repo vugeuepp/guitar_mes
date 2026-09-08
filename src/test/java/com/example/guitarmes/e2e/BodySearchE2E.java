@@ -28,9 +28,13 @@ class BodySearchE2E extends PlaywrightTestBase {
             "e2e.db.password", "");
     private final List<Long> bodyIds = new ArrayList<>();
     private Long bodyMasterId;
-    private String firstSerial;
-    private String secondSerial;
-    private String otherSerial;
+    private String activeSerial;
+    private String activeOtherSerial;
+    private String reworkSerial;
+    private String returnedSerial;
+    private String availableSerial;
+    private String assembledSerial;
+    private String rejectedSerial;
 
     @Override
     protected Path getEvidenceDirectory() {
@@ -38,14 +42,15 @@ class BodySearchE2E extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("ボディ一覧を複数条件で検索して条件をクリアできる")
-    void searchBodies() throws Exception {
+    @DisplayName("ボディを3カテゴリに分類しカテゴリ内検索できる")
+    void categoriesSearchAndClear() throws Exception {
         try {
             prepareTestData();
-            verifySerialSearch();
-            verifyIndividualFilters();
-            verifyCombinedSearch();
-            verifyNoResultsAndClear();
+            verifyDefaultActiveAndCounts();
+            verifyCategorySwitchResetsSearch();
+            verifyAttentionSearchAndClearKeepsCategory();
+            verifyPassedHasNoBulkStart();
+            verifyCategoryAndStatusConflictIsEmpty();
         } finally {
             cleanupSafely();
         }
@@ -54,18 +59,30 @@ class BodySearchE2E extends PlaywrightTestBase {
     private void prepareTestData() throws Exception {
         findReferences();
         String suffix = String.valueOf(System.currentTimeMillis());
-        firstSerial = "E2EBODY-SEARCH-A-" + suffix;
-        secondSerial = "E2EBODY-SEARCH-B-" + suffix;
-        otherSerial = "E2EBODY-SEARCH-X-" + suffix;
+        activeSerial = "E2EBODY-ACTIVE-A-" + suffix;
+        activeOtherSerial = "E2EBODY-ACTIVE-B-" + suffix;
+        reworkSerial = "E2EBODY-REWORK-" + suffix;
+        returnedSerial = "E2EBODY-RETURNED-" + suffix;
+        availableSerial = "E2EBODY-AVAILABLE-" + suffix;
+        assembledSerial = "E2EBODY-ASSEMBLED-" + suffix;
+        rejectedSerial = "E2EBODY-REJECTED-" + suffix;
         try (Connection connection = openConnection()) {
             connection.setAutoCommit(false);
             try {
-                bodyIds.add(insertBody(connection, firstSerial,
-                        "E2E Search Body", "塗装後検品", "WAITING_INSPECTION"));
-                bodyIds.add(insertBody(connection, secondSerial,
-                        "E2E Search Body", "塗装後検品", "WAITING_INSPECTION"));
-                bodyIds.add(insertBody(connection, otherSerial,
-                        "E2E Other Body", "パーツ付け", "WORKING"));
+                bodyIds.add(insertBody(connection, activeSerial,
+                        "E2E Category Target", "塗装後検品", "WAITING_INSPECTION"));
+                bodyIds.add(insertBody(connection, activeOtherSerial,
+                        "E2E Category Other", "パーツ付け", "WORKING"));
+                bodyIds.add(insertBody(connection, reworkSerial,
+                        "E2E Category Target", "バフがけ", "REWORK"));
+                bodyIds.add(insertBody(connection, returnedSerial,
+                        "E2E Returned Body", "塗装前工程へ差し戻し", "RETURNED"));
+                bodyIds.add(insertBody(connection, availableSerial,
+                        "E2E Available Body", "組立待ち", "AVAILABLE"));
+                bodyIds.add(insertBody(connection, assembledSerial,
+                        "E2E Assembled Body", "組立済み", "ASSEMBLED"));
+                bodyIds.add(insertBody(connection, rejectedSerial,
+                        "E2E Rejected Body", "製造終了", "REJECTED"));
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
@@ -74,13 +91,115 @@ class BodySearchE2E extends PlaywrightTestBase {
         }
     }
 
+    private void verifyDefaultActiveAndCounts() throws Exception {
+        page.navigate(BASE_URL + "/bodies/view");
+        page.waitForLoadState();
+        assertThat(page.locator("#category-active"))
+                .hasAttribute("aria-current", "page");
+        assertThat(page.locator("#category-attention")).isVisible();
+        assertThat(page.locator("#category-passed")).isVisible();
+        assertThat(bodyRow(activeSerial)).isVisible();
+        assertThat(bodyRows(reworkSerial)).hasCount(0);
+        assertThat(bodyRows(availableSerial)).hasCount(0);
+        assertThat(page.locator("#bulk-start-form")).isVisible();
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .isVisible();
+        assertCategoryCountsMatchDatabase();
+        captureScreenshot("01-body-active-category.png");
+    }
+
+    private void verifyCategorySwitchResetsSearch() {
+        page.locator("#serial").fill(activeSerial);
+        search();
+        assertThat(page.locator("#serial")).hasValue(activeSerial);
+        page.locator("#category-attention").click();
+        page.waitForLoadState();
+        assertThat(page.locator("#category-attention"))
+                .hasAttribute("aria-current", "page");
+        assertThat(page.locator("#serial")).hasValue("");
+        assertThat(page.locator("#modelName")).hasValue("");
+        assertThat(bodyRow(reworkSerial)).isVisible();
+        assertThat(bodyRow(returnedSerial)).isVisible();
+        assertThat(bodyRows(activeSerial)).hasCount(0);
+        assertThat(page.locator("#bulk-start-form")).isVisible();
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .isVisible();
+        assertThat(bodyRow(reworkSerial).getByRole(AriaRole.LINK,
+                new Locator.GetByRoleOptions().setName("工程開始"))).isVisible();
+        assertThat(bodyRow(returnedSerial)).containsText("操作不可");
+        page.locator("#processId").selectOption(
+                new com.microsoft.playwright.options.SelectOption()
+                        .setLabel("バフがけ"));
+        assertThat(bodyRow(reworkSerial).locator(".row-checkbox")).isEnabled();
+        assertThat(bodyRow(returnedSerial).locator(".row-checkbox")).isDisabled();
+        bodyRow(reworkSerial).locator(".row-checkbox").check();
+        assertThat(page.locator("#selected-count")).hasText("1");
+    }
+
+    private void verifyAttentionSearchAndClearKeepsCategory() {
+        page.locator("#serial").fill(reworkSerial);
+        page.locator("#modelName").fill("Category Target");
+        page.locator("#currentProcess").selectOption("バフがけ");
+        page.locator("#status").selectOption("REWORK");
+        search();
+        assertThat(bodyRow(reworkSerial)).isVisible();
+        assertThat(bodyRows(returnedSerial)).hasCount(0);
+        assertThat(page.locator("input[name=category]")).hasValue("attention");
+        assertThat(page.locator(".guitar-search-result strong")).hasText("1");
+        page.locator(".guitar-search-actions a").click();
+        page.waitForLoadState();
+        assertThat(page.locator("input[name=category]")).hasValue("attention");
+        assertThat(page.locator("#serial")).hasValue("");
+        assertThat(bodyRow(reworkSerial)).isVisible();
+        assertThat(bodyRow(returnedSerial)).isVisible();
+        captureScreenshot("02-body-attention-category.png");
+    }
+
+    private void verifyPassedHasNoBulkStart() {
+        page.locator("#category-passed").click();
+        page.waitForLoadState();
+        assertThat(page.locator("#category-passed"))
+                .hasAttribute("aria-current", "page");
+        assertThat(bodyRow(availableSerial)).isVisible();
+        assertThat(bodyRow(assembledSerial)).isVisible();
+        assertThat(bodyRow(rejectedSerial)).isVisible();
+        assertThat(bodyRows(activeSerial)).hasCount(0);
+        assertThat(page.locator("#bulk-start-form")).hasCount(0);
+        assertThat(page.locator(".row-checkbox")).hasCount(0);
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .hasCount(0);
+        captureScreenshot("03-body-passed-category.png");
+    }
+
+    private void verifyCategoryAndStatusConflictIsEmpty() {
+        page.locator("#category-active").click();
+        page.waitForLoadState();
+        page.locator("#status").selectOption("REJECTED");
+        search();
+        assertThat(page.locator(".empty-state"))
+                .containsText("条件に一致するボディはありません。");
+        assertThat(page.locator("input[name=category]")).hasValue("active");
+        page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("検索条件をクリア").setExact(true)).click();
+        page.waitForLoadState();
+        assertThat(page.locator("input[name=category]")).hasValue("active");
+        assertThat(bodyRow(activeSerial)).isVisible();
+    }
+
     private void findReferences() throws Exception {
-        String sql = "SELECT id, body_master_id FROM m_product "
+        String sql = "SELECT body_master_id FROM m_product "
                 + "WHERE body_master_id IS NOT NULL ORDER BY id LIMIT 1";
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
-            assertTrue(resultSet.next(), "E2Eで使用できるProductが必要です。");
+            assertTrue(resultSet.next(), "E2Eで使用できるBodyMasterが必要です。");
             bodyMasterId = resultSet.getLong("body_master_id");
         }
     }
@@ -108,83 +227,27 @@ class BodySearchE2E extends PlaywrightTestBase {
         }
     }
 
-    private void verifySerialSearch() {
-        page.navigate(BASE_URL + "/bodies/view");
-        page.waitForLoadState();
-        assertThat(page.locator(".guitar-search-panel")).isVisible();
-        page.locator("#serial").fill(firstSerial);
-        search();
-        assertThat(page.locator(".body-management-table tbody tr")).hasCount(1);
-        assertThat(bodyRow(firstSerial)).isVisible();
-        assertThat(page.locator(".guitar-search-result")).containsText("検索結果");
-        assertThat(page.locator(".guitar-search-result")).containsText("1件");
+    private void assertCategoryCountsMatchDatabase() throws Exception {
+        String sql = """
+                SELECT
+                    COUNT(*) FILTER (WHERE status IN ('WAITING_INSPECTION', 'WAITING', 'WORKING')),
+                    COUNT(*) FILTER (WHERE status IN ('REWORK', 'RETURNED')),
+                    COUNT(*) FILTER (WHERE status IN ('AVAILABLE', 'ASSEMBLED', 'REJECTED'))
+                FROM t_body
+                """;
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            assertTrue(resultSet.next());
+            assertEquals(resultSet.getLong(1), categoryCount("active"));
+            assertEquals(resultSet.getLong(2), categoryCount("attention"));
+            assertEquals(resultSet.getLong(3), categoryCount("passed"));
+        }
     }
 
-    private void verifyIndividualFilters() {
-        page.locator("#serial").fill("");
-        page.locator("#modelName").fill("Search Body");
-        search();
-        assertThat(bodyRow(firstSerial)).isVisible();
-        assertThat(page.locator(".body-management-table tbody tr")
-                .filter(new Locator.FilterOptions().setHasText(otherSerial))).hasCount(0);
-        page.locator("#modelName").fill("");
-        page.locator("#currentProcess").selectOption("パーツ付け");
-        search();
-        assertThat(bodyRow(otherSerial)).isVisible();
-        assertThat(page.locator(".body-management-table tbody tr")
-                .filter(new Locator.FilterOptions().setHasText(firstSerial))).hasCount(0);
-        page.locator("#currentProcess").selectOption("");
-        page.locator("#status").selectOption("WORKING");
-        search();
-        assertThat(bodyRow(otherSerial)).isVisible();
-        assertThat(page.locator(".body-management-table tbody tr")
-                .filter(new Locator.FilterOptions().setHasText(secondSerial))).hasCount(0);
-    }
-
-    private void verifyCombinedSearch() {
-        page.locator("#serial").fill("");
-        page.locator("#modelName").fill("Search Body");
-        page.locator("#currentProcess").selectOption("塗装後検品");
-        page.locator("#status").selectOption("WAITING_INSPECTION");
-        search();
-        assertThat(bodyRow(firstSerial)).isVisible();
-        assertThat(bodyRow(secondSerial)).isVisible();
-        assertEquals(0, page.locator(".body-management-table tbody tr")
-                .filter(new Locator.FilterOptions().setHasText(otherSerial)).count());
-        assertThat(page.locator("#modelName")).hasValue("Search Body");
-        assertThat(page.locator("#currentProcess")).hasValue("塗装後検品");
-        assertThat(page.locator("#status")).hasValue("WAITING_INSPECTION");
-        assertThat(bodyRow(firstSerial).locator(".row-checkbox")).isDisabled();
-        page.locator("#processId").selectOption(
-                new com.microsoft.playwright.options.SelectOption().setLabel("塗装後検品"));
-        assertThat(bodyRow(firstSerial).locator(".row-checkbox")).isEnabled();
-        bodyRow(firstSerial).locator(".row-checkbox").check();
-        assertThat(page.locator("#selected-count")).hasText("1");
-        page.locator("#processId").selectOption("");
-        assertThat(bodyRow(firstSerial).locator(".row-checkbox")).not().isChecked();
-        assertThat(page.locator("#selected-count")).hasText("0");
-        captureScreenshot("01-body-search-filter.png");
-    }
-
-    private void verifyNoResultsAndClear() {
-        page.locator("#serial").fill("NO-SUCH-" + firstSerial);
-        page.locator("#modelName").fill("");
-        page.locator("#currentProcess").selectOption("");
-        page.locator("#status").selectOption("");
-        search();
-        assertThat(page.locator(".empty-state"))
-                .containsText("条件に一致するボディはありません。");
-        assertThat(page.locator("#bulk-start-form")).hasCount(0);
-        page.getByRole(AriaRole.LINK,
-                new Page.GetByRoleOptions().setName("検索条件をクリア").setExact(true))
-                .click();
-        page.waitForLoadState();
-        assertThat(page.locator("#serial")).hasValue("");
-        assertThat(page.locator("#modelName")).hasValue("");
-        assertThat(page.locator("#currentProcess")).hasValue("");
-        assertThat(page.locator("#status")).hasValue("");
-        assertThat(bodyRow(firstSerial)).isVisible();
-        assertThat(bodyRow(otherSerial)).isVisible();
+    private long categoryCount(String category) {
+        return Long.parseLong(page.locator(
+                "#category-" + category + " .category-count").innerText());
     }
 
     private void search() {
@@ -193,9 +256,13 @@ class BodySearchE2E extends PlaywrightTestBase {
         page.waitForLoadState();
     }
 
-    private Locator bodyRow(String serialNo) {
-        Locator row = page.locator(".body-management-table tbody tr")
+    private Locator bodyRows(String serialNo) {
+        return page.locator(".body-management-table tbody tr")
                 .filter(new Locator.FilterOptions().setHasText(serialNo));
+    }
+
+    private Locator bodyRow(String serialNo) {
+        Locator row = bodyRows(serialNo);
         assertEquals(1, row.count(), serialNo + "の行が一意に見つかりません。");
         return row;
     }
@@ -213,6 +280,7 @@ class BodySearchE2E extends PlaywrightTestBase {
     }
 
     private Connection openConnection() throws Exception {
-        return DriverManager.getConnection(E2E_DB_URL, E2E_DB_USER, E2E_DB_PASSWORD);
+        return DriverManager.getConnection(
+                E2E_DB_URL, E2E_DB_USER, E2E_DB_PASSWORD);
     }
 }

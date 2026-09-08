@@ -75,4 +75,71 @@ class ProductionOrderSearchTest {
         mvc.perform(get("/production-orders/view"))
                 .andExpect(model().attribute("resultCount", 1)).andExpect(model().attribute("filterApplied", false));
     }
+    @Test
+    void categoriesUseStatusOnlyAndNormalizeUnknownValues() {
+        for (String value : java.util.Arrays.asList(null, "", " ", "invalid", "undefined"))
+            assertEquals("active", service.normalizeCategory(value));
+        assertEquals("completed", service.normalizeCategory(" COMPLETED "));
+        assertEquals("cancelled", service.normalizeCategory("CANCELLED"));
+        var planned = order("P", "PLANNED", "2020-01", "2020-01-01");
+        var working = order("W", "IN_PROGRESS", "2026-09", "2026-09-10");
+        var completed = order("C", "COMPLETED", "2026-09", "2026-09-10");
+        var cancelled = order("X", "CANCELLED", "2026-09", "2026-09-10");
+        var all = List.of(planned, working, completed, cancelled,
+                order("U", "UNKNOWN", "2026-09", null), order("N", null, "2026-09", null));
+        assertEquals(List.of(planned, working), service.filterByCategory(all, "active"));
+        assertEquals(List.of(completed), service.filterByCategory(all, "completed"));
+        assertEquals(List.of(cancelled), service.filterByCategory(all, "cancelled"));
+        assertEquals(List.of(planned, working), service.filterByCategory(all, "invalid"));
+        assertEquals(List.of("PLANNED", "IN_PROGRESS"), service.getCategoryStatuses("active"));
+        assertEquals(List.of("COMPLETED"), service.getCategoryStatuses("completed"));
+        assertEquals(List.of("CANCELLED"), service.getCategoryStatuses("cancelled"));
+        assertTrue(service.filterProductionOrders(service.filterByCategory(all, "active"),
+                "", "", "COMPLETED", "", "", "").isEmpty());
+    }
+
+    @Test
+    void controllerKeepsCategoryCountsEvenOnSearchErrors() throws Exception {
+        var planned = order("PO-P", "PLANNED", "2026-09", "2026-09-10");
+        var working = order("PO-W", "IN_PROGRESS", "2026-09", "2026-09-10");
+        var completed = order("PO-C", "COMPLETED", "2026-09", "2026-09-10");
+        var cancelled = order("PO-X", "CANCELLED", "2026-09", "2026-09-10");
+        when(repository.findAllByOrderByIdDesc()).thenReturn(List.of(planned, working, completed, cancelled));
+        var mvc = MockMvcBuilders.standaloneSetup(new ProductionOrderViewController(service, null, null, null)).build();
+        mvc.perform(get("/production-orders/view"))
+                .andExpect(model().attribute("category", "active"))
+                .andExpect(model().attribute("orders", List.of(planned, working)));
+        for (String invalid : List.of("", " ", "invalid", "undefined")) {
+            mvc.perform(get("/production-orders/view").param("category", invalid))
+                    .andExpect(model().attribute("category", "active"))
+                    .andExpect(model().attribute("orders", List.of(planned, working)));
+        }
+        for (String category : List.of("active", "completed", "cancelled")) {
+            var target = "active".equals(category) ? planned : "completed".equals(category) ? completed : cancelled;
+            mvc.perform(get("/production-orders/view").param("category", category)
+                    .param("orderNo", target.getOrderNo()).param("product", "ST-001")
+                    .param("status", target.getStatus()).param("planMonth", "2026-09")
+                    .param("dueFrom", "2026-09-10").param("dueTo", "2026-09-10"))
+                    .andExpect(model().attribute("category", category))
+                    .andExpect(model().attribute("orders", List.of(target)))
+                    .andExpect(model().attribute("resultCount", 1))
+                    .andExpect(model().attribute("activeCount", 2))
+                    .andExpect(model().attribute("completedCount", 1))
+                    .andExpect(model().attribute("cancelledCount", 1));
+            for (String[] dates : List.of(new String[]{"bad", ""}, new String[]{"2026-10-01", "2026-09-01"})) {
+                mvc.perform(get("/production-orders/view").param("category", category)
+                        .param("dueFrom", dates[0]).param("dueTo", dates[1]))
+                        .andExpect(model().attribute("category", category))
+                        .andExpect(model().attribute("activeCount", 2))
+                        .andExpect(model().attribute("completedCount", 1))
+                        .andExpect(model().attribute("cancelledCount", 1))
+                        .andExpect(model().attribute("resultCount", 0))
+                        .andExpect(model().attributeExists("searchError"));
+            }
+        }
+        mvc.perform(get("/production-orders/view").param("category", "completed").param("status", "PLANNED"))
+                .andExpect(model().attribute("selectedStatus", "PLANNED"))
+                .andExpect(model().attribute("orders", List.of()));
+    }
+
 }

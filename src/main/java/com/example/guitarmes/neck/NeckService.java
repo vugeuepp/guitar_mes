@@ -33,6 +33,35 @@ public class NeckService {
         return neckRepository.findAll();
     }
 
+    /** 未指定・空・未知のカテゴリは対応中へ正規化する。 */
+    public String normalizeCategory(String category) {
+        String normalized = normalize(category);
+        if ("attention".equals(normalized) || "passed".equals(normalized)) {
+            return normalized;
+        }
+        return "active";
+    }
+
+    /** Neckの状態から一覧カテゴリを導出して絞り込む。 */
+    public List<Neck> filterByCategory(List<Neck> necks, String category) {
+        String normalizedCategory = normalizeCategory(category);
+        return necks.stream()
+                .filter(neck -> belongsToCategory(neck, normalizedCategory))
+                .toList();
+    }
+
+    private boolean belongsToCategory(Neck neck, String category) {
+        String status = neck == null ? "" : normalize(neck.getStatus());
+        return switch (category) {
+        case "attention" -> normalize(RETURNED).equals(status);
+        case "passed" -> normalize(AVAILABLE).equals(status)
+                || normalize(ASSEMBLED).equals(status)
+                || normalize(REJECTED).equals(status);
+        default -> normalize(WAITING).equals(status)
+                || normalize(WORKING).equals(status);
+        };
+    }
+
     public List<Neck> filterNecks(List<Neck> necks, String serial,
             String model, String currentProcess, String status) {
         String serialCondition = normalize(serial);
