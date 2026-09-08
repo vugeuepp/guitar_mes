@@ -25,14 +25,26 @@ public class NeckViewController {
 
     @GetMapping("/necks/view")
     public String neckList(
+            @RequestParam(defaultValue = "active") String category,
             @RequestParam(required = false) String serial,
             @RequestParam(required = false) String modelName,
             @RequestParam(required = false) String currentProcess,
             @RequestParam(required = false) String status,
             Model model) {
         var allNecks = neckService.getNecks();
+        String selectedCategory = neckService.normalizeCategory(category);
+        var activeNecks = neckService.filterByCategory(allNecks, "active");
+        var attentionNecks = neckService.filterByCategory(allNecks, "attention");
+        var passedNecks = neckService.filterByCategory(allNecks, "passed");
+        var categoryNecks = neckService.filterByCategory(
+                allNecks, selectedCategory);
         var necks = neckService.filterNecks(
-                allNecks, serial, modelName, currentProcess, status);
+                categoryNecks, serial, modelName, currentProcess, status);
+
+        model.addAttribute("category", selectedCategory);
+        model.addAttribute("activeCount", activeNecks.size());
+        model.addAttribute("attentionCount", attentionNecks.size());
+        model.addAttribute("passedCount", passedNecks.size());
         model.addAttribute("necks", necks);
         model.addAttribute("neckProcesses", neckProcessService.getNeckProcesses());
         model.addAttribute("serial", serial == null ? "" : serial);

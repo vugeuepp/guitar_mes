@@ -325,7 +325,8 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
         assertTrue(labels.contains("NG"));
         assertFalse(labels.contains("合格"));
 
-        page.locator("#select-all").check();
+        historyCheckbox(historyIds.get(0)).check();
+        historyCheckbox(historyIds.get(1)).check();
         assertThat(page.locator("#selected-count")).hasText("2");
 
         captureScreenshot("05-neck-histories-selected.png");
