@@ -44,6 +44,7 @@ public class ProductionOrderViewController {
 
     @GetMapping("/production-orders/view")
     public String showList(
+            @RequestParam(defaultValue = "active") String category,
             @RequestParam(defaultValue = "") String orderNo,
             @RequestParam(defaultValue = "") String product,
             @RequestParam(defaultValue = "") String status,
@@ -51,6 +52,14 @@ public class ProductionOrderViewController {
             @RequestParam(defaultValue = "") String dueFrom,
             @RequestParam(defaultValue = "") String dueTo,
             Model model) {
+        var allOrders = productionOrderService.getProductionOrders();
+        String selectedCategory = productionOrderService.normalizeCategory(category);
+        model.addAttribute("category", selectedCategory);
+        model.addAttribute("activeCount", productionOrderService.filterByCategory(allOrders, "active").size());
+        model.addAttribute("completedCount", productionOrderService.filterByCategory(allOrders, "completed").size());
+        model.addAttribute("cancelledCount", productionOrderService.filterByCategory(allOrders, "cancelled").size());
+        model.addAttribute("categoryStatuses", productionOrderService.getCategoryStatuses(selectedCategory));
+        var categoryOrders = productionOrderService.filterByCategory(allOrders, selectedCategory);
         model.addAttribute("orderNo", orderNo);
         model.addAttribute("product", product);
         model.addAttribute("selectedStatus", status);
@@ -62,7 +71,7 @@ public class ProductionOrderViewController {
         List<ProductionOrder> orders;
         try {
             orders = productionOrderService.filterProductionOrders(
-                    productionOrderService.getProductionOrders(),
+                    categoryOrders,
                     orderNo, product, status, planMonth, dueFrom, dueTo);
         } catch (BusinessException exception) {
             orders = List.of();

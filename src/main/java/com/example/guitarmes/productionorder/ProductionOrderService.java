@@ -35,6 +35,29 @@ public class ProductionOrderService {
         return productionOrderRepository.findAllByOrderByIdDesc();
     }
 
+    /** 未指定・空・未知のカテゴリは進行中へ正規化する。 */
+    public String normalizeCategory(String category) {
+        String normalized = normalizeSearch(category);
+        return "completed".equals(normalized) || "cancelled".equals(normalized)
+                ? normalized : "active";
+    }
+
+    public List<String> getCategoryStatuses(String category) {
+        return switch (normalizeCategory(category)) {
+            case "completed" -> List.of(COMPLETED);
+            case "cancelled" -> List.of(CANCELLED);
+            default -> List.of(PLANNED, IN_PROGRESS);
+        };
+    }
+
+    /** 日付や数量ではなく既存statusだけで分類する。 */
+    public List<ProductionOrder> filterByCategory(List<ProductionOrder> orders, String category) {
+        var statuses = getCategoryStatuses(category).stream().map(this::normalizeSearch).toList();
+        return orders.stream()
+                .filter(order -> order != null && statuses.contains(normalizeSearch(order.getStatus())))
+                .toList();
+    }
+
     public List<ProductionOrder> filterProductionOrders(List<ProductionOrder> orders,
             String orderNo, String product, String status, String planMonth,
             String dueFrom, String dueTo) {
