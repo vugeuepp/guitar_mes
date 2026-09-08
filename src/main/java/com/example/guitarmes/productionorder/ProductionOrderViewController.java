@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.guitar.GuitarService;
@@ -42,10 +43,33 @@ public class ProductionOrderViewController {
     }
 
     @GetMapping("/production-orders/view")
-    public String showList(Model model) {
-        model.addAttribute(
-                "orders",
-                productionOrderService.getProductionOrders());
+    public String showList(
+            @RequestParam(defaultValue = "") String orderNo,
+            @RequestParam(defaultValue = "") String product,
+            @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "") String planMonth,
+            @RequestParam(defaultValue = "") String dueFrom,
+            @RequestParam(defaultValue = "") String dueTo,
+            Model model) {
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("product", product);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("planMonth", planMonth);
+        model.addAttribute("dueFrom", dueFrom);
+        model.addAttribute("dueTo", dueTo);
+        model.addAttribute("filterApplied", productionOrderService.hasSearchCondition(
+                orderNo, product, status, planMonth, dueFrom, dueTo));
+        List<ProductionOrder> orders;
+        try {
+            orders = productionOrderService.filterProductionOrders(
+                    productionOrderService.getProductionOrders(),
+                    orderNo, product, status, planMonth, dueFrom, dueTo);
+        } catch (BusinessException exception) {
+            orders = List.of();
+            model.addAttribute("searchError", exception.getMessage());
+        }
+        model.addAttribute("orders", orders);
+        model.addAttribute("resultCount", orders.size());
         return "production-order-list";
     }
 

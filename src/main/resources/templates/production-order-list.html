@@ -43,21 +43,39 @@
 
     </div>
 
-    <!-- 0件表示 -->
-    <div th:if="${#lists.isEmpty(orders)}"
-         class="empty-state">
-
-        <p>
-            生産計画はまだ登録されていません。
-        </p>
-
-        <a class="btn btn-primary"
-           th:href="@{/production-orders/new}">
-
-            最初の生産計画を登録
-
-        </a>
-
+    <section class="guitar-search-panel" aria-label="生産計画検索・フィルタ">
+        <form class="guitar-search-form" method="get" th:action="@{/production-orders/view}">
+            <div class="form-group"><label class="form-label" for="orderNo">生産指示番号</label>
+                <input class="form-input" id="orderNo" name="orderNo" type="search" th:value="${orderNo}" placeholder="番号の一部を入力"></div>
+            <div class="form-group"><label class="form-label" for="product">製品名・モデル番号</label>
+                <input class="form-input" id="product" name="product" type="search" th:value="${product}" placeholder="製品名またはモデル番号"></div>
+            <div class="form-group"><label class="form-label" for="planMonth">計画月</label>
+                <input class="form-input" id="planMonth" name="planMonth" type="search" th:value="${planMonth}" placeholder="yyyy-MM"></div>
+            <div class="form-group"><label class="form-label" for="dueFrom">納期（開始）</label>
+                <input class="form-input" id="dueFrom" name="dueFrom" type="search" th:value="${dueFrom}" placeholder="yyyy-MM-dd"></div>
+            <div class="form-group"><label class="form-label" for="dueTo">納期（終了）</label>
+                <input class="form-input" id="dueTo" name="dueTo" type="search" th:value="${dueTo}" placeholder="yyyy-MM-dd"></div>
+            <div class="form-group"><label class="form-label" for="status">状態</label>
+                <select class="form-select" id="status" name="status"><option value="">すべて</option>
+                    <option value="PLANNED" th:selected="${selectedStatus == 'PLANNED'}">計画中</option>
+                    <option value="IN_PROGRESS" th:selected="${selectedStatus == 'IN_PROGRESS'}">製造中</option>
+                    <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">完了</option>
+                    <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">取消</option>
+                </select></div>
+            <div class="guitar-search-actions"><button class="btn btn-primary" type="submit">検索</button>
+                <a class="btn btn-outline" th:href="@{/production-orders/view}">クリア</a></div>
+        </form>
+        <div th:unless="${searchError}" class="guitar-search-result" aria-live="polite">
+            <span th:if="${filterApplied}">検索結果</span><span th:unless="${filterApplied}">全件</span>
+            <strong th:text="${resultCount}">0</strong><span>件</span>
+        </div>
+    </section>
+    <div th:if="${searchError}" class="error-message" role="alert" th:text="${searchError}"></div>
+    <div th:if="${#lists.isEmpty(orders) and searchError == null}" class="empty-state">
+        <p th:if="${filterApplied}">条件に一致する生産計画はありません。</p>
+        <p th:unless="${filterApplied}">生産計画はまだ登録されていません。</p>
+        <a th:if="${filterApplied}" class="btn btn-outline" th:href="@{/production-orders/view}">検索条件をクリア</a>
+        <a th:unless="${filterApplied}" class="btn btn-primary" th:href="@{/production-orders/new}">最初の生産計画を登録</a>
     </div>
 
     <!-- 生産計画一覧 -->

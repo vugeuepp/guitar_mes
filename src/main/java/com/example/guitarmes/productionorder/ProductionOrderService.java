@@ -35,6 +35,45 @@ public class ProductionOrderService {
         return productionOrderRepository.findAllByOrderByIdDesc();
     }
 
+    public List<ProductionOrder> filterProductionOrders(List<ProductionOrder> orders,
+            String orderNo, String product, String status, String planMonth,
+            String dueFrom, String dueTo) {
+        String number = normalizeSearch(orderNo);
+        String productText = normalizeSearch(product);
+        String state = normalizeSearch(status);
+        YearMonth month;
+        LocalDate from;
+        LocalDate to;
+        try {
+            month = normalizeSearch(planMonth).isEmpty() ? null : YearMonth.parse(planMonth.trim());
+            from = normalizeSearch(dueFrom).isEmpty() ? null : LocalDate.parse(dueFrom.trim());
+            to = normalizeSearch(dueTo).isEmpty() ? null : LocalDate.parse(dueTo.trim());
+        } catch (java.time.format.DateTimeParseException exception) {
+            throw new BusinessException("計画月はyyyy-MM、納期はyyyy-MM-dd形式で正しく入力してください。");
+        }
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BusinessException("納期の開始日は終了日以前にしてください。");
+        }
+        return orders.stream()
+                .filter(order -> number.isEmpty() || normalizeSearch(order.getOrderNo()).contains(number))
+                .filter(order -> productText.isEmpty() || (order.getProduct() != null
+                        && (normalizeSearch(order.getProduct().getProductName()).contains(productText)
+                        || normalizeSearch(order.getProduct().getModelNo()).contains(productText))))
+                .filter(order -> state.isEmpty() || normalizeSearch(order.getStatus()).equals(state))
+                .filter(order -> month == null || month.equals(order.getPlanMonth()))
+                .filter(order -> from == null || (order.getDueDate() != null && !order.getDueDate().isBefore(from)))
+                .filter(order -> to == null || (order.getDueDate() != null && !order.getDueDate().isAfter(to)))
+                .toList();
+    }
+
+    public boolean hasSearchCondition(String... conditions) {
+        return java.util.Arrays.stream(conditions).anyMatch(value -> !normalizeSearch(value).isEmpty());
+    }
+
+    private String normalizeSearch(String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
     public ProductionOrder getProductionOrderById(Long id) {
         return productionOrderRepository.findById(id)
                 .orElseThrow(() ->
