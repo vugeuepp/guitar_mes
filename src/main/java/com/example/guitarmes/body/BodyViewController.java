@@ -27,15 +27,25 @@ public class BodyViewController {
     }
 
     @GetMapping("/bodies/view")
-    public String bodyList(Model model) {
-
-        model.addAttribute(
-                "bodies",
-                bodyService.getBodies());
-        model.addAttribute(
-                "bodyProcesses",
-                bodyProcessService.getBodyProcesses());
-
+    public String bodyList(
+            @RequestParam(required = false) String serial,
+            @RequestParam(required = false) String modelName,
+            @RequestParam(required = false) String currentProcess,
+            @RequestParam(required = false) String status,
+            Model model) {
+        var allBodies = bodyService.getBodies();
+        var bodies = bodyService.filterBodies(
+                allBodies, serial, modelName, currentProcess, status);
+        model.addAttribute("bodies", bodies);
+        model.addAttribute("bodyProcesses", bodyProcessService.getBodyProcesses());
+        model.addAttribute("serial", serial == null ? "" : serial);
+        model.addAttribute("modelName", modelName == null ? "" : modelName);
+        model.addAttribute("selectedCurrentProcess",
+                currentProcess == null ? "" : currentProcess);
+        model.addAttribute("selectedStatus", status == null ? "" : status);
+        model.addAttribute("filterApplied", bodyService.hasSearchCondition(
+                serial, modelName, currentProcess, status));
+        model.addAttribute("resultCount", bodies.size());
         return "body-list";
     }
 

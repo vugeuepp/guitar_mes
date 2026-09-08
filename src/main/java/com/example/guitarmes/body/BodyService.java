@@ -36,6 +36,36 @@ public class BodyService {
         return bodyRepository.findAll();
     }
 
+    public List<Body> filterBodies(List<Body> bodies, String serial,
+            String model, String currentProcess, String status) {
+        String serialCondition = normalize(serial);
+        String modelCondition = normalize(model);
+        String processCondition = normalize(currentProcess);
+        String statusCondition = normalize(status);
+        return bodies.stream()
+                .filter(body -> serialCondition.isEmpty()
+                        || normalize(body.getSerialNo()).contains(serialCondition))
+                .filter(body -> modelCondition.isEmpty()
+                        || normalize(body.getModelName()).contains(modelCondition))
+                .filter(body -> processCondition.isEmpty()
+                        || normalize(body.getCurrentProcess()).equals(processCondition))
+                .filter(body -> statusCondition.isEmpty()
+                        || normalize(body.getStatus()).equals(statusCondition))
+                .toList();
+    }
+
+    public boolean hasSearchCondition(String serial, String model,
+            String currentProcess, String status) {
+        return !normalize(serial).isEmpty()
+                || !normalize(model).isEmpty()
+                || !normalize(currentProcess).isEmpty()
+                || !normalize(status).isEmpty();
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
     public Body getBodyById(Long id) {
         return findBodyOrThrow(id);
     }
