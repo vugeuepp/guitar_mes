@@ -102,6 +102,10 @@ class BodySearchE2E extends PlaywrightTestBase {
         assertThat(bodyRows(reworkSerial)).hasCount(0);
         assertThat(bodyRows(availableSerial)).hasCount(0);
         assertThat(page.locator("#bulk-start-form")).isVisible();
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .isVisible();
         assertCategoryCountsMatchDatabase();
         captureScreenshot("01-body-active-category.png");
     }
@@ -119,10 +123,21 @@ class BodySearchE2E extends PlaywrightTestBase {
         assertThat(bodyRow(reworkSerial)).isVisible();
         assertThat(bodyRow(returnedSerial)).isVisible();
         assertThat(bodyRows(activeSerial)).hasCount(0);
-        assertThat(page.locator("#bulk-start-form")).hasCount(0);
+        assertThat(page.locator("#bulk-start-form")).isVisible();
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .isVisible();
         assertThat(bodyRow(reworkSerial).getByRole(AriaRole.LINK,
                 new Locator.GetByRoleOptions().setName("工程開始"))).isVisible();
         assertThat(bodyRow(returnedSerial)).containsText("操作不可");
+        page.locator("#processId").selectOption(
+                new com.microsoft.playwright.options.SelectOption()
+                        .setLabel("バフがけ"));
+        assertThat(bodyRow(reworkSerial).locator(".row-checkbox")).isEnabled();
+        assertThat(bodyRow(returnedSerial).locator(".row-checkbox")).isDisabled();
+        bodyRow(reworkSerial).locator(".row-checkbox").check();
+        assertThat(page.locator("#selected-count")).hasText("1");
     }
 
     private void verifyAttentionSearchAndClearKeepsCategory() {
@@ -155,6 +170,10 @@ class BodySearchE2E extends PlaywrightTestBase {
         assertThat(bodyRows(activeSerial)).hasCount(0);
         assertThat(page.locator("#bulk-start-form")).hasCount(0);
         assertThat(page.locator(".row-checkbox")).hasCount(0);
+        assertThat(page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions()
+                        .setName("一括工程終了").setExact(true)))
+                .hasCount(0);
         captureScreenshot("03-body-passed-category.png");
     }
 
