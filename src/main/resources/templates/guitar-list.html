@@ -26,7 +26,7 @@
             ? '複数のギターを選択し、同じ工程を一括開始できます。'
             : '完成済みのギターと製造実績を確認できます。'"></p>
         <div class="page-toolbar-actions">
-            <a class="btn btn-process-end" th:href="@{/processes/end/view}">
+            <a th:if="${category == 'active'}" class="btn btn-process-end" th:href="@{/processes/end/view}">
                 一括工程終了
             </a>
             <a class="btn btn-primary" th:href="@{/production-orders/view}">
@@ -102,7 +102,7 @@
           class="bulk-process-form" id="bulk-start-form">
         <section class="bulk-action-panel guitar-bulk-action-panel">
             <p class="form-help bulk-process-guidance">
-                対象工程を選択すると、一致するギターだけを選択できます。
+                このページ内で、対象工程に一致する処理可能なギターだけを選択できます。ページ移動で選択は解除されます。
             </p>
             <div class="form-group bulk-process-field">
                 <label class="form-label" for="processId">対象工程</label>
@@ -149,7 +149,7 @@
                     <col class="guitar-management-column-detail">
                 </colgroup>
                 <thead><tr>
-                    <th th:if="${category == 'active'}"><input type="checkbox" id="select-all" aria-label="全件選択"></th>
+                    <th th:if="${category == 'active'}"><input type="checkbox" id="select-all" aria-label="このページの処理可能な対象を全選択"></th>
                     <th>シリアル番号</th><th>製品</th><th>現在工程</th>
                     <th>進捗率</th><th>状態</th><th>操作</th><th>詳細</th>
                 </tr></thead>
@@ -164,7 +164,7 @@
                                th:attr="aria-label=${guitar.serialNo + 'を選択'},data-base-eligible=${!guitar.hasRunningProcess and guitar.hasNextProcess}">
                     </td>
                     
-                    <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span></td>
+                    <td><span class="guitar-serial-number" th:text="${guitar.serialNo}"></span><div class="list-timestamps"><div>更新 <span class="list-updated-at" th:text="${guitar.updatedAt == null ? '-' : #temporals.format(guitar.updatedAt, 'yyyy/MM/dd HH:mm')}">-</span></div><div th:if="${category == 'completed'}">完成 <span class="list-event-at" th:text="${guitar.completedAt == null ? '-' : #temporals.format(guitar.completedAt, 'yyyy/MM/dd HH:mm')}">-</span></div></div></td>
                     <td class="guitar-management-product-cell">
                         <div class="guitar-product-name"
                              th:text="${guitar.productName}"
@@ -276,6 +276,7 @@
         update();
     };
 
+    window.addEventListener('pageshow', applyFilter);
     processSelect.addEventListener('change', applyFilter);
     selectAll.addEventListener('change', () => {
         boxes.filter(box => !box.disabled)

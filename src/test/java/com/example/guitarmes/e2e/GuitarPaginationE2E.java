@@ -171,6 +171,9 @@ class GuitarPaginationE2E extends PlaywrightTestBase {
         verifyPage(0, waiting);
         selectAllAndAssertCurrentPage(waiting.subList(0, 20));
         click("#page-next");
+        page.goBack(); page.waitForLoadState();
+        assertThat(page.locator(".row-checkbox:checked")).hasCount(0);
+        click("#page-next");
         verifyPage(1, waiting);
         assertFilters(waitingFilters, 1);
         assertThat(page.locator(".row-checkbox:checked")).hasCount(0);
@@ -247,6 +250,13 @@ class GuitarPaginationE2E extends PlaywrightTestBase {
     }
 
     private void verifyPage(int number, List<String> expected) {
+        for (String serial : serials()) {
+            Row fixture = rows.stream().filter(r -> r.serial().equals(serial)).findFirst().orElseThrow();
+            var row = page.locator("tbody tr").filter(new Locator.FilterOptions().setHas(page.locator(".guitar-serial-number", new com.microsoft.playwright.Page.LocatorOptions().setHasText(serial))));
+            assertThat(row.locator(".list-updated-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.updatedAt()));
+            if (fixture.category().equals("completed")) assertThat(row.locator(".list-event-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.completedAt()));
+        }
+
         int pages = (expected.size() + 19) / 20;
         int end = Math.min(expected.size(), number * 20 + 20);
         assertThat(page.locator("#page-position")).hasText((number + 1) + " / " + pages);

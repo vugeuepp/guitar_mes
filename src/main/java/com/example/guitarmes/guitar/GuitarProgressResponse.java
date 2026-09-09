@@ -1,6 +1,13 @@
 package com.example.guitarmes.guitar;
 
 public class GuitarProgressResponse {
+    private java.time.LocalDateTime updatedAt;
+    private java.time.LocalDateTime completedAt;
+    public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(java.time.LocalDateTime value) { updatedAt = value; }
+    public java.time.LocalDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(java.time.LocalDateTime value) { completedAt = value; }
+
 
     private Long id;
 

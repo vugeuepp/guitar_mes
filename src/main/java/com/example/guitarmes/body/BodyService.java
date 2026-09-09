@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -61,7 +62,7 @@ public class BodyService {
         return bodyRepository.countMatching(searchCriteria(category, null, null, null, null));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Page<Body> searchBodiesPaged(String category,
             String serial, String modelName, String currentProcess, String status, int page) {
         return bodyRepository.search(searchCriteria(category, serial, modelName, currentProcess, status),

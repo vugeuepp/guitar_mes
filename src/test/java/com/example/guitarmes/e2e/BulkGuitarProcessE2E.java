@@ -253,7 +253,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         page.navigate(BASE_URL + "/guitars/view");
         page.waitForLoadState();
         assertThat(page.locator(".guitar-search-panel")).isVisible();
-        page.locator("#serial").fill(firstSerial.substring(0, 12));
+        page.locator("#serial").fill(firstSerial.substring(1));
         page.getByRole(AriaRole.BUTTON,
                 new Page.GetByRoleOptions().setName("検索").setExact(true))
                 .click();
@@ -266,7 +266,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page.locator(".guitar-search-result"))
                 .containsText("1件");
 
-        page.locator("#serial").fill("");
+        page.locator("#serial").fill(firstSerial.substring(firstSerial.lastIndexOf('-') + 1));
         page.locator("#currentProcess")
                 .selectOption(firstProcess.processName());
         page.locator("#status").selectOption("WAITING");
@@ -296,31 +296,35 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page.locator("#status")).hasValue("");
     }
 
+    private void filterFixtures() {
+        page.locator("#serial").fill(firstSerial.substring(firstSerial.lastIndexOf('-') + 1));
+        page.locator(".guitar-search-form button[type=submit]").click();
+        page.waitForLoadState();
+    }
+
     private void openGuitarList() {
         page.navigate(BASE_URL + "/guitars/view");
         page.waitForLoadState();
 
         assertThat(page).hasTitle(Pattern.compile("ギター管理一覧"));
+        filterFixtures();
         assertThat(page.locator("main.page-container")).containsText(firstSerial);
         assertThat(page.locator("main.page-container")).containsText(secondSerial);
         assertThat(guitarRow(firstSerial).locator(".guitar-product-name"))
                 .hasText(productName);
         assertThat(guitarRow(firstSerial).locator(".guitar-product-color"))
                 .hasText(productColor);
-        assertThat(page.locator(".process-badge").first()).isVisible();
-        Number checkboxWidth = (Number) page.locator(
-                ".bulk-checkbox-cell").first().evaluate(
+        assertThat(guitarRow(firstSerial).locator(".process-badge")).isVisible();
+        Number checkboxWidth = (Number) guitarRow(firstSerial).locator(".bulk-checkbox-cell").evaluate(
                         "element => element.getBoundingClientRect().width");
-        Number productWidth = (Number) page.locator(
-                ".guitar-management-product-cell").first().evaluate(
+        Number productWidth = (Number) guitarRow(firstSerial).locator(".guitar-management-product-cell").evaluate(
                         "element => element.getBoundingClientRect().width");
         assertTrue(checkboxWidth.doubleValue()
                         < productWidth.doubleValue() * 0.2,
                 "チェックボックス列は製品列の20%未満である必要があります。");
         assertTrue(productWidth.doubleValue() >= 420.0,
                 "製品列は420px以上である必要があります。");
-        Number checkboxInputWidth = (Number) page.locator(
-                ".bulk-checkbox-cell input").first().evaluate(
+        Number checkboxInputWidth = (Number) guitarRow(firstSerial).locator(".bulk-checkbox-cell input").evaluate(
                         "element => element.getBoundingClientRect().width");
         assertTrue(checkboxInputWidth.doubleValue() <= 20.0,
                 "チェックボックス本体は20px以下である必要があります。");
@@ -345,7 +349,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
         assertThat(page.locator(".bulk-selection-summary"))
                 .containsText("0件");
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("対象工程を選択すると、一致するギターだけを選択できます。");
+                .containsText("このページ内で、対象工程に一致する処理可能なギターだけを選択できます。");
         assertThat(guitarRow(firstSerial).locator("input.row-checkbox")).isDisabled();
         assertThat(guitarRow(secondSerial).locator("input.row-checkbox")).isDisabled();
         assertThat(guitarRow(otherSerial).locator("input.row-checkbox")).isDisabled();
@@ -385,6 +389,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
 
         assertThat(page).hasURL(Pattern.compile(".*/guitars/view"));
         assertThat(page.locator(".success-message")).containsText("2件");
+        filterFixtures();
         assertThat(guitarRow(firstSerial)).containsText("作業中");
         assertThat(guitarRow(secondSerial)).containsText("作業中");
         captureScreenshot("03-bulk-started.png");
@@ -451,6 +456,7 @@ class BulkGuitarProcessE2E extends PlaywrightTestBase {
 
         assertThat(page).hasURL(Pattern.compile(".*/guitars/view"));
         assertThat(page.locator(".success-message")).containsText("2件");
+        filterFixtures();
         assertThat(guitarRow(firstSerial)).containsText(secondProcess.processName());
         assertThat(guitarRow(secondSerial)).containsText(secondProcess.processName());
         captureScreenshot("06-bulk-ended.png");

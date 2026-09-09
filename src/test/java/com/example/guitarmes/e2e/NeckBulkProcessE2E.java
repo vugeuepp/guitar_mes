@@ -200,7 +200,7 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
 
         assertThat(page).hasTitle(Pattern.compile("ネック管理一覧"));
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("対象工程を選択すると、一致する個体だけを選択できます。");
+                .containsText("このページ内で、対象工程に一致する処理可能な個体だけを選択できます。");
         assertThat(neckCheckbox(firstSerial)).isDisabled();
         assertThat(neckCheckbox(secondSerial)).isDisabled();
         assertThat(neckCheckbox(otherSerial)).isDisabled();

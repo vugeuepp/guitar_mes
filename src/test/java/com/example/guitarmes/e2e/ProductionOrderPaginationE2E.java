@@ -205,6 +205,13 @@ class ProductionOrderPaginationE2E extends PlaywrightTestBase {
         return page.locator(".production-order-table .order-number").allTextContents().stream().map(String::trim).toList();
     }
     private void assertPage(String category, int displayPage, List<String> expected, int total) {
+        for (String number : numbers()) {
+            Fixture fixture = fixtures.stream().filter(f -> f.number().equals(number)).findFirst().orElseThrow();
+            var row = page.locator("tbody tr").filter(new com.microsoft.playwright.Locator.FilterOptions().setHas(page.locator(".order-number", new com.microsoft.playwright.Page.LocatorOptions().setHasText(number))));
+            assertThat(row.locator(".list-updated-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.updated()));
+            if (category.equals("completed")) assertThat(row.locator(".list-event-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.completed()));
+        }
+
         assertThat(page.locator("#production-order-page-position")).hasText(displayPage + " / 2");
         assertThat(page.locator(".production-order-table tbody tr")).hasCount(expected.size());
         assertEquals(expected, numbers());

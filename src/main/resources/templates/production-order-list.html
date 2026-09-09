@@ -176,7 +176,7 @@
 
                         <span class="order-number"
                               th:text="${order.orderNo}">
-                        </span>
+                        </span><div class="list-timestamps"><div>更新 <span class="list-updated-at" th:text="${order.updatedAt == null ? '-' : #temporals.format(order.updatedAt, 'yyyy/MM/dd HH:mm')}">-</span></div><div th:if="${category == 'completed'}">完成 <span class="list-event-at" th:text="${order.completedAt == null ? '-' : #temporals.format(order.completedAt, 'yyyy/MM/dd HH:mm')}">-</span></div></div>
 
                     </td>
 

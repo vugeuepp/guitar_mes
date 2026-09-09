@@ -71,6 +71,20 @@ class ProductionOrderRepositorySearchTest {
         return repository.search(criteria, PageRequest.of(page, 20));
     }
 
+    @Test void pageDoesNotLoadUnneededProductRelations() {
+        for (int i = 0; i < 21; i++) order("-PERF-" + i, "PLANNED", "2026-09-30", null, null);
+        em.flush(); em.clear();
+        var stats = em.getEntityManagerFactory().unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        stats.setStatisticsEnabled(true);
+        try {
+            stats.clear();
+            var result = searchPage("active", prefix + "-PERF-", 0);
+            assertEquals(21, result.getTotalElements()); assertEquals(20, result.getNumberOfElements());
+            result.forEach(item -> assertEquals(product.getProductName(), item.getProduct().getProductName()));
+            assertEquals(2, stats.getPrepareStatementCount());
+        } finally { stats.setStatisticsEnabled(false); }
+    }
+
     private void assertPageIds(
             Page<ProductionOrder> page,
             List<ProductionOrder> expected,

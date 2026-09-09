@@ -53,7 +53,10 @@ public class ProductionOrderSearchRepositoryImpl implements ProductionOrderSearc
         root.fetch("product", JoinType.LEFT);
         query.select(root).where(predicates(cb, root, criteria));
         query.orderBy(sort(cb, root, criteria.category()));
-        var typedQuery = entityManager.createQuery(query);
+        var graph = entityManager.createEntityGraph(ProductionOrder.class);
+        graph.addSubgraph("product");
+        var typedQuery = entityManager.createQuery(query)
+                .setHint("jakarta.persistence.fetchgraph", graph);
         typedQuery.setFirstResult(Math.toIntExact(corrected.getOffset()));
         typedQuery.setMaxResults(pageSize);
         return new PageImpl<>(typedQuery.getResultList(), corrected, total);

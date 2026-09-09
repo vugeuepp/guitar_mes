@@ -116,6 +116,9 @@ abstract class ComponentPaginationE2ESupport extends PlaywrightTestBase {
         page.locator("#processId").selectOption(String.valueOf(processId));
         page.locator("#select-all").check();
         assertThat(page.locator(".row-checkbox:checked")).hasCount(20);
+        page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted: true}))");
+        assertThat(page.locator(".row-checkbox:checked")).hasCount(0);
+        page.locator("#select-all").check();
         assertEquals(new HashSet<>(expected.subList(0, 20)), new HashSet<>(serials()));
         // 送信するIDは現在のページ内のみ。実際の業務状態はこのテストでは変更しない。
         @SuppressWarnings("unchecked")
@@ -124,6 +127,9 @@ abstract class ComponentPaginationE2ESupport extends PlaywrightTestBase {
         assertEquals(20, submitted.size());
         assertEquals(ordered("active").stream().filter(r -> expected.subList(0, 20).contains(r.serial()))
                 .map(r -> String.valueOf(r.id())).collect(Collectors.toSet()), new HashSet<>(submitted));
+        click("#page-next");
+        page.goBack(); page.waitForLoadState();
+        assertThat(page.locator(".row-checkbox:checked")).hasCount(0);
         click("#page-next"); verifyPage("active", 1, expected); assertFilters(filters, 1);
         assertThat(page.locator(".row-checkbox:checked")).hasCount(0);
         assertThat(page.locator("#selected-count")).hasText("0");
@@ -175,6 +181,13 @@ abstract class ComponentPaginationE2ESupport extends PlaywrightTestBase {
     }
     private List<String> serials() { return page.locator(".component-serial-number").allTextContents().stream().map(String::trim).toList(); }
     private void verifyPage(String category, int number, List<String> expected) {
+        for (String serial : serials()) {
+            Row fixture = rows.stream().filter(r -> r.serial().equals(serial)).findFirst().orElseThrow();
+            var row = page.locator("tbody tr").filter(new com.microsoft.playwright.Locator.FilterOptions().setHas(page.locator(".component-serial-number", new com.microsoft.playwright.Page.LocatorOptions().setHasText(serial))));
+            assertThat(row.locator(".list-updated-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.updated()));
+            if (category.equals("passed")) assertThat(row.locator(".list-event-at")).hasText(com.example.guitarmes.common.DateTimeFormatterUtil.format(fixture.available()));
+        }
+
         assertThat(page.locator("#page-position")).hasText((number + 1) + " / " + ((expected.size() + 19) / 20));
         int end = Math.min(expected.size(), number * 20 + 20);
         assertThat(page.locator(".component-serial-number")).hasCount(end - number * 20);

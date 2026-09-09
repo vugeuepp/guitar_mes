@@ -22,7 +22,7 @@ class BodyProcessTimestampTest {
     private Body entity(long id) {
         Body item = new Body(); item.setId(id); item.setStatus("WAITING");
         item.setCurrentProcess("パーツ付け"); item.setUpdatedAt(old); item.rememberUpdatedAt();
-        when(entities.findById(id)).thenReturn(Optional.of(item));
+        when(entities.findForUpdate(id)).thenReturn(Optional.of(item));
         return item;
     }
     private void process() {
@@ -53,11 +53,11 @@ class BodyProcessTimestampTest {
     void finalEndUsesSameTimeForHistoryAndAvailability(boolean bulk) {
         process(); Body a = entity(1L); a.setStatus("WORKING");
         BodyProcessHistory h = new BodyProcessHistory(1L, 10L, "Worker", old);
-        when(histories.findById(100L)).thenReturn(Optional.of(h));
+        when(histories.findForUpdate(100L)).thenReturn(Optional.of(h));
         if (bulk) {
             Body b = entity(2L); b.setStatus("WORKING");
             BodyProcessHistory h2 = new BodyProcessHistory(2L, 10L, "Worker", old);
-            when(histories.findById(101L)).thenReturn(Optional.of(h2));
+            when(histories.findForUpdate(101L)).thenReturn(Optional.of(h2));
             service.endProcesses(List.of(100L, 101L), "COMPLETED", "");
             assertEquals(h.getEndTime(), h2.getEndTime());
             assertEquals(h.getEndTime(), b.getAvailableAt());
@@ -77,7 +77,7 @@ class BodyProcessTimestampTest {
         ManufacturingProcess p = new ManufacturingProcess("BODY", "バフがけ", 1); p.setId(10L);
         when(processes.findById(10L)).thenReturn(Optional.of(p));
         BodyProcessHistory h = new BodyProcessHistory(1L, 10L, "Worker", old);
-        when(histories.findById(100L)).thenReturn(Optional.of(h));
+        when(histories.findForUpdate(100L)).thenReturn(Optional.of(h));
         if (bulk) service.endProcesses(List.of(100L), "COMPLETED", "");
         else service.endProcess(100L, "COMPLETED", "");
         assertNotNull(h.getEndTime());

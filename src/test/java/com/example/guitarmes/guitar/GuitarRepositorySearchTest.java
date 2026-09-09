@@ -32,7 +32,10 @@ import jakarta.persistence.EntityManager;
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("e2e")
+@org.springframework.context.annotation.Import({GuitarService.class, com.example.guitarmes.process.ProcessService.class})
 class GuitarRepositorySearchTest {
+    @Autowired GuitarService service;
+    @Autowired com.example.guitarmes.process.ProcessService processService;
     @Autowired EntityManager entityManager;
     @Autowired GuitarRepository repository;
 
@@ -225,6 +228,29 @@ class GuitarRepositorySearchTest {
                 prefix.toLowerCase(Locale.ROOT), "", "", ""), 0, 20);
         assertEquals(List.of(recent2.getId(), recent1.getId(), old.getId(),
                 noTime2.getId(), noTime1.getId()), ids(result));
+    }
+
+    @Test
+    void pageProgressUsesFourQueriesRegardlessOfPageSize() {
+        var order = new com.example.guitarmes.productionorder.ProductionOrder();
+        order.setOrderNo(prefix + "-ORDER"); order.setProduct(product);
+        order.setPlannedQuantity(30); order.setStartedQuantity(0); order.setCompletedQuantity(0);
+        order.setStatus("PLANNED"); order.setPlanMonth(java.time.YearMonth.of(2026, 9)); order.setDueDate(java.time.LocalDate.of(2026, 9, 30)); entityManager.persist(order);
+        for (int i = 0; i < 25; i++) {
+            Guitar guitar = add("-PERF-" + i, "調整・調音", product, null, null);
+            entityManager.createNativeQuery("update t_guitar set production_order_id=:orderId where id=:id")
+                    .setParameter("orderId", order.getId()).setParameter("id", guitar.getId()).executeUpdate();
+        }
+        entityManager.flush(); entityManager.clear();
+        var stats = entityManager.getEntityManagerFactory().unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        stats.setStatisticsEnabled(true);
+        try {
+            stats.clear();
+            var result = service.searchGuitarsPaged(processService, "active", prefix + "-PERF-", "", "", "", 0);
+            assertEquals(20, result.getNumberOfElements()); assertEquals(25, result.getTotalElements());
+            assertTrue(result.getContent().stream().allMatch(row -> row.getProductName().equals(product.getProductName())));
+            assertEquals(4, stats.getPrepareStatementCount(), "count・ページ・工程マスタ・ページ内履歴のみ");
+        } finally { stats.setStatisticsEnabled(false); }
     }
 
     @Test

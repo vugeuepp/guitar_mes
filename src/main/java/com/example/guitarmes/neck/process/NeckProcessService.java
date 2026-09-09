@@ -51,6 +51,13 @@ public class NeckProcessService {
             String workerName) {
         validateWorkerName(workerName);
 
+        Neck neck =
+                neckRepository.findForUpdate(neckId)
+                        .orElseThrow(() ->
+                                new NotFoundException(
+                                        "指定されたネックが存在しません。"));
+
+
         if (historyRepository
                 .existsByNeckIdAndEndTimeIsNull(
                         neckId)) {
@@ -58,12 +65,6 @@ public class NeckProcessService {
             throw new BusinessException(
                     "このネックには現在実施中の工程があります。");
         }
-
-        Neck neck =
-                neckRepository.findById(neckId)
-                        .orElseThrow(() ->
-                                new NotFoundException(
-                                        "指定されたネックが存在しません。"));
 
         ManufacturingProcess process =
                 processRepository.findById(processId)
@@ -111,7 +112,7 @@ public class NeckProcessService {
             String note) {
 
         NeckProcessHistory history =
-                historyRepository.findById(historyId)
+                historyRepository.findForUpdate(historyId)
                         .orElseThrow(() ->
                                 new NotFoundException(
                                         "指定された履歴が存在しません。"));
@@ -123,7 +124,7 @@ public class NeckProcessService {
         }
 
         Neck neck =
-                neckRepository.findById(
+                neckRepository.findForUpdate(
                                 history.getNeckId())
                         .orElseThrow(() ->
                                 new NotFoundException(
@@ -224,6 +225,9 @@ public class NeckProcessService {
             String selectedProcessName) {
 
         validateProcessAvailable(neck);
+        if (!WAITING.equals(neck.getStatus())) {
+            throw new BusinessException("このネックは工程開始可能な状態ではありません。");
+        }
 
         String currentProcess =
                 neck.getCurrentProcess();
@@ -621,8 +625,8 @@ public class NeckProcessService {
         validateIds(neckIds, "工程開始対象を選択してください。");
         validateWorkerName(workerName);
         ManufacturingProcess process = findNeckProcessForBulk(processId);
-        List<Neck> necks = neckIds.stream().distinct()
-                .map(this::findNeckForBulk).toList();
+        List<Neck> necks = neckIds.stream().distinct().sorted()
+                .map(this::findNeckForUpdate).toList();
         for (Neck neck : necks) {
             if (historyRepository.existsByNeckIdAndEndTimeIsNull(neck.getId())) {
                 throw new BusinessException(
@@ -647,8 +651,8 @@ public class NeckProcessService {
     public List<NeckProcessHistory> endProcesses(
             List<Long> historyIds, String result, String note) {
         validateIds(historyIds, "工程終了対象を選択してください。");
-        List<NeckProcessHistory> histories = historyIds.stream().distinct()
-                .map(id -> historyRepository.findById(id).orElseThrow(
+        List<NeckProcessHistory> histories = historyIds.stream().distinct().sorted()
+                .map(id -> historyRepository.findForUpdate(id).orElseThrow(
                         () -> new NotFoundException(
                                 "指定された履歴が存在しません。ID: " + id)))
                 .toList();
@@ -661,13 +665,18 @@ public class NeckProcessService {
         ManufacturingProcess process = findNeckProcessForBulk(processId);
         validateResult(process.getProcessName(), result);
         validateNgNote(result, note);
+        if (histories.stream().anyMatch(h -> h.getEndTime() != null)) {
+            throw new BusinessException("すでに終了した工程が含まれています。");
+        }
+        var lockedEntities = histories.stream().map(h -> h.getNeckId()).distinct().sorted()
+                .collect(java.util.stream.Collectors.toMap(id -> id, this::findNeckForUpdate));
         List<Neck> necks = new ArrayList<>();
         for (NeckProcessHistory history : histories) {
             if (history.getEndTime() != null) {
                 throw new BusinessException(
                         "終了済み工程が含まれています。履歴ID: " + history.getId());
             }
-            necks.add(findNeckForBulk(history.getNeckId()));
+            necks.add(lockedEntities.get(history.getNeckId()));
         }
         LocalDateTime now = LocalDateTime.now();
         for (int i = 0; i < histories.size(); i++) {
@@ -684,6 +693,11 @@ public class NeckProcessService {
 
     public List<NeckProcessHistory> getRunningProcesses() {
         return historyRepository.findByEndTimeIsNull();
+    }
+
+    private Neck findNeckForUpdate(Long id) {
+        return neckRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された個体が存在しません。"));
     }
 
     private Neck findNeckForBulk(Long id) {

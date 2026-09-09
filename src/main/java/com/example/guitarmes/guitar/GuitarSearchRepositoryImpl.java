@@ -55,7 +55,10 @@ public class GuitarSearchRepositoryImpl implements GuitarSearchRepository {
         query.select(root)
                 .where(predicates(query, cb, root, criteria, running))
                 .orderBy(sort(cb, root, criteria.category(), running));
+        var graph = entityManager.createEntityGraph(Guitar.class);
+        graph.addSubgraph("product");
         var rows = entityManager.createQuery(query)
+                .setHint("jakarta.persistence.fetchgraph", graph)
                 .setFirstResult(Math.toIntExact(corrected.getOffset()))
                 .setMaxResults(size)
                 .getResultList();

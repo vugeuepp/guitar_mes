@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
@@ -69,7 +70,7 @@ public class ProductionOrderService {
                 productionOrderRepository.countMatching(criteria));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Page<ProductionOrder> searchProductionOrdersPaged(
             String category,
             String orderNo,
@@ -174,7 +175,8 @@ public class ProductionOrderService {
                     "生産計画の更新内容が指定されていません。");
         }
 
-        ProductionOrder order = getProductionOrderById(id);
+        ProductionOrder order = productionOrderRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された生産計画が存在しません。"));
         validateEditable(order);
         validateRequest(
                 request.getProductId(),
@@ -194,7 +196,8 @@ public class ProductionOrderService {
 
     @Transactional
     public ProductionOrder cancelProductionOrder(Long id) {
-        ProductionOrder order = getProductionOrderById(id);
+        ProductionOrder order = productionOrderRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された生産計画が存在しません。"));
         validateEditable(order);
         order.setStatus(CANCELLED);
         return productionOrderRepository.save(order);

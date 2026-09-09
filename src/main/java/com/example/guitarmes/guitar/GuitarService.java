@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import com.example.guitarmes.assembly.AssemblyService;
 import com.example.guitarmes.exception.BusinessException;
@@ -233,7 +234,7 @@ public class GuitarService {
         return responses;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Page<GuitarProgressResponse> searchGuitarsPaged(
             ProcessService processService,
             String category,
@@ -251,13 +252,14 @@ public class GuitarService {
                 normalize(product),
                 normalize(currentProcess),
                 effectiveStatus);
-        return guitarRepository.search(criteria,
-                PageRequest.of(Math.max(0, page), PAGE_SIZE))
-                .map(guitar -> toProgressResponse(guitar, processService));
+        var result = guitarRepository.search(criteria,
+                PageRequest.of(Math.max(0, page), PAGE_SIZE));
+        var progress = processService.getPageProgress(result.getContent());
+        return result.map(guitar -> toProgressResponse(guitar, progress.get(guitar.getId())));
     }
 
     private GuitarProgressResponse toProgressResponse(
-            Guitar guitar, ProcessService processService) {
+            Guitar guitar, ProcessService.PageProgress progress) {
         Long guitarId = guitar.getId();
         String productName = "-";
         String color = "-";
@@ -265,15 +267,18 @@ public class GuitarService {
             productName = guitar.getProduct().getProductName();
             color = guitar.getProduct().getColor();
         }
-        return new GuitarProgressResponse(
+        var response = new GuitarProgressResponse(
                 guitarId,
                 guitar.getSerialNo(),
                 productName,
                 color,
                 guitar.getCurrentProcess(),
-                processService.getProgressRate(guitarId),
-                processService.hasRunningProcess(guitarId),
-                processService.hasNextProcess(guitarId));
+                progress.progressRate(),
+                progress.running(),
+                progress.hasNext());
+        response.setUpdatedAt(guitar.getUpdatedAt());
+        response.setCompletedAt(guitar.getCompletedAt());
+        return response;
     }
 
     @Transactional(readOnly = true)
