@@ -1,11 +1,12 @@
 # Guitar MES 開発ガイド
 
-このファイルは、リポジトリ全体で作業するAIエージェント向けの共通ルールです。
-ロードマップは計画、引き継ぎメモは時点ごとの記録として参照し、記載された「次回作業」をユーザーからの新しい実行指示と混同しないでください。
+このファイルは、リポジトリ全体で常に守る恒久的な開発ルールです。特にCodexなど、リポジトリを直接参照するAIエージェントは毎回確認してください。
+
+現在のPhase、branch、HEAD、最新テスト結果、次の作業、一時的なAI利用制約は `DEVELOPMENT_HANDOFF.md` を参照してください。このファイルには時点依存の進捗情報を原則として記録しません。
 
 ## プロジェクト
 
-ギター工場向けの製造実行システムです。Java 17 / Spring Boot / Spring MVC / Spring Data JPA / Thymeleaf / PostgreSQLを使用します。ビルドはMaven Wrapper、テストはJUnit・Mockito・MockMvc・Playwrightです。
+Guitar MESはギター工場向けの製造実行システムです。Java 17 / Spring Boot / Spring MVC / Spring Data JPA / Thymeleaf / PostgreSQLを使用します。ビルドはMaven Wrapper、テストはJUnit・Mockito・MockMvc・Playwrightです。
 
 - Java: `src/main/java/com/example/guitarmes/`（機能別パッケージ）
 - HTML: `src/main/resources/templates/`
@@ -14,113 +15,81 @@
 - 計画・作業記録: `引き継ぎ書類/`
 - 実行コマンド例: `コマンド集.txt`
 
+## 文書の責任
+
+- `AGENTS.md`: 恒久ルール。頻繁に書き換えません。
+- `DEVELOPMENT_HANDOFF.md`: 現在地、branch、Phase、latest verification、next candidate、Temporary Constraints。必要に応じて更新します。
+- `COPILOT_WORKFLOW.md`: Copilot利用プロトコル。通常は安定した文書として扱います。
+
+同じ時点情報を複数文書へ複製しません。ロードマップは計画、Handoffは時点ごとの記録として扱い、記載された次回候補をユーザーからの新しい実行指示と混同しないでください。
+
 ## 作業開始時
 
 1. ユーザーが依頼した範囲と、対象コードに適用される指示を確認する。
 2. `git branch --show-current`、`git status --short`、`git diff --check`、`git log --oneline --decorate -5`、`git branch -vv`で状態を確認する。
-3. 関連するロードマップと最新の引き継ぎメモを読む。ファイル名だけでなく本文の作業日・改訂日を見る。
-4. 文書の進捗と実コード・テスト・Git状態を照合する。古いブランチ名、件数、コミット状況を現在の事実として扱わない。ローカルのorigin参照と最新のリモート照会も区別する。
-5. 既存の未コミット変更を保全し、依頼と無関係な変更を混ぜない。
+3. 関連するロードマップ、`DEVELOPMENT_HANDOFF.md`、最新の開発文書を読む。ファイル名だけでなく本文の作業日・改訂日を見る。
+4. 文書の進捗と実コード・テスト・Git状態を照合する。古いbranch、HEAD、件数、commit状況を現在の事実として扱わない。ローカルのorigin参照と最新のリモート照会も区別する。
+5. 既存の未commit変更を保全し、依頼と無関係な変更を混ぜない。
 
-## ツールの役割とCopilot利用フロー
+## AIとユーザーの役割
 
-### 役割分担
+### ChatGPT
 
-- ChatGPT: 設計、仕様整理、push済みのGitHubコード確認、レビュー、テスト方針、Copilot・Codexへの指示作成を担当します。
-- Codex: リポジトリを直接参照する大規模・横断的な実装や調査に使用します。複数機能をまたぐ変更、設計判断が多い変更、リポジトリ全体の調査が必要な変更ではCodexを優先します。
-- Copilot: 小〜中規模で、変更内容が十分具体化された実装の変更案生成に使用します。
-- Mac: 生成した変更の適用、diff確認、Maven・Playwrightの実行、手動UI確認を行います。
+- 設計、仕様整理、計画
+- push済みGitHubコードの確認
+- diffレビュー
+- テスト方針
+- Codex / Copilotへの作業分割・指示
+- 完了判定
 
-### Copilot利用時の基本原則
+### Codex
 
-- このプロジェクトでは、CopilotがGit・GitHub・リポジトリ全体を自力で参照できることや、リポジトリへ直接書き込めることを前提にしません。Bundle外のコードを知っていることも前提にしません。
-- 実装依頼前に、ChatGPT等がpush済みのGitHub最新版、または現在の正しいソースを確認します。確認したソースを基準に作業範囲と必要な関連ファイルを選定し、作業単位ごとにCopilot用Bundleを明示的に提供します。
-- Bundleはその作業時点の最新版から作成します。以前の工程で作った古いBundleを無条件に再利用しません。
-- Bundle内の各ファイルを「変更対象」と「参照のみ」に分類し、Copilotプロンプトにも変更可能ファイルと参照専用ファイルを明記します。
-- プロンプトには「Bundle外の型・メソッド・仕様を推測して実装しないこと」を明記します。情報が不足する場合、Copilotは推測で補わず、必要なファイル名・型・メソッド・仕様を要求します。
-- Copilotの完了報告だけで実装完了と判断しません。生成した変更をMac側で適用してdiffを確認し、対象テストを実行します。追加の検証範囲は「テスト・検証」のルールに従います。
-- commit・push後にChatGPTがGitHub上の実コード差分をレビューし、その結果とテスト・確認結果を合わせて完了を判定します。
+- local repositoryを直接参照する実装
+- repository横断調査
+- 大規模・複数ファイル変更
+- 変更箇所に必要なtargeted testとtargeted validation
 
-### 標準フロー
+### Copilot
 
-1. ChatGPTがGitHub最新版を確認します。ローカルの未push変更を作業基準にする場合は、現在の正しいソースを明示的に共有して確認します。
-2. 作業範囲を決定し、必要な関連ファイルを選定します。
-3. 最新ソースからCopilot用Bundleを作成し、「変更可／参照のみ」を明示します。
-4. Bundleを前提とした具体的なCopilotプロンプトを作成します。
-5. Copilotが変更案を生成します。不足情報があれば、必要な情報を追加提供してから進めます。
-6. Mac側で変更を適用し、diffを確認します。
-7. 対象テストを実行し、「テスト・検証」の基準と変更内容に応じて通常全テスト・E2E・手動UI確認を行います。
-8. commit・push後、ChatGPTがGitHub上の実コード差分をレビューします。
-9. レビューと検証結果に基づき完了を判定します。修正が必要なら該当手順へ戻ります。
+- task-specific Bundleを与えられた小規模から中規模の具体的作業
+- Bundle内で `ROLE: EDITABLE` またはpromptで `ROLE: NEW / EDITABLE` と指定されたファイルだけの変更
+- 変更箇所に必要なtargeted testとtargeted validation
 
-### Bundle形式
+Copilotの詳細な利用手順は `COPILOT_WORKFLOW.md` に従います。
 
-形式は固定しませんが、リポジトリ相対パスによるファイル境界と役割が明確になる形式を推奨します。例:
+### User / Mac
 
-```text
-===== FILE: path/to/File.java =====
-ROLE: EDITABLE
+- 生成された変更の適用
+- local diff確認
+- full normal test
+- full E2E
+- manual UI verification
+- commit
+- push
 
-<source>
+## ChatGPT Delegation Gate
 
-===== FILE: path/to/Reference.java =====
-ROLE: REFERENCE ONLY
+ChatGPTは実装担当を決める前に、次の4点を確認します。
 
-<source>
-```
+1. **Who**: Codex / Copilot / Userの誰が担当するか。
+2. **Source of Truth**: push済みGitHubか、local working tree / uncommitted changesか。
+3. **Scope**: implementation / targeted test / full normal test / full E2E / manual UI / commit / pushの担当範囲。
+4. **Availability**: 担当AIが現在利用可能か。`DEVELOPMENT_HANDOFF.md` のTemporary Constraintsを確認する。
 
-`EDITABLE`は変更対象、`REFERENCE ONLY`は参照専用です。プロンプト側のファイル指定もBundleの役割と一致させます。
+利用できないAIを実装担当として提案しません。Copilotを使用する場合は、implementation promptより先にtask-specific Bundleを作成します。
 
-## 参照資料と現在地
+## Codex Scope Control
 
-2026年9月5日時点の参照資料:
+Codexは実装開始前に次を行います。
 
-- 全体計画: [新開発ロードマップ改訂版](引き継ぎ書類/260902_Guitar_MES_新開発ロードマップ改訂版.md)
-- 進捗記録: [今日のまとめ・引き継ぎメモ](引き継ぎ書類/250905_Guitar_MES_今日のまとめ・引き継ぎメモ.md)
+1. 現在のrepository状態を確認する。
+2. ユーザーから依頼されたscopeを特定する。
+3. 変更予定範囲を決める。
+4. そのscope内で実装する。
 
-### コード・Gitとの照合結果（2026年9月5日確認）
+調査中に関連問題を見つけても、重大なデータ整合性・安全性問題など直ちに扱う必要がある場合を除き、勝手にscopeを大きく広げません。scope拡張が必要な場合は、理由・対象・影響範囲を報告してから進めることを基本とします。
 
-現在地はPhase 5Bの途中です。以下は確認時点の記録であり、次回作業時には再照合してください。コードの静的確認と保存ログの確認を行い、この照合作業ではテスト再実行・DB確認・リモート最新照会はしていません。
-
-実装済みと確認した内容:
-
-- ギター一覧: シリアル部分一致、製品・工程・状態のAND検索。
-- ネック一覧: シリアル・モデル名の部分一致、工程・状態のAND検索。
-- 両検索画面: GET条件保持、件数、クリア、検索0件と未登録の区別。
-- `NeckSearchE2E`の存在と、`AssemblyCreateE2E`の実績一覧をネックシリアルで特定する修正。他の箇所を含むすべての`.first()`を除去したという意味ではありません。
-- ネック取付一括登録: 全ペアの事前検証、数量上限・重複チェック、トランザクション内でのAssembly・Guitar生成と部材状態更新。
-- 通常・E2E設定の`ddl-auto=validate`、E2E設定の専用DB `guitar_mes_e2e`。
-
-未実装・残課題:
-
-- ボディ一覧検索、`BodySearchE2E`、生産計画一覧検索。
-- 作業対象と完了実績の分離、未完了対象のデフォルト表示。現在の主要一覧は検索なしでは全件表示です。
-- 主要一覧のDB検索・ページング。ギター・ネック検索は全件取得後のJava側フィルタです。
-- Phase 4Dの全要件の充足確認。計画数量上限の制御はありますが、生産計画詳細の取付ボタン判定は主に部材発行済み・計画残数ありです。部材不足などロードマップの全条件を満たすかは追加確認が必要で、Phase 4D全体を照合済みと扱わないでください。
-
-次の候補はボディ一覧検索と`BodySearchE2E`、その後に生産計画一覧検索です。Phase 5Bは一覧分類・完了品分離も含むため、検索追加だけで完了と判断しないでください。Phase 5Cは日時・並び順・ページング、以後は工程別作業、認証・権限、品質管理、分析、運用改善です。
-
-資料の読み方:
-
-- 9月2日のロードマップにある「Phase 4Cから開始」は過去の開始地点です。新しい進捗記録とコードを優先します。
-- 最新メモのファイル名は`250905`ですが、本文の作業日は2026年9月5日です。
-- メモのコミット未確認という記載は古く、ネック検索とE2E修正は`e0335f4`にコミット済みと確認しました。
-
-Git確認時点:
-
-- ブランチ: `feature/phase5b-search-filter`、HEAD: `e0335f4 検索機能展開`。
-- ローカル`main`より3コミット先で、検索変更はローカル`main`に未反映。
-- 保存されたorigin参照とは一致しますが、最新のリモート状態は未照会です。
-- `コマンド集.txt`と`引き継ぎ書類/git_status_snapshot.txt`は変更あり。`AGENTS.md`と9月5日の引き継ぎメモは未追跡。ステージ済み変更はなく、`git diff --check`は成功しました。
-- この一覧を次回のGit状態とみなさず、実際の状態を確認してください。
-
-保存ログで確認した過去のテスト結果:
-
-- `logs/test-logs/20260905/console-20260905-171227.log`: 通常テスト246件成功。
-- `logs/test-logs/20260905/console-20260905-171304.log`: 初回E2E15件中1件失敗。
-- `logs/test-logs/20260905/console-20260905-171923.log`: 修正後のAssemblyCreateE2E単体1件成功。
-- `logs/test-logs/20260905/console-20260905-171951.log`: 修正後E2E全15件成功。
-- 最終E2E修正後の通常テスト全件はメモ上未実行です。これらは保存ログの結果であり、現在のコードを再実行した結果ではありません。
+既存コードの命名、import形式、整形、記述スタイルに合わせます。不要な完全修飾名や独自の整形を持ち込みません。
 
 ## 業務ルール
 
@@ -128,14 +97,13 @@ Git確認時点:
 - Guitarは生産計画登録時ではなく、Body・Neckを組み合わせたAssembly登録時に生成します。
 - 検証・計算・保存・トランザクション境界はServiceに置きます。画面の非活性制御だけに頼らずServiceで再検証します。
 - 一括処理は全件検証後に実行し、1件でも不正なら全件ロールバックします。数量超過、二重使用、仕様不一致、無効な計画や状態を防ぎます。
-- 同時操作を考慮し、更新直前にも状態を確認します。
+- 同時操作を考慮し、更新直前にも状態を再検証します。
 
 ## 画面・検索
 
 - Guitar・Body・Neckで操作感を統一し、一括開始では工程を先に選びます。工程変更時に選択を解除し、全件選択は処理可能な対象だけに限定します。
 - 利用者向け表示は内部IDではなく、シリアル番号・注文番号・工程名などを使います。
 - 検索はGETパラメーターで再現可能にし、複数条件はAND検索とします。条件保持、件数表示、クリア、検索0件と未登録の区別を維持します。
-- ギター・ネック検索は2026年9月5日のコード確認時点でJava側の全件取得後フィルタです。DB検索・ソート・ページングへの移行はPhase 5Cと整合させます。
 
 ## DB
 
@@ -145,11 +113,20 @@ Git確認時点:
 
 ## テスト・検証
 
+### 責任分担
+
+「何を検証するか」と「誰がfull suiteを実行するか」を区別します。
+
+- Codex / Copilot: 実装、変更箇所に必要なtargeted test、targeted validation。
+- User / Mac: full normal test、full E2E、manual UI verification。
+
+明示的な理由またはユーザー指示がない限り、CodexまたはCopilotへfull suiteを実行させません。これはcommit前に必要なfull testを省略する意味ではなく、必要なfull normal test / full E2EはUser / Macが実行します。
+
 ### Mac側テストコマンドの提示形式
 
 ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマンドは、以下の標準形式に統一します。Maven Wrapperと `-f "$PROJECT/pom.xml"` を使用し、`-Dstyle.color=always` でターミナルのカラー表示を維持します。
 
-通常テスト全件の例（括弧内のサブシェルで実行し、呼び出し元の設定を変えずに終了コードを返します）:
+通常テスト全件の例:
 
 ```bash
 (
@@ -162,10 +139,8 @@ ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマン�
   LOGFILE="$LOGDIR/console-$RUN_ID.log"
   cd "$PROJECT" || exit 1
   mkdir -p "$LOGDIR" || exit 1
-
   "$PROJECT/mvnw" -f "$PROJECT/pom.xml" -Dstyle.color=always test 2>&1 | tee "$LOGFILE"
   STATUS=$?
-
   printf '終了コード: %s\nログ: %s\n' "$STATUS" "$LOGFILE"
   if [ "$STATUS" -eq 0 ]; then
     printf 'テスト成功\n'
@@ -176,11 +151,11 @@ ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマン�
 )
 ```
 
-- `DAY`・`RUN_ID`・`LOGDIR`・`LOGFILE`を使用し、ログは `logs/test-logs/YYYYMMDD/console-YYYYMMDD-HHMMSS.log` に保存します。各実行で日時を取り直し、同名ログを上書きしないようにします。
+- `DAY`・`RUN_ID`・`LOGDIR`・`LOGFILE`を使用し、ログは `logs/test-logs/YYYYMMDD/console-YYYYMMDD-HHMMSS.log` に保存します。各実行で日時を取り直し、同名ログを上書きしません。
 - `tee`でターミナル表示とログ保存を両立し、`set -o pipefail`でMavenの失敗を検出します。パイプライン直後に `STATUS=$?` を取得し、終了コード・ログパス・日本語の成功／失敗メッセージを表示します。
 - targeted testは標準形式のMaven呼び出しに `-Dtest=対象クラス名` を追加します。複数クラスはカンマ区切りにします。
 - E2Eは `-Dplaywright.headless=true` を追加し、E2E全件はさらに `-Dtest='*E2E'` を指定します。対象E2Eだけの場合は対象クラスを `-Dtest=...` で指定します。ブラウザ対象アプリのURLが既定と異なる場合は `-De2e.base.url=...` も明示します。
-- 通常テスト全件とE2E全件は別々の実行・ログにします。上記の共通部分を省略したMaven呼び出しだけを、実行用の標準コマンドとして提示しません。
+- 通常テスト全件とE2E全件は別々の実行・ログにします。共通部分を省略したMaven呼び出しだけを実行用の標準コマンドとして提示しません。
 
 ### E2Eの実行環境
 
@@ -192,18 +167,27 @@ ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマン�
 - 実行前に既存のPlaywrightTestBase、E2E設定、`コマンド集.txt`で起動方法・前提条件を確認します。
 - 機能変更に応じてService・MockMvcテストを更新・実行します。HTML変更時は対応するPlaywright E2Eも更新・実行します。
 - E2Eはテスト自身が作成したデータを識別して検証・削除します。一覧先頭行、固定件数、一覧順に依存しません。
-- 機能変更のコミット前には通常テスト全件、主要業務フロー変更時にはE2E全件を実行します。検索横展開では対象検索E2Eに加えて既存の一括処理E2Eも確認します。
-- 同じコード状態で必要な全テストをMac側ですでに完走済みの場合、実行結果を確認して扱い、意味のない再実行を要求しません。コード変更・失敗・未確認の影響範囲など再実行が必要な場合は、その理由を示します。
-- Codex自身が実行したテストと、Mac側でユーザーに実行してもらうテストを明確に区別して報告します。
+- 機能変更のcommit前には通常テスト全件、主要業務フロー変更時にはE2E全件を実行します。検索横展開では対象検索E2Eに加えて既存の一括処理E2Eも確認します。
+- 同じコード状態で必要なfull suiteがUser / Macですでに成功済みなら、その結果を確認して扱い、意味のない再実行を要求しません。コード変更、失敗、未確認の影響範囲など再実行が必要な場合は理由を示します。
+- 誰がどの環境で実行した検証かを明確に区別して報告します。
 - 文書のみの変更は参照先・内容・差分を確認します。コードテストを実行したことにはしません。
-- 未実行、失敗、環境上実行できない検証は、その理由とともに報告します。過去の成功を今回の結果として報告しません。
+- 未実行、失敗、環境上実行できない検証は理由とともに報告します。過去の成功を今回の結果として報告しません。
 
 ## 変更の提供と終了時
 
-- ローカル作業では最新の実ファイルを修正基準にします。Copilotへの提供は「ツールの役割とCopilot利用フロー」のBundle運用に従い、その他のファイル共有でも必要に応じてBundleを使用します。
-- パッチを配布する場合は`git apply`対応の標準unified diffを使い、`git apply --check`で確認します。`*** Begin Patch`形式を配布用`.patch`にしません。
-- ZIP提供が必要な大規模変更では、既存運用に合わせて`templates`・`src`・`test`に分け、各区分へ対象ファイルを直接配置します。
-- 変更後は`git diff --check`、`git status --short`、対象差分を確認します。
-- コミットする場合は日本語で変更目的を記述し、対象ファイルを確認します。
-- 引き継ぎには作業日、Phase、変更内容、実行したテストとログ、未実行事項、残課題、確認時点のGit状態、次の候補作業を残します。
-- このファイルには長期的な共通ルールを保ち、日々のログは引き継ぎメモに記録します。参照資料や正式方針が更新されたら該当箇所も更新します。
+- local作業では最新の実ファイルを修正基準にします。Copilot利用時は `COPILOT_WORKFLOW.md` に従います。
+- パッチを配布する場合は `git apply` 対応の標準unified diffを使い、`git apply --check`で確認します。`*** Begin Patch`形式を配布用 `.patch` にしません。
+- ZIP提供が必要な大規模変更では、既存運用に合わせて `templates`・`src`・`test` に分け、各区分へ対象ファイルを直接配置します。
+- 変更後は `git diff --check`、`git status --short`、対象差分を確認します。
+- commitする場合は日本語で変更目的を記述し、対象ファイルを確認します。
+- Handoffには現在地、Phase、変更内容、検証結果、未実行事項、残課題、確認時点のGit状態、次の候補作業、Temporary Constraintsを簡潔に残します。
+
+## ChatGPT Chat Session Reset
+
+ChatGPTも長大なチャット履歴へ依存しません。チャットが長くなった場合、Phaseや大きな作業単位の区切り、または会話が重くなった場合は、Phase途中でも `DEVELOPMENT_HANDOFF.md` を更新して新しいチャットへ移行できます。
+
+新しいチャットでは過去チャットの完全な記憶を前提にせず、次を照合して現在地を再構築します。
+
+1. `DEVELOPMENT_HANDOFF.md`
+2. `AGENTS.md`
+3. actual GitHub / current branch state
