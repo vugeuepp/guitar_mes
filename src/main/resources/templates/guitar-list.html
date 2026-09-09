@@ -198,6 +198,19 @@
                 </tbody>
             </table>
         </div>
+        <nav th:if="${totalPages > 1}" class="component-pagination"
+             aria-label="ギター一覧のページ切替">
+            <a th:if="${hasPrevious}" id="page-previous" class="btn btn-outline" rel="prev"
+               th:href="@{/guitars/view(category=${category},serial=${serial},product=${selectedProduct},currentProcess=${selectedCurrentProcess},status=${selectedStatus},page=${currentPage - 1})}">← 前へ</a>
+            <button th:unless="${hasPrevious}" id="page-previous" class="btn btn-outline"
+                    type="button" disabled>← 前へ</button>
+            <span id="page-position" aria-live="polite"
+                  th:text="${(currentPage + 1) + ' / ' + totalPages}">1 / 2</span>
+            <a th:if="${hasNext}" id="page-next" class="btn btn-outline" rel="next"
+               th:href="@{/guitars/view(category=${category},serial=${serial},product=${selectedProduct},currentProcess=${selectedCurrentProcess},status=${selectedStatus},page=${currentPage + 1})}">次へ →</a>
+            <button th:unless="${hasNext}" id="page-next" class="btn btn-outline"
+                    type="button" disabled>次へ →</button>
+        </nav>
     </div>
     </div>
 </main>
