@@ -127,6 +127,9 @@ class ProductionOrderCancelE2E extends PlaywrightTestBase {
         created.keySet().removeAll(before.keySet());
         assertEquals(1, created.size(), "作成した計画を一意に識別できません。取消操作は行いません。");
         createdOrderNo = created.values().iterator().next();
+        page.locator("#orderNo").fill(createdOrderNo);
+        page.locator(".guitar-search-form button[type=submit]").click();
+        page.waitForLoadState();
         Locator createdRow = page.locator("tbody tr")
                 .filter(new Locator.FilterOptions().setHasText(createdOrderNo));
 

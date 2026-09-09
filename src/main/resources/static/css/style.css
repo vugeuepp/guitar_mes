@@ -3137,3 +3137,13 @@ body {
 @media (max-width: 700px) {
     .guitar-category-tab { padding: 12px 14px; }
 }
+
+/* 生産計画一覧のページ切替 */
+.production-order-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}

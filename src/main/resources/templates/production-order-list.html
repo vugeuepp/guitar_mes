@@ -244,6 +244,19 @@
 
     </div>
 
+            <nav th:if="${totalPages > 1}" class="production-order-pagination"
+                 aria-label="生産計画一覧のページ切替">
+                <a th:if="${hasPrevious}" id="production-order-previous" class="btn btn-outline" rel="prev"
+                   th:href="@{/production-orders/view(category=${category},orderNo=${orderNo},product=${product},status=${selectedStatus},planMonth=${planMonth},dueFrom=${dueFrom},dueTo=${dueTo},page=${currentPage - 1})}">← 前へ</a>
+                <button th:unless="${hasPrevious}" id="production-order-previous" class="btn btn-outline"
+                        type="button" disabled>← 前へ</button>
+                <span id="production-order-page-position" aria-live="polite"
+                      th:text="${(currentPage + 1) + ' / ' + totalPages}">1 / 2</span>
+                <a th:if="${hasNext}" id="production-order-next" class="btn btn-outline" rel="next"
+                   th:href="@{/production-orders/view(category=${category},orderNo=${orderNo},product=${product},status=${selectedStatus},planMonth=${planMonth},dueFrom=${dueFrom},dueTo=${dueTo},page=${currentPage + 1})}">次へ →</a>
+                <button th:unless="${hasNext}" id="production-order-next" class="btn btn-outline"
+                        type="button" disabled>次へ →</button>
+            </nav>
         </div>
     </div>
 </main>
