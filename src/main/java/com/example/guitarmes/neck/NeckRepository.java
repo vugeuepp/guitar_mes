@@ -6,7 +6,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NeckRepository
-        extends JpaRepository<Neck, Long> {
+        extends JpaRepository<Neck, Long>, NeckSearchRepository {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select e from Neck e where e.id = :id")
+    Optional<Neck> findForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
 
     List<Neck> findByStatusNot(
             String status);

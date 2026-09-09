@@ -222,6 +222,7 @@ class GuitarCategoryE2E extends PlaywrightTestBase {
             prepareTestData();
             page.navigate(BASE_URL + "/guitars/view");
             assertThat(page.locator("#category-active")).hasAttribute("aria-current", "page");
+            filterFixtures();
             assertThat(row(firstSerial)).isVisible();
             assertThat(row(completedSerial)).hasCount(0);
             assertCategoryRows(false);
@@ -241,14 +242,17 @@ class GuitarCategoryE2E extends PlaywrightTestBase {
             page.locator(".guitar-search-actions a").click();
             assertThat(page.locator("input[name=category]")).hasValue("active");
             assertThat(page.locator("#status")).hasValue("");
+            filterFixtures();
             assertThat(row(firstSerial)).isVisible(); assertThat(row(completedSerial)).hasCount(0);
             captureScreenshot("01-active.png");
             page.locator("#category-completed").click();
             assertCategoryRows(true);
+            filterFixtures();
             assertThat(row(completedSerial)).isVisible(); assertThat(row(firstSerial)).hasCount(0);
             assertThat(page.locator("#category-completed")).hasAttribute("aria-current", "page");
             assertThat(page.locator("#status")).hasCount(0);
             assertThat(page.locator("#bulk-start-form")).hasCount(0);
+            assertThat(page.locator("a[href='/processes/end/view']")).hasCount(0);
             assertThat(page.locator(".row-checkbox")).hasCount(0);
             page.locator("#serial").fill(completedSerial); page.locator("#product").selectOption(productName);
             page.locator("#currentProcess").selectOption("完成"); search(); page.reload();
@@ -261,14 +265,21 @@ class GuitarCategoryE2E extends PlaywrightTestBase {
             assertThat(page.locator("input[name=category]")).hasValue("completed");
             for (String field : List.of("serial", "product", "currentProcess"))
                 assertThat(page.locator("#" + field)).hasValue("");
+            filterFixtures();
             assertThat(row(completedSerial)).isVisible(); assertThat(row(firstSerial)).hasCount(0);
             page.locator("#serial").fill(firstSerial); search();
             assertThat(page.locator(".empty-state")).containsText("条件に一致する");
             page.locator(".empty-state a").click();
             assertThat(page.locator("input[name=category]")).hasValue("completed");
+            filterFixtures();
             assertThat(row(completedSerial)).isVisible();
         } finally { cleanup(); }
     }
+    private void filterFixtures() {
+        page.locator("#serial").fill(firstSerial.substring(firstSerial.lastIndexOf('-') + 1));
+        search();
+    }
+
     private Locator row(String serial) {
         return page.locator(".guitar-management-table tbody tr")
                 .filter(new Locator.FilterOptions().setHasText(serial));

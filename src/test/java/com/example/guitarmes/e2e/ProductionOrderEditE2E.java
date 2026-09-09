@@ -99,6 +99,9 @@ class ProductionOrderEditE2E extends PlaywrightTestBase {
     private void openProductionOrderList() {
         page.navigate(BASE_URL + "/production-orders/view");
         page.waitForLoadState();
+        page.locator("#orderNo").fill(orderNo);
+        page.locator(".guitar-search-form button[type=submit]").click();
+        page.waitForLoadState();
         assertThat(page).hasTitle(Pattern.compile("生産計画一覧"));
         captureScreenshot("01-list.png");
     }

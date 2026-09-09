@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.guitar;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,25 +34,41 @@ class GuitarCategoryTest {
         assertTrue(service.filterGuitarProgressList(active, "C", "", "", "").isEmpty());
     }
     @Test void controllerDefaultsCountsAndCompletedStatusHandling() throws Exception {
-        GuitarService spy = spy(service);
+        GuitarRepository repository = mock(GuitarRepository.class);
+        GuitarService pagedService = spy(new GuitarService(repository));
         ProcessService process = mock(ProcessService.class);
         AssemblyService assembly = mock(AssemblyService.class);
-        doReturn(all).when(spy).getGuitarProgressList(process, assembly);
+        when(repository.search(any(), any())).thenAnswer(invocation -> {
+            var criteria = (GuitarSearchCriteria) invocation.getArgument(0);
+            var pageable = (org.springframework.data.domain.Pageable) invocation.getArgument(1);
+            List<Guitar> rows = new java.util.ArrayList<>();
+            if ("completed".equals(criteria.category())) {
+                Guitar guitar = new Guitar("C", "完成"); guitar.setId(3L); rows.add(guitar);
+            }
+            return new org.springframework.data.domain.PageImpl<>(rows, pageable, rows.size());
+        });
+        when(repository.countMatching(any())).thenAnswer(invocation ->
+                "completed".equals(((GuitarSearchCriteria) invocation.getArgument(0)).category()) ? 1L : 3L);
+        when(repository.findProductOptions()).thenReturn(List.of("Model"));
+        when(process.getPageProgress(anyList())).thenReturn(java.util.Map.of(
+                3L, new ProcessService.PageProgress(100, false, false)));
         when(process.getAvailableGuitarProcesses()).thenReturn(List.of());
-        var mvc = MockMvcBuilders.standaloneSetup(new GuitarViewController(spy, process, assembly)).build();
+        var mvc = MockMvcBuilders.standaloneSetup(new GuitarViewController(pagedService, process, assembly)).build();
         mvc.perform(get("/guitars/view"))
                 .andExpect(model().attribute("category", "active"))
-                .andExpect(model().attribute("guitars", List.of(waiting, working, unknown)))
-                .andExpect(model().attribute("activeCount", 3)).andExpect(model().attribute("completedCount", 1));
-        mvc.perform(get("/guitars/view").param("category", "completed").param("serial", "C").param("status", "WAITING"))
-                .andExpect(status().isOk()).andExpect(model().attribute("category", "completed"))
-                .andExpect(model().attribute("guitars", List.of(completed)))
-                .andExpect(model().attribute("selectedStatus", "")).andExpect(model().attribute("resultCount", 1))
-                .andExpect(model().attribute("activeCount", 3));
-        mvc.perform(get("/guitars/view").param("category", "completed").param("status", "WORKING"))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("activeCount", 3L))
+                .andExpect(model().attribute("completedCount", 1L));
+        mvc.perform(get("/guitars/view").param("category", "completed").param("status", "WAITING"))
+                .andExpect(model().attribute("selectedStatus", ""))
                 .andExpect(model().attribute("filterApplied", false));
-        mvc.perform(get("/guitars/view").param("category", "invalid").param("serial", "A"))
-                .andExpect(model().attribute("category", "active")).andExpect(model().attribute("resultCount", 1))
-                .andExpect(model().attribute("activeCount", 3));
+        mvc.perform(get("/guitars/view").param("category", "invalid").param("page", "-2"))
+                .andExpect(model().attribute("category", "active"))
+                .andExpect(model().attribute("currentPage", 0));
+        var captor = org.mockito.ArgumentCaptor.forClass(GuitarSearchCriteria.class);
+        verify(repository, atLeastOnce()).search(captor.capture(), any());
+        assertTrue(captor.getAllValues().stream().anyMatch(c -> "completed".equals(c.category()) && c.status().isEmpty()));
+        verify(repository, never()).findAll();
     }
+
 }

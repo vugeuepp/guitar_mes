@@ -187,13 +187,20 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
         }
     }
 
+    private void filterFixtureRows() {
+        page.locator("#serial").fill(firstSerial.substring(firstSerial.lastIndexOf('-') + 1));
+        page.locator(".guitar-search-form button[type=submit]").click();
+        page.waitForLoadState();
+    }
+
     private void openNeckListAndVerifyInitialState() {
         page.navigate(BASE_URL + "/necks/view");
         page.waitForLoadState();
+        filterFixtureRows();
 
         assertThat(page).hasTitle(Pattern.compile("ネック管理一覧"));
         assertThat(page.locator(".bulk-process-guidance"))
-                .containsText("対象工程を選択すると、一致する個体だけを選択できます。");
+                .containsText("このページ内で、対象工程に一致する処理可能な個体だけを選択できます。");
         assertThat(neckCheckbox(firstSerial)).isDisabled();
         assertThat(neckCheckbox(secondSerial)).isDisabled();
         assertThat(neckCheckbox(otherSerial)).isDisabled();
@@ -255,6 +262,7 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasURL(Pattern.compile(".*/necks/view"));
         assertThat(page.locator(".success-message"))
                 .containsText("2件のネック工程を一括開始しました。");
+        filterFixtureRows();
         assertThat(neckRow(firstSerial)).containsText("作業中");
         assertThat(neckRow(secondSerial)).containsText("作業中");
         assertThat(neckRow(otherSerial)).containsText("工程待ち");
@@ -353,6 +361,7 @@ class NeckBulkProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasURL(Pattern.compile(".*/necks/view"));
         assertThat(page.locator(".success-message"))
                 .containsText("2件のネック工程を一括終了しました。");
+        filterFixtureRows();
         assertThat(neckRow(firstSerial)).containsText(FRET_FINISH);
         assertThat(neckRow(firstSerial)).containsText("工程待ち");
         assertThat(neckRow(secondSerial)).containsText(FRET_FINISH);

@@ -27,6 +27,7 @@ class BodySearchE2E extends PlaywrightTestBase {
     private static final String E2E_DB_PASSWORD = System.getProperty(
             "e2e.db.password", "");
     private final List<Long> bodyIds = new ArrayList<>();
+    private String suffix;
     private Long bodyMasterId;
     private String activeSerial;
     private String activeOtherSerial;
@@ -58,7 +59,7 @@ class BodySearchE2E extends PlaywrightTestBase {
 
     private void prepareTestData() throws Exception {
         findReferences();
-        String suffix = String.valueOf(System.currentTimeMillis());
+        suffix = String.valueOf(System.currentTimeMillis());
         activeSerial = "E2EBODY-ACTIVE-A-" + suffix;
         activeOtherSerial = "E2EBODY-ACTIVE-B-" + suffix;
         reworkSerial = "E2EBODY-REWORK-" + suffix;
@@ -91,6 +92,8 @@ class BodySearchE2E extends PlaywrightTestBase {
         }
     }
 
+    private void filterFixtures() { page.locator("#serial").fill(suffix); search(); }
+
     private void verifyDefaultActiveAndCounts() throws Exception {
         page.navigate(BASE_URL + "/bodies/view");
         page.waitForLoadState();
@@ -98,6 +101,7 @@ class BodySearchE2E extends PlaywrightTestBase {
                 .hasAttribute("aria-current", "page");
         assertThat(page.locator("#category-attention")).isVisible();
         assertThat(page.locator("#category-passed")).isVisible();
+        filterFixtures();
         assertThat(bodyRow(activeSerial)).isVisible();
         assertThat(bodyRows(reworkSerial)).hasCount(0);
         assertThat(bodyRows(availableSerial)).hasCount(0);
@@ -120,6 +124,7 @@ class BodySearchE2E extends PlaywrightTestBase {
                 .hasAttribute("aria-current", "page");
         assertThat(page.locator("#serial")).hasValue("");
         assertThat(page.locator("#modelName")).hasValue("");
+        filterFixtures();
         assertThat(bodyRow(reworkSerial)).isVisible();
         assertThat(bodyRow(returnedSerial)).isVisible();
         assertThat(bodyRows(activeSerial)).hasCount(0);
@@ -127,7 +132,7 @@ class BodySearchE2E extends PlaywrightTestBase {
         assertThat(page.getByRole(AriaRole.LINK,
                 new Page.GetByRoleOptions()
                         .setName("一括工程終了").setExact(true)))
-                .isVisible();
+                .hasCount(0);
         assertThat(bodyRow(reworkSerial).getByRole(AriaRole.LINK,
                 new Locator.GetByRoleOptions().setName("工程開始"))).isVisible();
         assertThat(bodyRow(returnedSerial)).containsText("操作不可");
@@ -154,6 +159,7 @@ class BodySearchE2E extends PlaywrightTestBase {
         page.waitForLoadState();
         assertThat(page.locator("input[name=category]")).hasValue("attention");
         assertThat(page.locator("#serial")).hasValue("");
+        filterFixtures();
         assertThat(bodyRow(reworkSerial)).isVisible();
         assertThat(bodyRow(returnedSerial)).isVisible();
         captureScreenshot("02-body-attention-category.png");
@@ -164,6 +170,7 @@ class BodySearchE2E extends PlaywrightTestBase {
         page.waitForLoadState();
         assertThat(page.locator("#category-passed"))
                 .hasAttribute("aria-current", "page");
+        filterFixtures();
         assertThat(bodyRow(availableSerial)).isVisible();
         assertThat(bodyRow(assembledSerial)).isVisible();
         assertThat(bodyRow(rejectedSerial)).isVisible();
@@ -190,6 +197,7 @@ class BodySearchE2E extends PlaywrightTestBase {
                         .setName("検索条件をクリア").setExact(true)).click();
         page.waitForLoadState();
         assertThat(page.locator("input[name=category]")).hasValue("active");
+        filterFixtures();
         assertThat(bodyRow(activeSerial)).isVisible();
     }
 

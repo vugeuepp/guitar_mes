@@ -6,7 +6,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BodyRepository
-        extends JpaRepository<Body, Long> {
+        extends JpaRepository<Body, Long>, BodySearchRepository {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select e from Body e where e.id = :id")
+    Optional<Body> findForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
 
     List<Body> findByStatusNot(
             String status);

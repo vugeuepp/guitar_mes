@@ -42,6 +42,7 @@ class ProcessServiceTest {
     @Mock
     private ProductionOrderRepository orderRepository;
 
+    @Mock private jakarta.persistence.EntityManager entityManager;
     private ProcessService service;
 
     @BeforeEach
@@ -51,6 +52,8 @@ class ProcessServiceTest {
                 guitarRepository,
                 processRepository,
                 orderRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "entityManager", entityManager);
+        org.mockito.Mockito.lenient().when(guitarRepository.findById(any())).thenAnswer(i -> guitarRepository.findForUpdate(i.getArgument(0)));
     }
 
     @Test
@@ -133,11 +136,10 @@ class ProcessServiceTest {
         invalid.setId(11L);
 
         when(processRepository.findById(1L)).thenReturn(Optional.of(process));
-        when(guitarRepository.findById(10L)).thenReturn(Optional.of(valid));
-        when(guitarRepository.findById(11L)).thenReturn(Optional.of(invalid));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(valid));
+        when(guitarRepository.findForUpdate(11L)).thenReturn(Optional.of(invalid));
         when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
                 ProcessTargetConstants.GUITAR)).thenReturn(List.of(process));
-        when(historyRepository.findByEndTimeIsNull()).thenReturn(List.of());
         when(historyRepository.findByGuitarId(10L)).thenReturn(List.of());
 
         assertThrows(
@@ -154,7 +156,7 @@ class ProcessServiceTest {
         Guitar guitar = currentFlowGuitar(10L, GuitarProcessConstants.COMPLETED);
 
         when(processRepository.findById(1L)).thenReturn(Optional.of(process));
-        when(guitarRepository.findById(10L)).thenReturn(Optional.of(guitar));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(guitar));
 
         assertThrows(
                 BusinessException.class,
@@ -171,10 +173,10 @@ class ProcessServiceTest {
         ProcessHistory running = history(100L, 10L, 1L, null);
 
         when(processRepository.findById(1L)).thenReturn(Optional.of(process));
-        when(guitarRepository.findById(10L)).thenReturn(Optional.of(guitar));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(guitar));
         when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
                 ProcessTargetConstants.GUITAR)).thenReturn(List.of(process));
-        when(historyRepository.findByEndTimeIsNull()).thenReturn(List.of(running));
+        when(historyRepository.findByGuitarId(10L)).thenReturn(List.of(running));
 
         assertThrows(
                 BusinessException.class,
@@ -191,10 +193,9 @@ class ProcessServiceTest {
         Guitar guitar = currentFlowGuitar(10L, "ギターパーツ取付");
 
         when(processRepository.findById(2L)).thenReturn(Optional.of(second));
-        when(guitarRepository.findById(10L)).thenReturn(Optional.of(guitar));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(guitar));
         when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
                 ProcessTargetConstants.GUITAR)).thenReturn(List.of(first, second));
-        when(historyRepository.findByEndTimeIsNull()).thenReturn(List.of());
         when(historyRepository.findByGuitarId(10L)).thenReturn(List.of());
 
         assertThrows(
@@ -223,11 +224,11 @@ class ProcessServiceTest {
         ProcessHistory history1 = history(100L, 10L, 1L, null);
         ProcessHistory history2 = history(101L, 11L, 1L, null);
 
-        when(historyRepository.findById(100L)).thenReturn(Optional.of(history1));
-        when(historyRepository.findById(101L)).thenReturn(Optional.of(history2));
+        when(historyRepository.findForUpdate(100L)).thenReturn(Optional.of(history1));
+        when(historyRepository.findForUpdate(101L)).thenReturn(Optional.of(history2));
         when(processRepository.findById(1L)).thenReturn(Optional.of(first));
-        when(guitarRepository.findById(10L)).thenReturn(Optional.of(guitar1));
-        when(guitarRepository.findById(11L)).thenReturn(Optional.of(guitar2));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(guitar1));
+        when(guitarRepository.findForUpdate(11L)).thenReturn(Optional.of(guitar2));
         when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
                 ProcessTargetConstants.GUITAR)).thenReturn(List.of(first, second));
         when(guitarRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -240,6 +241,8 @@ class ProcessServiceTest {
         assertEquals("調整・調音", guitar2.getCurrentProcess());
         assertEquals(true, history1.getEndTime() != null);
         assertEquals(true, history2.getEndTime() != null);
+        assertEquals(history1.getEndTime(), guitar1.getUpdatedAt());
+        assertEquals(history2.getEndTime(), guitar2.getUpdatedAt());
         verify(guitarRepository).saveAll(List.of(guitar1, guitar2));
         verify(historyRepository).saveAll(List.of(history1, history2));
     }
@@ -251,13 +254,13 @@ class ProcessServiceTest {
         ProcessHistory history1 = history(100L, 10L, 1L, null);
         ProcessHistory history2 = history(101L, 11L, 2L, null);
 
-        when(historyRepository.findById(100L)).thenReturn(Optional.of(history1));
-        when(historyRepository.findById(101L)).thenReturn(Optional.of(history2));
+        when(historyRepository.findForUpdate(100L)).thenReturn(Optional.of(history1));
+        when(historyRepository.findForUpdate(101L)).thenReturn(Optional.of(history2));
         when(processRepository.findById(1L)).thenReturn(Optional.of(first));
         when(processRepository.findById(2L)).thenReturn(Optional.of(second));
-        when(guitarRepository.findById(10L))
+        when(guitarRepository.findForUpdate(10L))
                 .thenReturn(Optional.of(currentFlowGuitar(10L, first.getProcessName())));
-        when(guitarRepository.findById(11L))
+        when(guitarRepository.findForUpdate(11L))
                 .thenReturn(Optional.of(currentFlowGuitar(11L, second.getProcessName())));
 
         assertThrows(
@@ -276,7 +279,7 @@ class ProcessServiceTest {
                 1L,
                 LocalDateTime.now());
 
-        when(historyRepository.findById(100L)).thenReturn(Optional.of(completed));
+        when(historyRepository.findForUpdate(100L)).thenReturn(Optional.of(completed));
 
         assertThrows(
                 BusinessException.class,
@@ -286,16 +289,75 @@ class ProcessServiceTest {
         verify(historyRepository, never()).saveAll(any());
     }
 
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void timestampStartEvenWhenCurrentProcessIsUnchanged(boolean bulk) {
+        var process = guitarProcess(1L, "ギターパーツ取付", 1);
+        var guitar = currentFlowGuitar(10L, process.getProcessName());
+        guitar.setUpdatedAt(LocalDateTime.of(2020, 1, 1, 0, 0));
+        guitar.rememberUpdatedAt();
+        prepareStartableGuitar(guitar, process);
+        ProcessHistory result;
+        if (bulk) {
+            when(historyRepository.saveAll(any())).thenAnswer(i -> i.getArgument(0));
+            result = service.startProcesses(List.of(10L), 1L, "Worker").get(0);
+        } else {
+            when(historyRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            result = service.startProcess(10L, 1L, "Worker");
+        }
+        assertEquals(process.getProcessName(), guitar.getCurrentProcess());
+        assertEquals(result.getStartTime(), guitar.getUpdatedAt());
+        guitar.preUpdate();
+        assertEquals(result.getStartTime(), guitar.getUpdatedAt());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void timestampCompletionMatchesHistoryAndProductionOrder(boolean bulk) {
+        var process = guitarProcess(1L, "最終検品", 3);
+        var guitar = currentFlowGuitar(10L, process.getProcessName());
+        guitar.getProductionOrder().setStatus("IN_PROGRESS");
+        var h = history(100L, 10L, 1L, null);
+        when(historyRepository.findForUpdate(100L)).thenReturn(Optional.of(h));
+        when(guitarRepository.findForUpdate(10L)).thenReturn(Optional.of(guitar));
+        when(processRepository.findById(1L)).thenReturn(Optional.of(process));
+        when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
+                ProcessTargetConstants.GUITAR)).thenReturn(List.of(process));
+        if (bulk) {
+            var other = currentFlowGuitar(11L, process.getProcessName());
+            other.setProductionOrder(guitar.getProductionOrder());
+            guitar.getProductionOrder().setPlannedQuantity(2);
+            guitar.getProductionOrder().setStartedQuantity(2);
+            var h2 = history(101L, 11L, 1L, null);
+            when(historyRepository.findForUpdate(101L)).thenReturn(Optional.of(h2));
+            when(guitarRepository.findForUpdate(11L)).thenReturn(Optional.of(other));
+            service.endProcesses(List.of(100L, 101L));
+            assertEquals(h.getEndTime(), h2.getEndTime());
+            assertEquals(h.getEndTime(), other.getCompletedAt());
+        } else {
+            service.endProcess(100L);
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(h.getEndTime());
+        assertEquals(h.getEndTime(), guitar.getUpdatedAt());
+        assertEquals(h.getEndTime(), guitar.getCompletedAt());
+        assertEquals(h.getEndTime(), guitar.getProductionOrder().getUpdatedAt());
+        assertEquals(h.getEndTime(), guitar.getProductionOrder().getCompletedAt());
+        assertEquals("COMPLETED", guitar.getProductionOrder().getStatus());
+        guitar.preUpdate(); guitar.getProductionOrder().preUpdate();
+        assertEquals(h.getEndTime(), guitar.getUpdatedAt());
+        assertEquals(h.getEndTime(), guitar.getProductionOrder().getUpdatedAt());
+    }
+
     private void prepareStartableGuitar(
             Guitar guitar,
             ManufacturingProcess process) {
         when(processRepository.findById(process.getId()))
                 .thenReturn(Optional.of(process));
-        when(guitarRepository.findById(guitar.getId()))
+        when(guitarRepository.findForUpdate(guitar.getId()))
                 .thenReturn(Optional.of(guitar));
         when(processRepository.findByTargetTypeOrderByProcessOrderAsc(
                 ProcessTargetConstants.GUITAR)).thenReturn(List.of(process));
-        when(historyRepository.findByEndTimeIsNull()).thenReturn(List.of());
         when(historyRepository.findByGuitarId(guitar.getId())).thenReturn(List.of());
     }
 

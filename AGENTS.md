@@ -22,6 +22,55 @@
 4. 文書の進捗と実コード・テスト・Git状態を照合する。古いブランチ名、件数、コミット状況を現在の事実として扱わない。ローカルのorigin参照と最新のリモート照会も区別する。
 5. 既存の未コミット変更を保全し、依頼と無関係な変更を混ぜない。
 
+## ツールの役割とCopilot利用フロー
+
+### 役割分担
+
+- ChatGPT: 設計、仕様整理、push済みのGitHubコード確認、レビュー、テスト方針、Copilot・Codexへの指示作成を担当します。
+- Codex: リポジトリを直接参照する大規模・横断的な実装や調査に使用します。複数機能をまたぐ変更、設計判断が多い変更、リポジトリ全体の調査が必要な変更ではCodexを優先します。
+- Copilot: 小〜中規模で、変更内容が十分具体化された実装の変更案生成に使用します。
+- Mac: 生成した変更の適用、diff確認、Maven・Playwrightの実行、手動UI確認を行います。
+
+### Copilot利用時の基本原則
+
+- このプロジェクトでは、CopilotがGit・GitHub・リポジトリ全体を自力で参照できることや、リポジトリへ直接書き込めることを前提にしません。Bundle外のコードを知っていることも前提にしません。
+- 実装依頼前に、ChatGPT等がpush済みのGitHub最新版、または現在の正しいソースを確認します。確認したソースを基準に作業範囲と必要な関連ファイルを選定し、作業単位ごとにCopilot用Bundleを明示的に提供します。
+- Bundleはその作業時点の最新版から作成します。以前の工程で作った古いBundleを無条件に再利用しません。
+- Bundle内の各ファイルを「変更対象」と「参照のみ」に分類し、Copilotプロンプトにも変更可能ファイルと参照専用ファイルを明記します。
+- プロンプトには「Bundle外の型・メソッド・仕様を推測して実装しないこと」を明記します。情報が不足する場合、Copilotは推測で補わず、必要なファイル名・型・メソッド・仕様を要求します。
+- Copilotの完了報告だけで実装完了と判断しません。生成した変更をMac側で適用してdiffを確認し、対象テストを実行します。追加の検証範囲は「テスト・検証」のルールに従います。
+- commit・push後にChatGPTがGitHub上の実コード差分をレビューし、その結果とテスト・確認結果を合わせて完了を判定します。
+
+### 標準フロー
+
+1. ChatGPTがGitHub最新版を確認します。ローカルの未push変更を作業基準にする場合は、現在の正しいソースを明示的に共有して確認します。
+2. 作業範囲を決定し、必要な関連ファイルを選定します。
+3. 最新ソースからCopilot用Bundleを作成し、「変更可／参照のみ」を明示します。
+4. Bundleを前提とした具体的なCopilotプロンプトを作成します。
+5. Copilotが変更案を生成します。不足情報があれば、必要な情報を追加提供してから進めます。
+6. Mac側で変更を適用し、diffを確認します。
+7. 対象テストを実行し、「テスト・検証」の基準と変更内容に応じて通常全テスト・E2E・手動UI確認を行います。
+8. commit・push後、ChatGPTがGitHub上の実コード差分をレビューします。
+9. レビューと検証結果に基づき完了を判定します。修正が必要なら該当手順へ戻ります。
+
+### Bundle形式
+
+形式は固定しませんが、リポジトリ相対パスによるファイル境界と役割が明確になる形式を推奨します。例:
+
+```text
+===== FILE: path/to/File.java =====
+ROLE: EDITABLE
+
+<source>
+
+===== FILE: path/to/Reference.java =====
+ROLE: REFERENCE ONLY
+
+<source>
+```
+
+`EDITABLE`は変更対象、`REFERENCE ONLY`は参照専用です。プロンプト側のファイル指定もBundleの役割と一致させます。
+
 ## 参照資料と現在地
 
 2026年9月5日時点の参照資料:
@@ -96,30 +145,62 @@ Git確認時点:
 
 ## テスト・検証
 
-リポジトリ直下での基本コマンド:
+### Mac側テストコマンドの提示形式
+
+ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマンドは、以下の標準形式に統一します。Maven Wrapperと `-f "$PROJECT/pom.xml"` を使用し、`-Dstyle.color=always` でターミナルのカラー表示を維持します。
+
+通常テスト全件の例（括弧内のサブシェルで実行し、呼び出し元の設定を変えずに終了コードを返します）:
 
 ```bash
-# 通常テスト
-./mvnw test
+(
+  set +e
+  set -o pipefail
+  PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+  RUN_ID=$(date +%Y%m%d-%H%M%S)
+  DAY=${RUN_ID%-*}
+  LOGDIR="$PROJECT/logs/test-logs/$DAY"
+  LOGFILE="$LOGDIR/console-$RUN_ID.log"
+  cd "$PROJECT" || exit 1
+  mkdir -p "$LOGDIR" || exit 1
 
-# 対象E2E（例）
-./mvnw -Dplaywright.headless=true -Dtest=NeckSearchE2E test
+  "$PROJECT/mvnw" -f "$PROJECT/pom.xml" -Dstyle.color=always test 2>&1 | tee "$LOGFILE"
+  STATUS=$?
 
-# E2E全件
-./mvnw -Dplaywright.headless=true -Dtest='*E2E' test
+  printf '終了コード: %s\nログ: %s\n' "$STATUS" "$LOGFILE"
+  if [ "$STATUS" -eq 0 ]; then
+    printf 'テスト成功\n'
+  else
+    printf 'テスト失敗（ログ保存の失敗も含む）。ログを確認してください。\n'
+  fi
+  exit "$STATUS"
+)
 ```
+
+- `DAY`・`RUN_ID`・`LOGDIR`・`LOGFILE`を使用し、ログは `logs/test-logs/YYYYMMDD/console-YYYYMMDD-HHMMSS.log` に保存します。各実行で日時を取り直し、同名ログを上書きしないようにします。
+- `tee`でターミナル表示とログ保存を両立し、`set -o pipefail`でMavenの失敗を検出します。パイプライン直後に `STATUS=$?` を取得し、終了コード・ログパス・日本語の成功／失敗メッセージを表示します。
+- targeted testは標準形式のMaven呼び出しに `-Dtest=対象クラス名` を追加します。複数クラスはカンマ区切りにします。
+- E2Eは `-Dplaywright.headless=true` を追加し、E2E全件はさらに `-Dtest='*E2E'` を指定します。対象E2Eだけの場合は対象クラスを `-Dtest=...` で指定します。ブラウザ対象アプリのURLが既定と異なる場合は `-De2e.base.url=...` も明示します。
+- 通常テスト全件とE2E全件は別々の実行・ログにします。上記の共通部分を省略したMaven呼び出しだけを、実行用の標準コマンドとして提示しません。
+
+### E2Eの実行環境
+
+- ブラウザ対象アプリをe2e profileで起動し、アプリとテストセットアップの両方が同じ専用DB `guitar_mes_e2e` を使用することを確認します。Dev profileのアプリを起動したままE2Eを実行しません。
+- Eclipse運用では「Devを停止 → GuitarMES - E2Eを起動 → E2E実行 → E2E停止 → 必要ならDevへ戻す」を基本とします。
+
+### 検証範囲と結果の扱い
 
 - 実行前に既存のPlaywrightTestBase、E2E設定、`コマンド集.txt`で起動方法・前提条件を確認します。
 - 機能変更に応じてService・MockMvcテストを更新・実行します。HTML変更時は対応するPlaywright E2Eも更新・実行します。
 - E2Eはテスト自身が作成したデータを識別して検証・削除します。一覧先頭行、固定件数、一覧順に依存しません。
 - 機能変更のコミット前には通常テスト全件、主要業務フロー変更時にはE2E全件を実行します。検索横展開では対象検索E2Eに加えて既存の一括処理E2Eも確認します。
-- 最終の通常テスト・E2E全件ログは `logs/test-logs/<日付>/` に日時付きで保存します。`tee`使用時は`set -o pipefail`で失敗を見落とさないようにします。
+- 同じコード状態で必要な全テストをMac側ですでに完走済みの場合、実行結果を確認して扱い、意味のない再実行を要求しません。コード変更・失敗・未確認の影響範囲など再実行が必要な場合は、その理由を示します。
+- Codex自身が実行したテストと、Mac側でユーザーに実行してもらうテストを明確に区別して報告します。
 - 文書のみの変更は参照先・内容・差分を確認します。コードテストを実行したことにはしません。
 - 未実行、失敗、環境上実行できない検証は、その理由とともに報告します。過去の成功を今回の結果として報告しません。
 
 ## 変更の提供と終了時
 
-- ローカル作業では最新の実ファイルを修正基準にします。Bundleはファイル共有方式が必要な場合に使用します。
+- ローカル作業では最新の実ファイルを修正基準にします。Copilotへの提供は「ツールの役割とCopilot利用フロー」のBundle運用に従い、その他のファイル共有でも必要に応じてBundleを使用します。
 - パッチを配布する場合は`git apply`対応の標準unified diffを使い、`git apply --check`で確認します。`*** Begin Patch`形式を配布用`.patch`にしません。
 - ZIP提供が必要な大規模変更では、既存運用に合わせて`templates`・`src`・`test`に分け、各区分へ対象ファイルを直接配置します。
 - 変更後は`git diff --check`、`git status --short`、対象差分を確認します。

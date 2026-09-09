@@ -56,18 +56,67 @@ class AssemblyServiceTest {
         ProductionSchedule other = schedule(order, 11L);
         Body body = body(order, selected);
         Neck neck = neck(order, other);
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(productionScheduleRepository.findById(10L))
                 .thenReturn(Optional.of(selected));
-        when(bodyRepository.findById(20L)).thenReturn(Optional.of(body));
-        when(neckRepository.findById(30L)).thenReturn(Optional.of(neck));
+        when(bodyRepository.findForUpdate(20L)).thenReturn(Optional.of(body));
+        when(neckRepository.findForUpdate(30L)).thenReturn(Optional.of(neck));
 
         BusinessException exception = assertThrows(
                 BusinessException.class,
                 () -> service.createAssembly(
                         1L, 10L, 30L, 20L, "Worker"));
         assertTrue(exception.getMessage().contains("同じ日産計画"));
+    }
+
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void assemblyPreservesAvailabilityAndSharesActivityTime(boolean bulk) {
+        ProductionOrder order = order();
+        ProductionSchedule selected = schedule(order, 10L);
+        Body body = body(order, selected);
+        Neck neck = neck(order, selected);
+        var available = java.time.LocalDateTime.of(2020, 1, 1, 0, 0);
+        body.setAvailableAt(available); neck.setAvailableAt(available);
+        body.setUpdatedAt(available); neck.setUpdatedAt(available);
+        body.rememberUpdatedAt(); neck.rememberUpdatedAt();
+        when(productionOrderRepository.findForUpdate(1L)).thenReturn(Optional.of(order));
+        when(productionScheduleRepository.findById(10L)).thenReturn(Optional.of(selected));
+        when(bodyRepository.findForUpdate(20L)).thenReturn(Optional.of(body));
+        when(neckRepository.findForUpdate(30L)).thenReturn(Optional.of(neck));
+        when(guitarService.createGuitar(order)).thenReturn(new com.example.guitarmes.guitar.Guitar());
+        Assembly result;
+        if (bulk) {
+            when(assemblyRepository.saveAll(org.mockito.ArgumentMatchers.any())).thenAnswer(i -> i.getArgument(0));
+            order.setPlannedQuantity(2);
+            selected.setPlannedQuantity(2);
+            Body secondBody = body(order, selected); secondBody.setId(21L);
+            Neck secondNeck = neck(order, selected); secondNeck.setId(31L);
+            secondBody.setAvailableAt(available); secondNeck.setAvailableAt(available);
+            when(bodyRepository.findForUpdate(21L)).thenReturn(Optional.of(secondBody));
+            when(neckRepository.findForUpdate(31L)).thenReturn(Optional.of(secondNeck));
+            var assemblies = service.createAssemblies(1L, 10L,
+                    java.util.List.of(30L, 31L), java.util.List.of(20L, 21L), "Worker");
+            result = assemblies.get(0);
+            org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), assemblies.get(1).getAssemblyDate());
+            org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), secondBody.getUpdatedAt());
+            org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), secondNeck.getUpdatedAt());
+            org.junit.jupiter.api.Assertions.assertEquals(available, secondBody.getAvailableAt());
+            org.junit.jupiter.api.Assertions.assertEquals(available, secondNeck.getAvailableAt());
+        } else {
+            when(assemblyRepository.save(org.mockito.ArgumentMatchers.any())).thenAnswer(i -> i.getArgument(0));
+            result = service.createAssembly(1L, 10L, 30L, 20L, "Worker");
+        }
+        org.junit.jupiter.api.Assertions.assertEquals("ASSEMBLED", body.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("ASSEMBLED", neck.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(available, body.getAvailableAt());
+        org.junit.jupiter.api.Assertions.assertEquals(available, neck.getAvailableAt());
+        body.preUpdate(); neck.preUpdate(); order.preUpdate();
+        org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), body.getUpdatedAt());
+        org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), neck.getUpdatedAt());
+        org.junit.jupiter.api.Assertions.assertEquals(result.getAssemblyDate(), order.getUpdatedAt());
     }
 
     private ProductionOrder order() {
@@ -127,13 +176,13 @@ class AssemblyServiceTest {
         Neck neck = new Neck();
         neck.setId(30L);
 
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(productionScheduleRepository.findById(10L))
                 .thenReturn(Optional.of(selected));
-        when(bodyRepository.findById(20L))
+        when(bodyRepository.findForUpdate(20L))
                 .thenReturn(Optional.of(body));
-        when(neckRepository.findById(30L))
+        when(neckRepository.findForUpdate(30L))
                 .thenReturn(Optional.of(neck));
 
         BusinessException exception = assertThrows(
@@ -150,7 +199,7 @@ class AssemblyServiceTest {
     void createAssemblies_duplicateNeck_throws() {
         ProductionOrder order = minimalOrder(3, 0);
         ProductionSchedule selected = schedule(order, 10L);
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(productionScheduleRepository.findById(10L))
                 .thenReturn(Optional.of(selected));
@@ -174,7 +223,7 @@ class AssemblyServiceTest {
     void createAssemblies_overRemainingQuantity_throws() {
         ProductionOrder order = minimalOrder(2, 1);
         ProductionSchedule selected = schedule(order, 10L);
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(productionScheduleRepository.findById(10L))
                 .thenReturn(Optional.of(selected));

@@ -1,87 +1,85 @@
 package com.example.guitarmes.neck;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.*;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import com.example.guitarmes.neck.process.NeckProcessService;
-import com.example.guitarmes.master.neck.NeckMasterService;
 
 class NeckViewControllerTest {
     @Test
-    void defaultsCountsCategoriesAndPreservesSearchConditions() throws Exception {
-        Neck active = neck("DB-ACTIVE", "Active Model", "PLEK", "WAITING");
-        Neck attention = neck("DB-ATTENTION", "Attention Model", "PLEK", "RETURNED");
-        Neck returned = neck("DB-RETURNED", "Returned Model", "塗装前", "RETURNED");
-        Neck passed = neck("DB-PASSED", "Passed Model", "組立待ち", "AVAILABLE");
-        Neck rejected = neck("DB-REJECTED", "Rejected Model", "製造終了", "REJECTED");
-
-        NeckRepository repository = mock(NeckRepository.class);
-        when(repository.findAll()).thenReturn(
-                List.of(active, attention, returned, passed, rejected));
-        NeckProcessService processes = mock(NeckProcessService.class);
-        when(processes.getNeckProcesses()).thenReturn(List.of());
-        var mvc = MockMvcBuilders.standaloneSetup(new NeckViewController(
-                new NeckService(repository, null),
-                mock(NeckMasterService.class), processes)).build();
-
+    void correctedPagesCountsAndInputsArePreserved() throws Exception {
+        var repository = mock(NeckRepository.class);
+        var service = new NeckService(repository, null);
+        var rows = List.of(new Neck());
+        when(repository.search(any(), any())).thenAnswer(call -> {
+            Pageable requested = call.getArgument(1);
+            return new PageImpl<>(rows, PageRequest.of(Math.min(requested.getPageNumber(), 1), 20), 21);
+        });
+        when(repository.countMatching(any())).thenReturn(42L);
+        var processes = mock(NeckProcessService.class);
+        var mvc = MockMvcBuilders.standaloneSetup(new NeckViewController(service, null, processes)).build();
         mvc.perform(get("/necks/view"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("neck-list"))
                 .andExpect(model().attribute("category", "active"))
-                .andExpect(model().attribute("necks", List.of(active)))
-                .andExpect(model().attribute("activeCount", 1))
-                .andExpect(model().attribute("attentionCount", 2))
-                .andExpect(model().attribute("passedCount", 2))
-                .andExpect(model().attribute("resultCount", 1))
+                .andExpect(model().attribute("currentPage", 0))
                 .andExpect(model().attribute("filterApplied", false));
-
-        mvc.perform(get("/necks/view")
-                        .param("category", "attention")
-                        .param("serial", "ATTENTION")
-                        .param("modelName", "Attention")
-                        .param("currentProcess", "PLEK")
-                        .param("status", "RETURNED"))
-                .andExpect(model().attribute("category", "attention"))
-                .andExpect(model().attribute("necks", List.of(attention)))
-                .andExpect(model().attribute("resultCount", 1))
-                .andExpect(model().attribute("serial", "ATTENTION"))
-                .andExpect(model().attribute("modelName", "Attention"))
-                .andExpect(model().attribute("selectedCurrentProcess", "PLEK"))
-                .andExpect(model().attribute("selectedStatus", "RETURNED"))
-                .andExpect(model().attribute("filterApplied", true))
-                .andExpect(model().attribute("attentionCount", 2));
-
-        mvc.perform(get("/necks/view")
-                        .param("category", "active")
-                        .param("status", "REJECTED"))
-                .andExpect(model().attribute("category", "active"))
-                .andExpect(model().attribute("necks", List.of()))
-                .andExpect(model().attribute("resultCount", 0));
-
-        for (String category : List.of("", " ", "invalid", "undefined")) {
-            mvc.perform(get("/necks/view").param("category", category))
-                    .andExpect(model().attribute("category", "active"))
-                    .andExpect(model().attribute("necks", List.of(active)));
+        for (String category : List.of("active", "attention", "passed")) {
+            mvc.perform(get("/necks/view").param("category", category).param("page", "999")
+                    .param("serial", " SERIAL ").param("modelName", " Model ")
+                    .param("currentProcess", " Process ").param("status", "WAITING"))
+                    .andExpect(status().isOk()).andExpect(view().name("neck-list"))
+                    .andExpect(model().attribute("necks", rows))
+                    .andExpect(model().attribute("category", category))
+                    .andExpect(model().attribute("currentPage", 1))
+                    .andExpect(model().attribute("pageSize", 20))
+                    .andExpect(model().attribute("totalPages", 2))
+                    .andExpect(model().attribute("resultCount", 21L))
+                    .andExpect(model().attribute("hasPrevious", true))
+                    .andExpect(model().attribute("hasNext", false))
+                    .andExpect(model().attribute("activeCount", 42L))
+                    .andExpect(model().attribute("attentionCount", 42L))
+                    .andExpect(model().attribute("passedCount", 42L))
+                    .andExpect(model().attribute("serial", " SERIAL "))
+                    .andExpect(model().attribute("modelName", " Model "))
+                    .andExpect(model().attribute("selectedCurrentProcess", " Process "))
+                    .andExpect(model().attribute("selectedStatus", "WAITING"))
+                    .andExpect(model().attribute("filterApplied", true));
         }
-
-        mvc.perform(get("/necks/view").param("category", "passed"))
-                .andExpect(model().attribute("category", "passed"))
-                .andExpect(model().attribute("necks", List.of(passed, rejected)))
-                .andExpect(model().attribute("resultCount", 2));
+        mvc.perform(get("/necks/view").param("category", "unknown").param("page", "-1"))
+                .andExpect(model().attribute("category", "active"))
+                .andExpect(model().attribute("currentPage", 0));
+        verify(repository, never()).findAll();
     }
 
-    private Neck neck(String serial, String model, String process, String status) {
-        Neck neck = new Neck();
-        neck.setSerialNo(serial);
-        neck.setModelName(model);
-        neck.setCurrentProcess(process);
-        neck.setStatus(status);
-        return neck;
+    @Test
+    void serviceNormalizesInputAndUsesFixedPageSize() {
+        var repository = mock(NeckRepository.class);
+        var service = new NeckService(repository, null);
+        service.searchNecksPaged(" invalid ", " Ab%_! ", null, " Proc ", " WAITING ", -10);
+        verify(repository).search(new NeckSearchCriteria("active", service.getCategoryStatuses("active"),
+                "ab%_!", "", "proc", "waiting"), PageRequest.of(0, 20));
+        service.countCategory("PASSED");
+        verify(repository).countMatching(new NeckSearchCriteria("passed", service.getCategoryStatuses("passed"),
+                "", "", "", ""));
+    }
+
+    @Test
+    void zeroResultsUseCorrectedEmptyPage() throws Exception {
+        var repository = mock(NeckRepository.class);
+        when(repository.search(any(), any())).thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+        var mvc = MockMvcBuilders.standaloneSetup(new NeckViewController(new NeckService(repository, null),
+                null, mock(NeckProcessService.class))).build();
+        mvc.perform(get("/necks/view").param("serial", "missing").param("page", "8"))
+                .andExpect(model().attribute("necks", List.of()))
+                .andExpect(model().attribute("resultCount", 0L))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 0))
+                .andExpect(model().attribute("hasNext", false))
+                .andExpect(model().attribute("hasPrevious", false))
+                .andExpect(model().attribute("filterApplied", true));
     }
 }

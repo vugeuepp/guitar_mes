@@ -44,12 +44,13 @@ public class BodyProcessService {
     @Transactional
     public BodyProcessHistory startProcess(Long bodyId, Long processId, String workerName) {
         validateWorkerName(workerName);
+        Body body = bodyRepository.findForUpdate(bodyId)
+                        .orElseThrow(() ->new NotFoundException("指定されたボディが存在しません。"));
+
+
         if (historyRepository.existsByBodyIdAndEndTimeIsNull(bodyId)) {
             throw new BusinessException("このボディには現在実施中の工程があります。");
         }
-
-        Body body = bodyRepository.findById(bodyId)
-                        .orElseThrow(() ->new NotFoundException("指定されたボディが存在しません。"));
 
         ManufacturingProcess process = processRepository.findById(processId)
         		        .orElseThrow(() -> new NotFoundException("指定された工程が存在しません。"));
@@ -67,6 +68,8 @@ public class BodyProcessService {
 
         body.setStatus(WORKING);
 
+        body.setUpdatedAt(history.getStartTime());
+
         bodyRepository.save(body);
 
         return historyRepository.save(history);
@@ -75,14 +78,14 @@ public class BodyProcessService {
     @Transactional
     public BodyProcessHistory endProcess(Long historyId, String result, String note) {
 
-        BodyProcessHistory history = historyRepository.findById(historyId)
+        BodyProcessHistory history = historyRepository.findForUpdate(historyId)
                         .orElseThrow(() -> new NotFoundException("指定された履歴が存在しません。"));
 
         if (history.getEndTime() != null) {
             throw new BusinessException("この工程はすでに終了しています。");
         }
 
-        Body body = bodyRepository.findById(history.getBodyId())
+        Body body = bodyRepository.findForUpdate(history.getBodyId())
                         .orElseThrow(() -> new NotFoundException("指定されたボディが存在しません。"));
 
         ManufacturingProcess process = processRepository.findById(history.getProcessId())
@@ -99,7 +102,7 @@ public class BodyProcessService {
         history.setNote(note);
         history.setEndTime(LocalDateTime.now());
 
-        updateBodyAfterProcess(body, process.getProcessName(), result);
+        updateBodyAfterProcess(body, process.getProcessName(), result, history.getEndTime());
 
         bodyRepository.save(body);
         return historyRepository.save(history);
@@ -201,7 +204,11 @@ public class BodyProcessService {
 	    }
 	
 	    private void validateStartableProcess(Body body, String selectedProcessName) {
-	        String currentProcess = body.getCurrentProcess();
+	        if (!WAITING.equals(body.getStatus()) && !WAITING_INSPECTION.equals(body.getStatus())
+                && !REWORK.equals(body.getStatus())) {
+            throw new BusinessException("このボディは工程開始可能な状態ではありません。");
+        }
+        String currentProcess = body.getCurrentProcess();
 	
 	        if (currentProcess == null || currentProcess.isBlank()) {
 	            throw new BusinessException("このボディの現在工程が設定されていません。");
@@ -252,7 +259,8 @@ public class BodyProcessService {
 	        throw new BusinessException("未対応のボディ工程です。");
 	    }
 	
-	    private void updateBodyAfterProcess(Body body, String processName, String result) {
+	    private void updateBodyAfterProcess(Body body, String processName, String result, LocalDateTime eventTime) {
+        body.setUpdatedAt(eventTime);
 	        if (POST_PAINT_INSPECTION.equals(processName)) {
 	            updateAfterInspection(body, result);
 	            return;
@@ -267,6 +275,7 @@ public class BodyProcessService {
 	        if (PARTS_INSTALLATION.equals(processName)) {
 	            body.setCurrentProcess(WAITING_FOR_ASSEMBLY);
 	            body.setStatus(AVAILABLE);
+            body.setAvailableAt(eventTime);
 	            return;
 	        }
 	        throw new BusinessException(
@@ -388,8 +397,8 @@ public class BodyProcessService {
         validateIds(bodyIds, "工程開始対象を選択してください。");
         validateWorkerName(workerName);
         ManufacturingProcess process = findBodyProcess(processId);
-        List<Body> bodies = bodyIds.stream().distinct()
-                .map(this::findBodyForBulk).toList();
+        List<Body> bodies = bodyIds.stream().distinct().sorted()
+                .map(this::findBodyForUpdate).toList();
         for (Body body : bodies) {
             if (historyRepository.existsByBodyIdAndEndTimeIsNull(body.getId())) {
                 throw new BusinessException(
@@ -402,6 +411,7 @@ public class BodyProcessService {
         for (Body body : bodies) {
             body.setCurrentProcess(process.getProcessName());
             body.setStatus(WORKING);
+            body.setUpdatedAt(now);
             histories.add(new BodyProcessHistory(
                     body.getId(), processId, workerName.trim(), now));
         }
@@ -415,8 +425,8 @@ public class BodyProcessService {
             String result,
             String note) {
         validateIds(historyIds, "工程終了対象を選択してください。");
-        List<BodyProcessHistory> histories = historyIds.stream().distinct()
-                .map(id -> historyRepository.findById(id).orElseThrow(
+        List<BodyProcessHistory> histories = historyIds.stream().distinct().sorted()
+                .map(id -> historyRepository.findForUpdate(id).orElseThrow(
                         () -> new NotFoundException(
                                 "指定された履歴が存在しません。ID: " + id)))
                 .toList();
@@ -428,13 +438,18 @@ public class BodyProcessService {
         }
         ManufacturingProcess process = findBodyProcess(processId);
         validateResult(process.getProcessName(), result);
+        if (histories.stream().anyMatch(h -> h.getEndTime() != null)) {
+            throw new BusinessException("すでに終了した工程が含まれています。");
+        }
+        var lockedEntities = histories.stream().map(h -> h.getBodyId()).distinct().sorted()
+                .collect(java.util.stream.Collectors.toMap(id -> id, this::findBodyForUpdate));
         List<Body> bodies = new ArrayList<>();
         for (BodyProcessHistory history : histories) {
             if (history.getEndTime() != null) {
                 throw new BusinessException(
                         "終了済み工程が含まれています。履歴ID: " + history.getId());
             }
-            bodies.add(findBodyForBulk(history.getBodyId()));
+            bodies.add(lockedEntities.get(history.getBodyId()));
         }
         LocalDateTime now = LocalDateTime.now();
         for (int i = 0; i < histories.size(); i++) {
@@ -443,7 +458,7 @@ public class BodyProcessService {
             history.setNote(note);
             history.setEndTime(now);
             updateBodyAfterProcess(
-                    bodies.get(i), process.getProcessName(), result);
+                    bodies.get(i), process.getProcessName(), result, now);
         }
         bodyRepository.saveAll(bodies);
         return historyRepository.saveAll(histories);
@@ -451,6 +466,11 @@ public class BodyProcessService {
 
     public List<BodyProcessHistory> getRunningProcesses() {
         return historyRepository.findByEndTimeIsNull();
+    }
+
+    private Body findBodyForUpdate(Long id) {
+        return bodyRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された個体が存在しません。"));
     }
 
     private Body findBodyForBulk(Long id) {

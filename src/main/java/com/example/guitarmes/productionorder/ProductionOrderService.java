@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.productionorder;
 
 import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
@@ -6,8 +7,11 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
@@ -17,6 +21,7 @@ import com.example.guitarmes.product.ProductRepository;
 
 @Service
 public class ProductionOrderService {
+    public static final int PAGE_SIZE = 20;
 
     private final ProductionOrderRepository productionOrderRepository;
     private final ProductRepository productRepository;
@@ -50,17 +55,40 @@ public class ProductionOrderService {
         };
     }
 
-    /** 日付や数量ではなく既存statusだけで分類する。 */
-    public List<ProductionOrder> filterByCategory(List<ProductionOrder> orders, String category) {
-        var statuses = getCategoryStatuses(category).stream().map(this::normalizeSearch).toList();
-        return orders.stream()
-                .filter(order -> order != null && statuses.contains(normalizeSearch(order.getStatus())))
-                .toList();
+    public record SearchResult(List<ProductionOrder> orders, long resultCount) {}
+
+    @Transactional(readOnly = true)
+    public long countCategory(String category) {
+        return productionOrderRepository.countMatching(searchCriteria(category, "", "", "", "", "", ""));
     }
 
-    public List<ProductionOrder> filterProductionOrders(List<ProductionOrder> orders,
-            String orderNo, String product, String status, String planMonth,
-            String dueFrom, String dueTo) {
+    @Transactional(readOnly = true)
+    public SearchResult searchProductionOrders(String category, String orderNo, String product,
+            String status, String planMonth, String dueFrom, String dueTo) {
+        var criteria = searchCriteria(category, orderNo, product, status, planMonth, dueFrom, dueTo);
+        return new SearchResult(productionOrderRepository.search(criteria),
+                productionOrderRepository.countMatching(criteria));
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Page<ProductionOrder> searchProductionOrdersPaged(
+            String category,
+            String orderNo,
+            String product,
+            String status,
+            String planMonth,
+            String dueFrom,
+            String dueTo,
+            int page) {
+        var criteria = searchCriteria(
+                category, orderNo, product, status, planMonth, dueFrom, dueTo);
+        int requestedPage = Math.max(page, 0);
+        return productionOrderRepository.search(
+                criteria, PageRequest.of(requestedPage, PAGE_SIZE));
+    }
+
+    private ProductionOrderSearchCriteria searchCriteria(String category, String orderNo,
+            String product, String status, String planMonth, String dueFrom, String dueTo) {
         String number = normalizeSearch(orderNo);
         String productText = normalizeSearch(product);
         String state = normalizeSearch(status);
@@ -77,16 +105,9 @@ public class ProductionOrderService {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BusinessException("納期の開始日は終了日以前にしてください。");
         }
-        return orders.stream()
-                .filter(order -> number.isEmpty() || normalizeSearch(order.getOrderNo()).contains(number))
-                .filter(order -> productText.isEmpty() || (order.getProduct() != null
-                        && (normalizeSearch(order.getProduct().getProductName()).contains(productText)
-                        || normalizeSearch(order.getProduct().getModelNo()).contains(productText))))
-                .filter(order -> state.isEmpty() || normalizeSearch(order.getStatus()).equals(state))
-                .filter(order -> month == null || month.equals(order.getPlanMonth()))
-                .filter(order -> from == null || (order.getDueDate() != null && !order.getDueDate().isBefore(from)))
-                .filter(order -> to == null || (order.getDueDate() != null && !order.getDueDate().isAfter(to)))
-                .toList();
+        String selectedCategory = normalizeCategory(category);
+        return new ProductionOrderSearchCriteria(selectedCategory, getCategoryStatuses(selectedCategory),
+                number, productText, state, month, from, to);
     }
 
     public boolean hasSearchCondition(String... conditions) {
@@ -154,7 +175,8 @@ public class ProductionOrderService {
                     "生産計画の更新内容が指定されていません。");
         }
 
-        ProductionOrder order = getProductionOrderById(id);
+        ProductionOrder order = productionOrderRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された生産計画が存在しません。"));
         validateEditable(order);
         validateRequest(
                 request.getProductId(),
@@ -174,7 +196,8 @@ public class ProductionOrderService {
 
     @Transactional
     public ProductionOrder cancelProductionOrder(Long id) {
-        ProductionOrder order = getProductionOrderById(id);
+        ProductionOrder order = productionOrderRepository.findForUpdate(id).orElseThrow(
+                () -> new NotFoundException("指定された生産計画が存在しません。"));
         validateEditable(order);
         order.setStatus(CANCELLED);
         return productionOrderRepository.save(order);

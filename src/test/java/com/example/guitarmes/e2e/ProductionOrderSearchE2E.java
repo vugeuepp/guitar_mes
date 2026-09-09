@@ -63,6 +63,7 @@ class ProductionOrderSearchE2E extends PlaywrightTestBase {
             page.locator(".empty-state a").click();
             for (String field : List.of("orderNo", "product", "status", "planMonth", "dueFrom", "dueTo"))
                 assertThat(page.locator("#" + field)).hasValue("");
+            page.locator("#orderNo").fill(prefix); search();
             assertThat(row("A")).isVisible(); assertThat(row("B")).isVisible();
         } finally {
             try (Connection c = connection()) {
@@ -75,6 +76,7 @@ class ProductionOrderSearchE2E extends PlaywrightTestBase {
     private void verifyCategories() throws Exception {
         page.navigate(BASE_URL + "/production-orders/view");
         assertThat(page.locator("input[name=category]")).hasValue("active");
+        page.locator("#orderNo").fill(prefix); search();
         assertThat(row("A")).isVisible();
         assertThat(row("B")).isVisible();
         assertThat(row("C")).hasCount(0);
@@ -91,8 +93,6 @@ class ProductionOrderSearchE2E extends PlaywrightTestBase {
             verifyCategoryCounts();
             var expected = "active".equals(category) ? List.of("A", "B")
                     : "completed".equals(category) ? List.of("C") : List.of("D");
-            for (String suffix : List.of("A", "B", "C", "D"))
-                assertThat(row(suffix)).hasCount(expected.contains(suffix) ? 1 : 0);
             var labels = "active".equals(category) ? List.of("計画中", "製造中")
                     : "completed".equals(category) ? List.of("完了") : List.of("中止");
             for (String label : page.locator(".production-order-table .status-badge").allTextContents())
@@ -101,6 +101,8 @@ class ProductionOrderSearchE2E extends PlaywrightTestBase {
             page.locator("#orderNo").fill(prefix);
             search();
             assertThat(page.locator(".production-order-table tbody tr")).hasCount(expected.size());
+            for (String suffix : List.of("A", "B", "C", "D"))
+                assertThat(row(suffix)).hasCount(expected.contains(suffix) ? 1 : 0);
             verifyCategoryCounts();
             String suffix = expected.get(0);
             String status = "active".equals(category) ? "PLANNED"

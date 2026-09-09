@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.guitar;
 
 import static com.example.guitarmes.process.common.GuitarProcessConstants.*;
@@ -9,8 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import com.example.guitarmes.assembly.AssemblyService;
 import com.example.guitarmes.exception.BusinessException;
@@ -22,6 +26,7 @@ import com.example.guitarmes.productionorder.ProductionOrder;
 
 @Service
 public class GuitarService {
+    public static final int PAGE_SIZE = 20;
 
     private final GuitarRepository guitarRepository;
 
@@ -229,9 +234,67 @@ public class GuitarService {
         return responses;
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Page<GuitarProgressResponse> searchGuitarsPaged(
+            ProcessService processService,
+            String category,
+            String serial,
+            String product,
+            String currentProcess,
+            String status,
+            int page) {
+        String selectedCategory = normalizeCategory(category);
+        String effectiveStatus = "completed".equals(selectedCategory)
+                ? "" : normalize(status);
+        var criteria = new GuitarSearchCriteria(
+                selectedCategory,
+                normalize(serial),
+                normalize(product),
+                normalize(currentProcess),
+                effectiveStatus);
+        var result = guitarRepository.search(criteria,
+                PageRequest.of(Math.max(0, page), PAGE_SIZE));
+        var progress = processService.getPageProgress(result.getContent());
+        return result.map(guitar -> toProgressResponse(guitar, progress.get(guitar.getId())));
+    }
+
+    private GuitarProgressResponse toProgressResponse(
+            Guitar guitar, ProcessService.PageProgress progress) {
+        Long guitarId = guitar.getId();
+        String productName = "-";
+        String color = "-";
+        if (guitar.getProduct() != null) {
+            productName = guitar.getProduct().getProductName();
+            color = guitar.getProduct().getColor();
+        }
+        var response = new GuitarProgressResponse(
+                guitarId,
+                guitar.getSerialNo(),
+                productName,
+                color,
+                guitar.getCurrentProcess(),
+                progress.progressRate(),
+                progress.running(),
+                progress.hasNext());
+        response.setUpdatedAt(guitar.getUpdatedAt());
+        response.setCompletedAt(guitar.getCompletedAt());
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public long countCategory(String category) {
+        return guitarRepository.countMatching(new GuitarSearchCriteria(
+                normalizeCategory(category), "", "", "", ""));
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getProductOptions() {
+        return guitarRepository.findProductOptions();
+    }
+
     /** 未指定・未知のカテゴリは製造中に戻す。 */
     public String normalizeCategory(String category) {
-        return "completed".equals(category) ? "completed" : "active";
+        return "completed".equals(normalize(category)) ? "completed" : "active";
     }
 
     /** 完成判定は工程名だけを使用する。nullの工程も製造中に含める。 */
@@ -311,7 +374,7 @@ public class GuitarService {
     }
 
     private String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase();
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     /**

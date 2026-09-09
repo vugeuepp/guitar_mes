@@ -123,6 +123,7 @@ class NeckSearchE2E extends PlaywrightTestBase {
     private void verifyCategories() throws Exception {
         page.navigate(BASE_URL + "/necks/view");
         assertThat(page.locator("#category-active")).hasAttribute("aria-current", "page");
+        page.locator("#serial").fill(suffix); search();
         assertThat(neckRow(firstSerial)).isVisible();
         assertThat(neckRow(otherSerial)).isVisible();
         for (String invalid : List.of("", "invalid", "undefined")) {
@@ -148,6 +149,7 @@ class NeckSearchE2E extends PlaywrightTestBase {
             for (String text : page.locator(".neck-management-table .status-cell").allTextContents()) {
                 assertTrue(states.get(category).stream().anyMatch(state -> labels.get(state).equals(text.trim())));
             }
+            page.locator("#serial").fill(suffix); search();
             for (var entry : categorySerials.entrySet()) {
                 Locator row = page.locator(".neck-management-table tbody tr")
                         .filter(new Locator.FilterOptions().setHasText(entry.getValue()));

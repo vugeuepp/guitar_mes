@@ -25,7 +25,16 @@ abstract class PlaywrightTestBase {
     protected Page page;
 
     @BeforeEach
-    void setUpPlaywright() {
+    void setUpPlaywright() throws java.sql.SQLException {
+        try (var connection = java.sql.DriverManager.getConnection(
+                System.getProperty("e2e.db.url", "jdbc:postgresql://localhost:5432/guitar_mes_e2e"),
+                System.getProperty("e2e.db.user", "naokiyamada"), System.getProperty("e2e.db.password", ""));
+             var statement = connection.createStatement();
+             var result = statement.executeQuery("select current_database()")) {
+            if (!result.next() || !"guitar_mes_e2e".equals(result.getString(1))) {
+                throw new IllegalStateException("専用E2E DB以外では実行しません。");
+            }
+        }
         boolean headless = Boolean.parseBoolean(
                 System.getProperty(
                         "playwright.headless",

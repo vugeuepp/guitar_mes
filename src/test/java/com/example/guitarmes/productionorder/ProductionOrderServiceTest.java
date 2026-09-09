@@ -55,7 +55,8 @@ class ProductionOrderServiceTest {
     @DisplayName("未着手の計画から編集DTOを作成できる")
     void getUpdateRequest_planned_succeeds() {
         ProductionOrder order = order(PLANNED, 0, 0);
-        stubOrder(order);
+        when(productionOrderRepository.findById(1L)).thenReturn(Optional.of(order));
+        when(guitarRepository.existsByProductionOrderId(1L)).thenReturn(false);
         ProductionOrderUpdateRequest request =
                 service.getProductionOrderUpdateRequest(1L);
         assertEquals(10L, request.getProductId());
@@ -138,7 +139,7 @@ class ProductionOrderServiceTest {
     @DisplayName("Guitar発行済みの計画は編集できない")
     void update_issuedGuitar_throws() {
         ProductionOrder order = order(PLANNED, 0, 0);
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(guitarRepository.existsByProductionOrderId(1L))
                 .thenReturn(true);
@@ -203,18 +204,18 @@ class ProductionOrderServiceTest {
                 BusinessException.class,
                 () -> service.updateProductionOrder(1L, null));
         assertTrue(ex.getMessage().contains("指定されていません"));
-        verify(productionOrderRepository, never()).findById(any());
+        verify(productionOrderRepository, never()).findForUpdate(any());
     }
 
     private void stubOrder(ProductionOrder order) {
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
         when(guitarRepository.existsByProductionOrderId(1L))
                 .thenReturn(false);
     }
 
     private void stubOrderWithoutGuitarCheck(ProductionOrder order) {
-        when(productionOrderRepository.findById(1L))
+        when(productionOrderRepository.findForUpdate(1L))
                 .thenReturn(Optional.of(order));
     }
 

@@ -27,6 +27,9 @@ import com.example.guitarmes.productionorder.ProductionOrderStatusConstants;
 
 @Service
 public class ProcessService {
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
 
     private final ProcessHistoryRepository historyRepository;
     private final GuitarRepository guitarRepository;
@@ -64,7 +67,7 @@ public class ProcessService {
         validateWorkerName(workerName);
 
         Guitar guitar =
-                findGuitarOrThrow(guitarId);
+                findGuitarForUpdate(guitarId);
 
         /*
          * ProductionOrderを持たないGuitarは
@@ -120,6 +123,8 @@ public class ProcessService {
         guitar.setCurrentProcess(
                 selectedProcess.getProcessName());
 
+        guitar.setUpdatedAt(history.getStartTime());
+
         guitarRepository.save(guitar);
 
         return historyRepository.save(history);
@@ -133,7 +138,7 @@ public class ProcessService {
             Long historyId) {
 
         ProcessHistory history =
-                historyRepository.findById(historyId)
+                historyRepository.findForUpdate(historyId)
                         .orElseThrow(() ->
                                 new NotFoundException(
                                         "指定された工程履歴が存在しません。"));
@@ -152,11 +157,15 @@ public class ProcessService {
                 endedProcess);
 
         Guitar guitar =
-                findGuitarOrThrow(
+                findGuitarForUpdate(
                         history.getGuitarId());
+
+        lockProductionOrders(List.of(guitar));
 
         history.setEndTime(
                 LocalDateTime.now());
+
+        guitar.setUpdatedAt(history.getEndTime());
 
         ProcessHistory savedHistory =
                 historyRepository.save(history);
@@ -167,7 +176,7 @@ public class ProcessService {
 
         if (nextProcess == null) {
 
-            completeGuitar(guitar);
+            completeGuitar(guitar, history.getEndTime());
 
         } else {
 
@@ -211,7 +220,7 @@ public class ProcessService {
      * Guitarを完成状態へ変更する。
      */
     private void completeGuitar(
-            Guitar guitar) {
+            Guitar guitar, LocalDateTime eventTime) {
 
         if (GuitarProcessConstants.COMPLETED
                 .equals(guitar.getCurrentProcess())) {
@@ -222,18 +231,20 @@ public class ProcessService {
 
         guitar.setCurrentProcess(
                 GuitarProcessConstants.COMPLETED);
+        guitar.setCompletedAt(eventTime);
+        guitar.setUpdatedAt(eventTime);
 
         guitarRepository.save(guitar);
 
         updateProductionOrderAfterCompletion(
-                guitar);
+                guitar, eventTime);
     }
 
     /**
      * Guitar完成時にProductionOrderの完成数を更新する。
      */
     private void updateProductionOrderAfterCompletion(
-            Guitar guitar) {
+            Guitar guitar, LocalDateTime eventTime) {
 
         ProductionOrder productionOrder =
                 guitar.getProductionOrder();
@@ -294,11 +305,15 @@ public class ProcessService {
                     + "更新できません。");
         }
 
+        productionOrder.setUpdatedAt(eventTime);
         productionOrder.setCompletedQuantity(
                 nextCompletedQuantity);
 
         if (nextCompletedQuantity
                 == plannedQuantity) {
+            if (!ProductionOrderStatusConstants.COMPLETED.equals(productionOrder.getStatus())) {
+                productionOrder.setCompletedAt(eventTime);
+            }
 
             productionOrder.setStatus(
                     ProductionOrderStatusConstants
@@ -650,10 +665,10 @@ public class ProcessService {
 
         for (ProcessHistory history
                 : historyRepository
-                        .findByEndTimeIsNull()) {
+                        .findByGuitarId(guitarId)) {
 
-            if (history.getGuitarId()
-                    .equals(guitarId)
+            if (history.getEndTime() == null
+                    && history.getGuitarId().equals(guitarId)
                     && guitarProcessIds.contains(
                             history.getProcessId())) {
 
@@ -824,6 +839,20 @@ public class ProcessService {
                 .toList();
     }
 
+    private void lockProductionOrders(List<Guitar> guitars) {
+        // 既に読み込まれた計画も、ロック取得後の最新数量へ読み直す。
+        // 一括処理では計画ごとに一度だけ実施し、処理途中の増分を消さない。
+        guitars.stream().map(Guitar::getProductionOrder).filter(java.util.Objects::nonNull)
+                .collect(Collectors.toMap(ProductionOrder::getId, p -> p, (a, b) -> a))
+                .values().stream().sorted(java.util.Comparator.comparing(ProductionOrder::getId))
+                .forEach(order -> entityManager.refresh(order, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE));
+    }
+
+    private Guitar findGuitarForUpdate(Long guitarId) {
+        return guitarRepository.findForUpdate(guitarId).orElseThrow(
+                () -> new NotFoundException("指定されたギターが存在しません。"));
+    }
+
     private Guitar findGuitarOrThrow(
             Long guitarId) {
 
@@ -878,9 +907,9 @@ public class ProcessService {
         validateWorkerName(workerName);
         ManufacturingProcess selectedProcess = findProcessOrThrow(processId);
         validateGuitarProcess(selectedProcess);
-        List<Long> uniqueIds = guitarIds.stream().distinct().toList();
+        List<Long> uniqueIds = guitarIds.stream().distinct().sorted().toList();
         List<Guitar> guitars = uniqueIds.stream()
-                .map(this::findGuitarOrThrow)
+                .map(this::findGuitarForUpdate)
                 .toList();
         for (Guitar guitar : guitars) {
             validateStartable(guitar, selectedProcess);
@@ -889,6 +918,7 @@ public class ProcessService {
         List<ProcessHistory> histories = new ArrayList<>();
         for (Guitar guitar : guitars) {
             guitar.setCurrentProcess(selectedProcess.getProcessName());
+            guitar.setUpdatedAt(now);
             histories.add(new ProcessHistory(
                     guitar.getId(), processId, workerName.trim(), now));
         }
@@ -899,12 +929,17 @@ public class ProcessService {
     @Transactional
     public List<ProcessHistory> endProcesses(List<Long> historyIds) {
         validateIds(historyIds, "工程終了対象を選択してください。");
-        List<Long> uniqueIds = historyIds.stream().distinct().toList();
+        List<Long> uniqueIds = historyIds.stream().distinct().sorted().toList();
         List<ProcessHistory> histories = uniqueIds.stream()
-                .map(id -> historyRepository.findById(id)
+                .map(id -> historyRepository.findForUpdate(id)
                         .orElseThrow(() -> new NotFoundException(
                                 "指定された工程履歴が存在しません。ID: " + id)))
                 .toList();
+        if (histories.stream().anyMatch(h -> h.getEndTime() != null)) {
+            throw new BusinessException("すでに終了した工程が含まれています。");
+        }
+        var lockedEntities = histories.stream().map(h -> h.getGuitarId()).distinct().sorted()
+                .collect(java.util.stream.Collectors.toMap(id -> id, this::findGuitarForUpdate));
         List<Guitar> guitars = new ArrayList<>();
         List<ManufacturingProcess> processes = new ArrayList<>();
         for (ProcessHistory history : histories) {
@@ -915,18 +950,20 @@ public class ProcessService {
             ManufacturingProcess process = findProcessOrThrow(history.getProcessId());
             validateGuitarProcess(process);
             processes.add(process);
-            guitars.add(findGuitarOrThrow(history.getGuitarId()));
+            guitars.add(lockedEntities.get(history.getGuitarId()));
         }
         Long firstProcessId = histories.get(0).getProcessId();
         if (histories.stream().anyMatch(h -> !firstProcessId.equals(h.getProcessId()))) {
             throw new BusinessException("異なる工程をまとめて終了することはできません。");
         }
+        lockProductionOrders(guitars);
         LocalDateTime now = LocalDateTime.now();
         histories.forEach(history -> history.setEndTime(now));
         for (int i = 0; i < guitars.size(); i++) {
+            guitars.get(i).setUpdatedAt(now);
             ManufacturingProcess nextProcess = findNextProcessAfter(processes.get(i));
             if (nextProcess == null) {
-                completeGuitar(guitars.get(i));
+                completeGuitar(guitars.get(i), now);
             } else {
                 guitars.get(i).setCurrentProcess(nextProcess.getProcessName());
             }
@@ -934,6 +971,37 @@ public class ProcessService {
         guitarRepository.saveAll(guitars);
         return historyRepository.saveAll(histories);
     }
+
+    /** 一覧の表示ページだけをまとめて集計する。旧工程履歴は対象外。 */
+    public Map<Long, PageProgress> getPageProgress(List<Guitar> guitars) {
+        if (guitars.isEmpty()) return Map.of();
+        List<ManufacturingProcess> processes = getGuitarProcesses();
+        Set<Long> processIds = processes.stream().map(ManufacturingProcess::getId)
+                .collect(Collectors.toSet());
+        Map<Long, List<ProcessHistory>> byGuitar = historyRepository
+                .findByGuitarIdInOrderByIdAsc(guitars.stream().map(Guitar::getId).toList())
+                .stream().filter(h -> processIds.contains(h.getProcessId()))
+                .collect(Collectors.groupingBy(ProcessHistory::getGuitarId));
+        Map<Long, PageProgress> result = new HashMap<>();
+        for (Guitar guitar : guitars) {
+            List<ProcessHistory> histories = byGuitar.getOrDefault(guitar.getId(), List.of());
+            boolean running = histories.stream().anyMatch(h -> h.getEndTime() == null);
+            double credit = 0;
+            for (ManufacturingProcess process : processes) {
+                ProcessHistory history = findHistoryByProcessId(histories, process.getId());
+                if (history != null) credit += history.getEndTime() == null ? 0.5 : 1;
+            }
+            Set<Long> completedIds = histories.stream().filter(h -> h.getEndTime() != null)
+                    .map(ProcessHistory::getProcessId).collect(Collectors.toSet());
+            boolean hasNext = !GuitarProcessConstants.COMPLETED.equals(guitar.getCurrentProcess())
+                    && !running && processes.stream().anyMatch(p -> !completedIds.contains(p.getId()));
+            int rate = processes.isEmpty() ? 0 : (int) (credit / processes.size() * 100);
+            result.put(guitar.getId(), new PageProgress(rate, running, hasNext));
+        }
+        return result;
+    }
+
+    public record PageProgress(int progressRate, boolean running, boolean hasNext) {}
 
     public List<ManufacturingProcess> getAvailableGuitarProcesses() {
         return getGuitarProcesses();

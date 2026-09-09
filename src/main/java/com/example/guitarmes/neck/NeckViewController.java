@@ -30,22 +30,16 @@ public class NeckViewController {
             @RequestParam(required = false) String modelName,
             @RequestParam(required = false) String currentProcess,
             @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
             Model model) {
-        var allNecks = neckService.getNecks();
         String selectedCategory = neckService.normalizeCategory(category);
-        var activeNecks = neckService.filterByCategory(allNecks, "active");
-        var attentionNecks = neckService.filterByCategory(allNecks, "attention");
-        var passedNecks = neckService.filterByCategory(allNecks, "passed");
-        var categoryNecks = neckService.filterByCategory(
-                allNecks, selectedCategory);
-        var necks = neckService.filterNecks(
-                categoryNecks, serial, modelName, currentProcess, status);
+        var result = neckService.searchNecksPaged(selectedCategory, serial, modelName, currentProcess, status, page);
 
         model.addAttribute("category", selectedCategory);
-        model.addAttribute("activeCount", activeNecks.size());
-        model.addAttribute("attentionCount", attentionNecks.size());
-        model.addAttribute("passedCount", passedNecks.size());
-        model.addAttribute("necks", necks);
+        model.addAttribute("activeCount", neckService.countCategory("active"));
+        model.addAttribute("attentionCount", neckService.countCategory("attention"));
+        model.addAttribute("passedCount", neckService.countCategory("passed"));
+        model.addAttribute("necks", result.getContent());
         model.addAttribute("neckProcesses", neckProcessService.getNeckProcesses());
         model.addAttribute("serial", serial == null ? "" : serial);
         model.addAttribute("modelName", modelName == null ? "" : modelName);
@@ -54,7 +48,12 @@ public class NeckViewController {
         model.addAttribute("selectedStatus", status == null ? "" : status);
         model.addAttribute("filterApplied", neckService.hasSearchCondition(
                 serial, modelName, currentProcess, status));
-        model.addAttribute("resultCount", necks.size());
+        model.addAttribute("resultCount", result.getTotalElements());
+        model.addAttribute("currentPage", result.getNumber());
+        model.addAttribute("totalPages", result.getTotalPages());
+        model.addAttribute("pageSize", NeckService.PAGE_SIZE);
+        model.addAttribute("hasPrevious", result.hasPrevious());
+        model.addAttribute("hasNext", result.hasNext());
         return "neck-list";
     }
 

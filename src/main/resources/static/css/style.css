@@ -3137,3 +3137,27 @@ body {
 @media (max-width: 700px) {
     .guitar-category-tab { padding: 12px 14px; }
 }
+
+/* 生産計画一覧のページ切替 */
+.production-order-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Body / Neck一覧のページ切替 */
+.component-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* 一覧の業務日時。過去データの未記録値は補完せず「-」表示。 */
+.list-timestamps { margin-top: 0.35rem; font-size: 0.7rem; line-height: 1.6; color: #666; white-space: normal; }
+.list-timestamps span { white-space: nowrap; }

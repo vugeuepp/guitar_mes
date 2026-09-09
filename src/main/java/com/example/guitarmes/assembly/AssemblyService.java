@@ -162,7 +162,8 @@ public class AssemblyService {
          */
         Guitar guitar = guitarService.createGuitar(productionOrder);
 
-        Assembly assembly = new Assembly(guitar, targetNeck, targetBody, LocalDateTime.now(), workerName.trim());
+        LocalDateTime now = LocalDateTime.now();
+        Assembly assembly = new Assembly(guitar, targetNeck, targetBody, now, workerName.trim());
 
         Assembly savedAssembly = assemblyRepository.save(assembly);
 
@@ -171,6 +172,8 @@ public class AssemblyService {
          */
         targetNeck.setStatus(ASSEMBLED);
         targetBody.setStatus(ASSEMBLED);
+        targetBody.setUpdatedAt(now);
+        targetNeck.setUpdatedAt(now);
         neckRepository.save(targetNeck);
         bodyRepository.save(targetBody);
 
@@ -180,6 +183,7 @@ public class AssemblyService {
         int nextStartedQuantity = productionOrder.getStartedQuantity() + 1;
         productionOrder.setStartedQuantity(nextStartedQuantity);
         productionOrder.setStatus(ProductionOrderStatusConstants.IN_PROGRESS);
+        productionOrder.setUpdatedAt(now);
         productionOrderRepository.save(productionOrder);
         return savedAssembly;
     }
@@ -273,7 +277,7 @@ public class AssemblyService {
      */
     private ProductionOrder findProductionOrderOrThrow(Long productionOrderId) {
 
-        return productionOrderRepository.findById(productionOrderId).orElseThrow(
+        return productionOrderRepository.findForUpdate(productionOrderId).orElseThrow(
         		() -> new NotFoundException("指定された生産計画が存在しません。"));
     }
 
@@ -281,7 +285,7 @@ public class AssemblyService {
      * Neckを取得する。
      */
     private Neck findNeckOrThrow(Long neckId) {
-        return neckRepository.findById(neckId).orElseThrow(
+        return neckRepository.findForUpdate(neckId).orElseThrow(
         		() -> new NotFoundException("指定されたネックが存在しません。"));
     }
 
@@ -291,7 +295,7 @@ public class AssemblyService {
     private Body findBodyOrThrow(
             Long bodyId) {
 
-        return bodyRepository.findById(bodyId).orElseThrow(
+        return bodyRepository.findForUpdate(bodyId).orElseThrow(
         		() -> new NotFoundException("指定されたボディが存在しません。"));
     }
 
@@ -402,12 +406,13 @@ public class AssemblyService {
             throw new BusinessException("同じボディを複数回選択できません。");
         }
 
-        List<Neck> necks = neckIds.stream()
-                .map(this::findNeckOrThrow)
-                .toList();
-        List<Body> bodies = bodyIds.stream()
-                .map(this::findBodyOrThrow)
-                .toList();
+        // ロックはID順、組み合わせは入力順を維持する。
+        var lockedNecks = neckIds.stream().sorted().collect(java.util.stream.Collectors.toMap(
+                id -> id, this::findNeckOrThrow));
+        var lockedBodies = bodyIds.stream().sorted().collect(java.util.stream.Collectors.toMap(
+                id -> id, this::findBodyOrThrow));
+        List<Neck> necks = neckIds.stream().map(lockedNecks::get).toList();
+        List<Body> bodies = bodyIds.stream().map(lockedBodies::get).toList();
 
         for (int i = 0; i < count; i++) {
             Neck neck = necks.get(i);
@@ -429,6 +434,8 @@ public class AssemblyService {
                     guitar, neck, body, now, workerName.trim()));
             neck.setStatus(ASSEMBLED);
             body.setStatus(ASSEMBLED);
+            body.setUpdatedAt(now);
+            neck.setUpdatedAt(now);
         }
 
         List<Assembly> saved = assemblyRepository.saveAll(assemblies);
@@ -438,6 +445,7 @@ public class AssemblyService {
                 productionOrder.getStartedQuantity() + count);
         productionOrder.setStatus(
                 ProductionOrderStatusConstants.IN_PROGRESS);
+        productionOrder.setUpdatedAt(now);
         productionOrderRepository.save(productionOrder);
         return saved;
     }
