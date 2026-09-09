@@ -51,6 +51,7 @@ public class ProductionOrderViewController {
             @RequestParam(defaultValue = "") String planMonth,
             @RequestParam(defaultValue = "") String dueFrom,
             @RequestParam(defaultValue = "") String dueTo,
+            @RequestParam(defaultValue = "0") int page,
             Model model) {
         String selectedCategory = productionOrderService.normalizeCategory(category);
         model.addAttribute("category", selectedCategory);
@@ -68,17 +69,31 @@ public class ProductionOrderViewController {
                 orderNo, product, status, planMonth, dueFrom, dueTo));
         List<ProductionOrder> orders;
         long resultCount = 0;
+        int currentPage = 0;
+        int totalPages = 0;
+        boolean hasPrevious = false;
+        boolean hasNext = false;
         try {
-            var result = productionOrderService.searchProductionOrders(selectedCategory,
-                    orderNo, product, status, planMonth, dueFrom, dueTo);
-            orders = result.orders();
-            resultCount = result.resultCount();
+            var pageResult = productionOrderService.searchProductionOrdersPaged(
+                    selectedCategory, orderNo, product, status,
+                    planMonth, dueFrom, dueTo, page);
+            orders = pageResult.getContent();
+            resultCount = pageResult.getTotalElements();
+            currentPage = pageResult.getNumber();
+            totalPages = pageResult.getTotalPages();
+            hasPrevious = pageResult.hasPrevious();
+            hasNext = pageResult.hasNext();
         } catch (BusinessException exception) {
             orders = List.of();
             model.addAttribute("searchError", exception.getMessage());
         }
         model.addAttribute("orders", orders);
         model.addAttribute("resultCount", resultCount);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("pageSize", ProductionOrderService.PAGE_SIZE);
+        model.addAttribute("hasPrevious", hasPrevious);
+        model.addAttribute("hasNext", hasNext);
         return "production-order-list";
     }
 

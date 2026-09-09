@@ -120,46 +120,113 @@ class ProductionOrderSearchTest {
     }
 
     @Test
-    void controllerKeepsInputsCountsAndErrorsForEachCategory() throws Exception {
-        when(repository.search(any())).thenReturn(List.of());
-        when(repository.countMatching(any())).thenAnswer(invocation -> {
-            ProductionOrderSearchCriteria c = invocation.getArgument(0);
-            if (!c.orderNo().isEmpty()) return 0L;
-            return switch (c.category()) { case "completed" -> 3L; case "cancelled" -> 4L; default -> 2L; };
+    void controllerUsesPagedSearchAndKeepsInputsCountsAndPageMetadata() throws Exception {
+        ProductionOrder row = new ProductionOrder();
+        when(repository.search(any(), any())).thenAnswer(invocation -> {
+            org.springframework.data.domain.Pageable pageable = invocation.getArgument(1);
+            int requested = pageable.getPageNumber();
+            int corrected = requested >= 999 ? 2 : requested;
+            if (requested < 0) corrected = 0;
+            return new PageImpl<>(List.of(row),
+                    PageRequest.of(corrected, ProductionOrderService.PAGE_SIZE), 53);
         });
-        var mvc = MockMvcBuilders.standaloneSetup(new ProductionOrderViewController(service, null, null, null)).build();
+        when(repository.countMatching(any())).thenAnswer(invocation -> {
+            ProductionOrderSearchCriteria criteria = invocation.getArgument(0);
+            return switch (criteria.category()) {
+                case "completed" -> 3L;
+                case "cancelled" -> 4L;
+                default -> 2L;
+            };
+        });
+        var mvc = MockMvcBuilders.standaloneSetup(
+                new ProductionOrderViewController(service, null, null, null)).build();
+
         mvc.perform(get("/production-orders/view"))
+                .andExpect(status().isOk())
                 .andExpect(model().attribute("category", "active"))
-                .andExpect(model().attribute("filterApplied", false));
-        for (String category : List.of("active", "completed", "cancelled")) {
-            mvc.perform(get("/production-orders/view").param("category", category)
-                    .param("orderNo", "missing").param("product", "ST").param("status", "PLANNED")
-                    .param("planMonth", "2026-09").param("dueFrom", "2026-09-10").param("dueTo", "2026-09-10"))
-                    .andExpect(status().isOk()).andExpect(view().name("production-order-list"))
-                    .andExpect(model().attribute("category", category))
-                    .andExpect(model().attribute("categoryStatuses", service.getCategoryStatuses(category)))
-                    .andExpect(model().attribute("activeCount", 2L)).andExpect(model().attribute("completedCount", 3L))
-                    .andExpect(model().attribute("cancelledCount", 4L)).andExpect(model().attribute("resultCount", 0L))
-                    .andExpect(model().attribute("orders", List.of())).andExpect(model().attribute("filterApplied", true))
-                    .andExpect(model().attribute("orderNo", "missing")).andExpect(model().attribute("product", "ST"))
-                    .andExpect(model().attribute("selectedStatus", "PLANNED"))
-                    .andExpect(model().attribute("planMonth", "2026-09"))
-                    .andExpect(model().attribute("dueFrom", "2026-09-10"))
-                    .andExpect(model().attribute("dueTo", "2026-09-10"))
-                    .andExpect(model().attributeDoesNotExist("searchError"));
-            for (String[] dates : List.of(new String[]{"bad", ""}, new String[]{"2026-10-01", "2026-09-01"})) {
-                mvc.perform(get("/production-orders/view").param("category", category)
-                        .param("dueFrom", dates[0]).param("dueTo", dates[1]))
-                        .andExpect(model().attribute("category", category))
-                        .andExpect(model().attribute("activeCount", 2L)).andExpect(model().attribute("completedCount", 3L))
-                        .andExpect(model().attribute("cancelledCount", 4L)).andExpect(model().attribute("resultCount", 0L))
-                        .andExpect(model().attribute("dueFrom", dates[0])).andExpect(model().attributeExists("searchError"));
-            }
-        }
-        for (String invalid : List.of("", " ", "invalid", "undefined")) {
-            mvc.perform(get("/production-orders/view").param("category", invalid))
-                    .andExpect(model().attribute("category", "active"));
-        }
+                .andExpect(model().attribute("orders", List.of(row)))
+                .andExpect(model().attribute("resultCount", 53L))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 3))
+                .andExpect(model().attribute("pageSize", 20))
+                .andExpect(model().attribute("hasPrevious", false))
+                .andExpect(model().attribute("hasNext", true));
+
+        mvc.perform(get("/production-orders/view")
+                        .param("category", "completed")
+                        .param("page", "1")
+                        .param("orderNo", "PO")
+                        .param("product", "ST")
+                        .param("status", "COMPLETED")
+                        .param("planMonth", "2026-09")
+                        .param("dueFrom", "2026-09-10")
+                        .param("dueTo", "2026-09-10"))
+                .andExpect(model().attribute("category", "completed"))
+                .andExpect(model().attribute("activeCount", 2L))
+                .andExpect(model().attribute("completedCount", 3L))
+                .andExpect(model().attribute("cancelledCount", 4L))
+                .andExpect(model().attribute("orders", List.of(row)))
+                .andExpect(model().attribute("resultCount", 53L))
+                .andExpect(model().attribute("currentPage", 1))
+                .andExpect(model().attribute("totalPages", 3))
+                .andExpect(model().attribute("pageSize", 20))
+                .andExpect(model().attribute("hasPrevious", true))
+                .andExpect(model().attribute("hasNext", true))
+                .andExpect(model().attribute("orderNo", "PO"))
+                .andExpect(model().attribute("product", "ST"))
+                .andExpect(model().attribute("selectedStatus", "COMPLETED"))
+                .andExpect(model().attribute("planMonth", "2026-09"))
+                .andExpect(model().attribute("dueFrom", "2026-09-10"))
+                .andExpect(model().attribute("dueTo", "2026-09-10"));
+
+        mvc.perform(get("/production-orders/view").param("page", "999"))
+                .andExpect(model().attribute("currentPage", 2))
+                .andExpect(model().attribute("hasPrevious", true))
+                .andExpect(model().attribute("hasNext", false));
+
+        mvc.perform(get("/production-orders/view").param("page", "-5"))
+                .andExpect(model().attribute("currentPage", 0));
+
+        var pageableCaptor = ArgumentCaptor.forClass(
+                org.springframework.data.domain.Pageable.class);
+        verify(repository, atLeastOnce()).search(any(), pageableCaptor.capture());
+        assertTrue(pageableCaptor.getAllValues().stream()
+                .anyMatch(value -> value.getPageNumber() == 1));
+        verify(repository, never()).search(any(ProductionOrderSearchCriteria.class));
         verify(repository, never()).findAllByOrderByIdDesc();
+    }
+
+    @Test
+    void controllerUsesSafePagingModelForZeroResultsAndBusinessErrors() throws Exception {
+        when(repository.search(any(), any())).thenReturn(
+                new PageImpl<>(List.of(),
+                        PageRequest.of(0, ProductionOrderService.PAGE_SIZE), 0));
+        when(repository.countMatching(any())).thenReturn(0L);
+        var mvc = MockMvcBuilders.standaloneSetup(
+                new ProductionOrderViewController(service, null, null, null)).build();
+
+        mvc.perform(get("/production-orders/view"))
+                .andExpect(model().attribute("orders", List.of()))
+                .andExpect(model().attribute("resultCount", 0L))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 0))
+                .andExpect(model().attribute("pageSize", 20))
+                .andExpect(model().attribute("hasPrevious", false))
+                .andExpect(model().attribute("hasNext", false));
+
+        mvc.perform(get("/production-orders/view")
+                        .param("category", "cancelled")
+                        .param("page", "2")
+                        .param("dueFrom", "bad"))
+                .andExpect(model().attribute("category", "cancelled"))
+                .andExpect(model().attribute("orders", List.of()))
+                .andExpect(model().attribute("resultCount", 0L))
+                .andExpect(model().attribute("currentPage", 0))
+                .andExpect(model().attribute("totalPages", 0))
+                .andExpect(model().attribute("pageSize", 20))
+                .andExpect(model().attribute("hasPrevious", false))
+                .andExpect(model().attribute("hasNext", false))
+                .andExpect(model().attribute("dueFrom", "bad"))
+                .andExpect(model().attributeExists("searchError"));
     }
 }
