@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.guitar;
 
 import java.util.List;
@@ -6,7 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GuitarRepository
-        extends JpaRepository<Guitar, Long> {
+        extends JpaRepository<Guitar, Long>, GuitarSearchRepository {
 
     List<Guitar> findByProductId(
             Long productId);
