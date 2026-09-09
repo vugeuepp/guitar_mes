@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.productionorder;
 
 import java.util.ArrayList;
@@ -11,6 +12,10 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 public class ProductionOrderSearchRepositoryImpl implements ProductionOrderSearchRepository {
     private final EntityManager entityManager;
@@ -28,6 +33,30 @@ public class ProductionOrderSearchRepositoryImpl implements ProductionOrderSearc
         query.select(root).where(predicates(cb, root, criteria));
         query.orderBy(sort(cb, root, criteria.category()));
         return entityManager.createQuery(query).getResultList();
+    }
+
+    @Override
+    public Page<ProductionOrder> search(
+            ProductionOrderSearchCriteria criteria,
+            Pageable pageable) {
+        long total = countMatching(criteria);
+        int pageSize = pageable.getPageSize();
+        int lastPage = total == 0 ? 0 : (int) ((total - 1) / pageSize);
+        int pageNumber = Math.min(pageable.getPageNumber(), lastPage);
+        Pageable corrected = PageRequest.of(pageNumber, pageSize);
+        if (total == 0) {
+            return new PageImpl<>(List.of(), corrected, 0);
+        }
+        var cb = entityManager.getCriteriaBuilder();
+        var query = cb.createQuery(ProductionOrder.class);
+        var root = query.from(ProductionOrder.class);
+        root.fetch("product", JoinType.LEFT);
+        query.select(root).where(predicates(cb, root, criteria));
+        query.orderBy(sort(cb, root, criteria.category()));
+        var typedQuery = entityManager.createQuery(query);
+        typedQuery.setFirstResult(Math.toIntExact(corrected.getOffset()));
+        typedQuery.setMaxResults(pageSize);
+        return new PageImpl<>(typedQuery.getResultList(), corrected, total);
     }
 
     @Override

@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.productionorder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,6 +12,8 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;
@@ -56,6 +59,28 @@ class ProductionOrderRepositorySearchTest {
     private ProductionOrderService.SearchResult search(String category, String number, String productText,
             String status, String month, String from, String to) {
         return service.searchProductionOrders(category, number, productText, status, month, from, to);
+    }
+
+    private Page<ProductionOrder> searchPage(
+            String category, String number, int page) {
+        var criteria = new ProductionOrderSearchCriteria(
+                service.normalizeCategory(category),
+                service.getCategoryStatuses(category),
+                number.toLowerCase(java.util.Locale.ROOT),
+                "", "", null, null, null);
+        return repository.search(criteria, PageRequest.of(page, 20));
+    }
+
+    private void assertPageIds(
+            Page<ProductionOrder> page,
+            List<ProductionOrder> expected,
+            long total,
+            int pageNumber) {
+        assertEquals(expected.stream().map(ProductionOrder::getId).toList(),
+                page.getContent().stream().map(ProductionOrder::getId).toList());
+        assertEquals(total, page.getTotalElements());
+        assertEquals(pageNumber, page.getNumber());
+        assertTrue(page.getNumberOfElements() <= 20);
     }
 
     private void assertRows(ProductionOrderService.SearchResult result, ProductionOrder... expected) {
@@ -159,4 +184,89 @@ class ProductionOrderRepositorySearchTest {
             assertRows(search(category, prefix, "", "", "", "", ""), recent2, recent1, old, noTime2, noTime1);
         }
     }
+    @Test
+    void pagingUsesDatabaseLimitOffsetAndTotalCount() {
+        List<ProductionOrder> expected = new java.util.ArrayList<>();
+        for (int index = 0; index < 45; index++) {
+            expected.add(order("-PAGE-" + index, "PLANNED",
+                    "2026-09-10", "2026-09-01 10:00:00", null));
+        }
+        expected.sort(java.util.Comparator.comparing(
+                ProductionOrder::getId).reversed());
+
+        var first = searchPage("active", prefix + "-page-", 0);
+        var second = searchPage("active", prefix + "-page-", 1);
+        var last = searchPage("active", prefix + "-page-", 2);
+        var overflow = searchPage("active", prefix + "-page-", 999);
+
+        assertPageIds(first, expected.subList(0, 20), 45, 0);
+        assertPageIds(second, expected.subList(20, 40), 45, 1);
+        assertPageIds(last, expected.subList(40, 45), 45, 2);
+        assertPageIds(overflow, expected.subList(40, 45), 45, 2);
+        assertEquals(20, first.getNumberOfElements());
+        assertEquals(5, last.getNumberOfElements());
+        var combined = new java.util.ArrayList<Long>();
+        combined.addAll(first.map(ProductionOrder::getId).getContent());
+        combined.addAll(second.map(ProductionOrder::getId).getContent());
+        combined.addAll(last.map(ProductionOrder::getId).getContent());
+        assertEquals(45, combined.stream().distinct().count());
+    }
+
+    @Test
+    void pagingHandlesAtMostTwentyAndZeroResults() {
+        var one = order("-ONE", "PLANNED", null, null, null);
+        assertPageIds(searchPage("active", prefix + "-one", 0),
+                List.of(one), 1, 0);
+        assertPageIds(searchPage("active", prefix + "-missing", 5),
+                List.of(), 0, 0);
+    }
+
+    @Test
+    void categorySearchAndSortRemainStableAcrossPageBoundaries() {
+        for (String category : List.of("active", "completed", "cancelled")) {
+            String status = switch (category) {
+                case "completed" -> "COMPLETED";
+                case "cancelled" -> "CANCELLED";
+                default -> "PLANNED";
+            };
+            List<ProductionOrder> expected = new java.util.ArrayList<>();
+            for (int index = 0; index < 21; index++) {
+                String completed = "completed".equals(category)
+                        ? "2026-09-02 10:00:00" : null;
+                String updated = "completed".equals(category)
+                        ? null : "2026-09-02 10:00:00";
+                expected.add(order("-" + category + "-" + index, status,
+                        "active".equals(category) ? "2026-09-02" : null,
+                        updated, completed));
+            }
+            expected.sort(java.util.Comparator.comparing(
+                    ProductionOrder::getId).reversed());
+            var first = searchPage(category, prefix + "-" + category + "-", 0);
+            var second = searchPage(category, prefix + "-" + category + "-", 1);
+            assertPageIds(first, expected.subList(0, 20), 21, 0);
+            assertPageIds(second, expected.subList(20, 21), 21, 1);
+            assertFalse(first.getContent().stream().map(ProductionOrder::getId)
+                    .anyMatch(second.getContent().stream()
+                            .map(ProductionOrder::getId).toList()::contains));
+        }
+    }
+
+    @Test
+    void activePagingKeepsNullsLastOrdering() {
+        List<ProductionOrder> dated = new java.util.ArrayList<>();
+        for (int index = 0; index < 20; index++) {
+            dated.add(order("-DATED-" + index, "PLANNED",
+                    "2026-09-01", null, null));
+        }
+        var nullDue = order("-NULL-DUE", "PLANNED", null, null, null);
+        var first = searchPage("active", prefix + "-", 0);
+        var allIds = first.getContent().stream()
+                .map(ProductionOrder::getId).toList();
+        assertFalse(allIds.contains(nullDue.getId()));
+        var second = searchPage("active", prefix + "-", 1);
+        assertTrue(second.getContent().stream()
+                .map(ProductionOrder::getId)
+                .anyMatch(nullDue.getId()::equals));
+    }
+
 }

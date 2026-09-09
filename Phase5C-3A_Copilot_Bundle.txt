@@ -1,0 +1,1915 @@
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderSearchRepository.java =====
+ROLE: EDITABLE
+
+package com.example.guitarmes.productionorder;
+
+import java.util.List;
+
+public interface ProductionOrderSearchRepository {
+    List<ProductionOrder> search(ProductionOrderSearchCriteria criteria);
+    long countMatching(ProductionOrderSearchCriteria criteria);
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderSearchRepositoryImpl.java =====
+ROLE: EDITABLE
+
+package com.example.guitarmes.productionorder;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+
+public class ProductionOrderSearchRepositoryImpl implements ProductionOrderSearchRepository {
+    private final EntityManager entityManager;
+
+    public ProductionOrderSearchRepositoryImpl(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
+
+    @Override
+    public List<ProductionOrder> search(ProductionOrderSearchCriteria criteria) {
+        var cb = entityManager.getCriteriaBuilder();
+        var query = cb.createQuery(ProductionOrder.class);
+        var root = query.from(ProductionOrder.class);
+        root.fetch("product", JoinType.LEFT);
+        query.select(root).where(predicates(cb, root, criteria));
+        query.orderBy(sort(cb, root, criteria.category()));
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    @Override
+    public long countMatching(ProductionOrderSearchCriteria criteria) {
+        var cb = entityManager.getCriteriaBuilder();
+        var query = cb.createQuery(Long.class);
+        var root = query.from(ProductionOrder.class);
+        query.select(cb.count(root)).where(predicates(cb, root, criteria));
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
+    /** 一覧とcountで必ず同じカテゴリ・検索述語を使う。 */
+    private Predicate[] predicates(CriteriaBuilder cb, Root<ProductionOrder> root,
+            ProductionOrderSearchCriteria criteria) {
+        List<Predicate> conditions = new ArrayList<>();
+        var states = criteria.categoryStatuses().stream()
+                .map(value -> value.toLowerCase(Locale.ROOT)).toList();
+        Expression<String> status = cb.lower(cb.trim(root.get("status")));
+        conditions.add(status.in(states));
+        if (!criteria.orderNo().isEmpty()) {
+            conditions.add(contains(cb, root.get("orderNo"), criteria.orderNo()));
+        }
+        if (!criteria.product().isEmpty()) {
+            var product = root.join("product", JoinType.LEFT);
+            conditions.add(cb.or(contains(cb, product.get("productName"), criteria.product()),
+                    contains(cb, product.get("modelNo"), criteria.product())));
+        }
+        if (!criteria.status().isEmpty()) {
+            conditions.add(cb.equal(status, criteria.status()));
+        }
+        if (criteria.planMonth() != null) {
+            // YearMonthDateConverterを通して、DBの月初DATEと比較する。
+            conditions.add(cb.equal(root.get("planMonth"), criteria.planMonth()));
+        }
+        if (criteria.dueFrom() != null) {
+            conditions.add(cb.greaterThanOrEqualTo(root.get("dueDate"), criteria.dueFrom()));
+        }
+        if (criteria.dueTo() != null) {
+            conditions.add(cb.lessThanOrEqualTo(root.get("dueDate"), criteria.dueTo()));
+        }
+        return conditions.toArray(Predicate[]::new);
+    }
+
+    private Predicate contains(CriteriaBuilder cb, Expression<String> field, String text) {
+        String escaped = text.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+        return cb.like(cb.lower(cb.trim(field)), "%" + escaped + "%", '!');
+    }
+
+    private List<Order> sort(CriteriaBuilder cb, Root<ProductionOrder> root, String category) {
+        List<Order> orders = new ArrayList<>();
+        if ("active".equals(category)) {
+            nullsLast(cb, orders, root.get("dueDate"), true);
+            nullsLast(cb, orders, root.get("updatedAt"), false);
+        } else if ("completed".equals(category)) {
+            nullsLast(cb, orders, root.get("completedAt"), false);
+        } else {
+            nullsLast(cb, orders, root.get("updatedAt"), false);
+        }
+        orders.add(cb.desc(root.get("id")));
+        return orders;
+    }
+
+    private void nullsLast(CriteriaBuilder cb, List<Order> orders, Expression<?> field, boolean ascending) {
+        orders.add(cb.asc(cb.<Integer>selectCase().when(cb.isNull(field), 1).otherwise(0)));
+        orders.add(ascending ? cb.asc(field) : cb.desc(field));
+    }
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderService.java =====
+ROLE: EDITABLE
+
+package com.example.guitarmes.productionorder;
+
+import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.guitar.GuitarRepository;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
+
+@Service
+public class ProductionOrderService {
+
+    private final ProductionOrderRepository productionOrderRepository;
+    private final ProductRepository productRepository;
+    private final GuitarRepository guitarRepository;
+
+    public ProductionOrderService(
+            ProductionOrderRepository productionOrderRepository,
+            ProductRepository productRepository,
+            GuitarRepository guitarRepository) {
+        this.productionOrderRepository = productionOrderRepository;
+        this.productRepository = productRepository;
+        this.guitarRepository = guitarRepository;
+    }
+
+    public List<ProductionOrder> getProductionOrders() {
+        return productionOrderRepository.findAllByOrderByIdDesc();
+    }
+
+    /** 未指定・空・未知のカテゴリは進行中へ正規化する。 */
+    public String normalizeCategory(String category) {
+        String normalized = normalizeSearch(category);
+        return "completed".equals(normalized) || "cancelled".equals(normalized)
+                ? normalized : "active";
+    }
+
+    public List<String> getCategoryStatuses(String category) {
+        return switch (normalizeCategory(category)) {
+            case "completed" -> List.of(COMPLETED);
+            case "cancelled" -> List.of(CANCELLED);
+            default -> List.of(PLANNED, IN_PROGRESS);
+        };
+    }
+
+    public record SearchResult(List<ProductionOrder> orders, long resultCount) {}
+
+    @Transactional(readOnly = true)
+    public long countCategory(String category) {
+        return productionOrderRepository.countMatching(searchCriteria(category, "", "", "", "", "", ""));
+    }
+
+    @Transactional(readOnly = true)
+    public SearchResult searchProductionOrders(String category, String orderNo, String product,
+            String status, String planMonth, String dueFrom, String dueTo) {
+        var criteria = searchCriteria(category, orderNo, product, status, planMonth, dueFrom, dueTo);
+        return new SearchResult(productionOrderRepository.search(criteria),
+                productionOrderRepository.countMatching(criteria));
+    }
+
+    private ProductionOrderSearchCriteria searchCriteria(String category, String orderNo,
+            String product, String status, String planMonth, String dueFrom, String dueTo) {
+        String number = normalizeSearch(orderNo);
+        String productText = normalizeSearch(product);
+        String state = normalizeSearch(status);
+        YearMonth month;
+        LocalDate from;
+        LocalDate to;
+        try {
+            month = normalizeSearch(planMonth).isEmpty() ? null : YearMonth.parse(planMonth.trim());
+            from = normalizeSearch(dueFrom).isEmpty() ? null : LocalDate.parse(dueFrom.trim());
+            to = normalizeSearch(dueTo).isEmpty() ? null : LocalDate.parse(dueTo.trim());
+        } catch (java.time.format.DateTimeParseException exception) {
+            throw new BusinessException("計画月はyyyy-MM、納期はyyyy-MM-dd形式で正しく入力してください。");
+        }
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BusinessException("納期の開始日は終了日以前にしてください。");
+        }
+        String selectedCategory = normalizeCategory(category);
+        return new ProductionOrderSearchCriteria(selectedCategory, getCategoryStatuses(selectedCategory),
+                number, productText, state, month, from, to);
+    }
+
+    public boolean hasSearchCondition(String... conditions) {
+        return java.util.Arrays.stream(conditions).anyMatch(value -> !normalizeSearch(value).isEmpty());
+    }
+
+    private String normalizeSearch(String value) {
+        return value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    public ProductionOrder getProductionOrderById(Long id) {
+        return productionOrderRepository.findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "指定された生産指示が存在しません。"));
+    }
+
+    public ProductionOrderUpdateRequest
+            getProductionOrderUpdateRequest(Long id) {
+        ProductionOrder order = getProductionOrderById(id);
+        validateEditable(order);
+
+        ProductionOrderUpdateRequest request =
+                new ProductionOrderUpdateRequest();
+        request.setProductId(order.getProduct().getId());
+        request.setPlannedQuantity(order.getPlannedQuantity());
+        request.setPlanMonth(order.getPlanMonth());
+        request.setPlannedStartDate(order.getPlannedStartDate());
+        request.setDueDate(order.getDueDate());
+        return request;
+    }
+
+    @Transactional
+    public ProductionOrder createProductionOrder(
+            Long productId,
+            Integer plannedQuantity,
+            YearMonth planMonth,
+            LocalDate plannedStartDate,
+            LocalDate dueDate) {
+        validateRequest(
+                productId,
+                plannedQuantity,
+                planMonth,
+                plannedStartDate,
+                dueDate);
+        Product product = getProduct(productId);
+        ProductionOrder productionOrder =
+                new ProductionOrder(
+                        generateOrderNo(),
+                        product,
+                        plannedQuantity,
+                        planMonth,
+                        plannedStartDate,
+                        dueDate,
+                        PLANNED);
+        return productionOrderRepository.save(productionOrder);
+    }
+
+    @Transactional
+    public ProductionOrder updateProductionOrder(
+            Long id,
+            ProductionOrderUpdateRequest request) {
+        if (request == null) {
+            throw new BusinessException(
+                    "生産計画の更新内容が指定されていません。");
+        }
+
+        ProductionOrder order = getProductionOrderById(id);
+        validateEditable(order);
+        validateRequest(
+                request.getProductId(),
+                request.getPlannedQuantity(),
+                request.getPlanMonth(),
+                request.getPlannedStartDate(),
+                request.getDueDate());
+        Product product = getProduct(request.getProductId());
+
+        order.setProduct(product);
+        order.setPlannedQuantity(request.getPlannedQuantity());
+        order.setPlanMonth(request.getPlanMonth());
+        order.setPlannedStartDate(request.getPlannedStartDate());
+        order.setDueDate(request.getDueDate());
+        return productionOrderRepository.save(order);
+    }
+
+    @Transactional
+    public ProductionOrder cancelProductionOrder(Long id) {
+        ProductionOrder order = getProductionOrderById(id);
+        validateEditable(order);
+        order.setStatus(CANCELLED);
+        return productionOrderRepository.save(order);
+    }
+
+    private Product getProduct(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "指定された製品が存在しません。"));
+    }
+
+    private void validateEditable(ProductionOrder order) {
+        if (!PLANNED.equals(order.getStatus())) {
+            throw new BusinessException(
+                    "計画中の生産指示だけ編集・取消できます。");
+        }
+        if (!Integer.valueOf(0).equals(order.getStartedQuantity())
+                || !Integer.valueOf(0).equals(order.getCompletedQuantity())) {
+            throw new BusinessException(
+                    "着手済みまたは完成実績がある生産指示は編集・取消できません。");
+        }
+        if (guitarRepository.existsByProductionOrderId(order.getId())) {
+            throw new BusinessException(
+                    "ギター個体が発行済みの生産指示は編集・取消できません。");
+        }
+    }
+
+    private void validateRequest(
+            Long productId,
+            Integer plannedQuantity,
+            YearMonth planMonth,
+            LocalDate plannedStartDate,
+            LocalDate dueDate) {
+        if (productId == null) {
+            throw new BusinessException(
+                    "対象製品を選択してください。");
+        }
+        if (plannedQuantity == null || plannedQuantity <= 0) {
+            throw new BusinessException(
+                    "計画数は1以上で入力してください。");
+        }
+        if (planMonth == null) {
+            throw new BusinessException(
+                    "対象月を入力してください。");
+        }
+        if (plannedStartDate == null) {
+            throw new BusinessException(
+                    "生産開始予定日を入力してください。");
+        }
+        if (dueDate == null) {
+            throw new BusinessException(
+                    "納期を入力してください。");
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate maximumDate = today.plusYears(5);
+        if (plannedStartDate.isBefore(today)) {
+            throw new BusinessException(
+                    "生産開始予定日は当日以降にしてください。");
+        }
+        if (plannedStartDate.isAfter(maximumDate)
+                || dueDate.isAfter(maximumDate)) {
+            throw new BusinessException(
+                    "日付は当日から5年以内で入力してください。");
+        }
+
+        if (plannedStartDate != null
+                && dueDate != null
+                && dueDate.isBefore(plannedStartDate)) {
+            throw new BusinessException(
+                    "納期は生産開始予定日以降にしてください。");
+        }
+    }
+
+    private String generateOrderNo() {
+        String year = String.valueOf(LocalDate.now().getYear())
+                .substring(2);
+        String prefix = "PO" + year;
+        ProductionOrder lastOrder = productionOrderRepository
+                .findTopByOrderNoStartingWithOrderByOrderNoDesc(prefix)
+                .orElse(null);
+        int nextNumber = 1;
+        if (lastOrder != null) {
+            nextNumber = Integer.parseInt(
+                    lastOrder.getOrderNo().substring(4)) + 1;
+        }
+        return prefix + String.format("%04d", nextNumber);
+    }
+}
+
+
+===== FILE: src/test/java/com/example/guitarmes/productionorder/ProductionOrderRepositorySearchTest.java =====
+ROLE: EDITABLE
+
+package com.example.guitarmes.productionorder;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.UUID;
+
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.test.context.ActiveProfiles;
+
+import com.example.guitarmes.product.Product;
+
+/** 専用PostgreSQLを使用。作成データ・日時fixture更新は各テスト終了時に全てロールバック。 */
+@DataJpaTest(properties = {"spring.jpa.hibernate.ddl-auto=validate", "spring.jpa.show-sql=false"})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("e2e")
+class ProductionOrderRepositorySearchTest {
+    @Autowired ProductionOrderRepository repository;
+    @Autowired EntityManager em;
+    private ProductionOrderService service;
+    private Product product;
+    private String prefix;
+
+    @BeforeEach
+    void fixtures() {
+        assertEquals("guitar_mes_e2e", em.createNativeQuery("select current_database()", String.class).getSingleResult());
+        service = new ProductionOrderService(repository, null, null);
+        prefix = "Q" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        product = new Product();
+        product.setModelNo(prefix + "-MODEL%_!I");
+        product.setProductName(prefix + " Guitar%_!I");
+        em.persist(product);
+    }
+
+    private ProductionOrder order(String suffix, String status, String due, String updated, String completed) {
+        var order = new ProductionOrder(prefix + suffix, product, 1, YearMonth.of(2026, 9), null,
+                due == null ? null : LocalDate.parse(due), status);
+        em.persist(order);
+        em.flush();
+        // Callbackを経由せず、5C-1以前のNULLや過去時刻を自身のfixtureだけに再現する。
+        em.createNativeQuery("update t_production_order set updated_at=cast(:updated as timestamp), "
+                + "completed_at=cast(:completed as timestamp) where id=:id")
+                .setParameter("updated", updated).setParameter("completed", completed)
+                .setParameter("id", order.getId()).executeUpdate();
+        em.detach(order);
+        return order;
+    }
+
+    private ProductionOrderService.SearchResult search(String category, String number, String productText,
+            String status, String month, String from, String to) {
+        return service.searchProductionOrders(category, number, productText, status, month, from, to);
+    }
+
+    private void assertRows(ProductionOrderService.SearchResult result, ProductionOrder... expected) {
+        assertEquals(List.of(expected).stream().map(ProductionOrder::getId).toList(),
+                result.orders().stream().map(ProductionOrder::getId).toList());
+        assertEquals(expected.length, result.resultCount());
+    }
+
+    @Test
+    void categoriesCountsAndForeignStatusRemainIndependentOfSearch() {
+        long active = service.countCategory("active"), completed = service.countCategory("completed"),
+                cancelled = service.countCategory("cancelled");
+        var p = order("P", "PLANNED", "2026-09-01", null, null);
+        var w = order("W", "IN_PROGRESS", "2026-09-02", null, null);
+        var c = order("C", "COMPLETED", null, null, null);
+        var x = order("X", "CANCELLED", null, null, null);
+        assertRows(search("active", prefix, "", "", "", "", ""), p, w);
+        assertRows(search("unknown", prefix, "", "", "", "", ""), p, w);
+        assertRows(search("completed", prefix, "", "", "", "", ""), c);
+        assertRows(search("cancelled", prefix, "", "", "", "", ""), x);
+        assertRows(search("completed", prefix, "", "PLANNED", "", "", ""));
+        assertRows(search("active", prefix + "P", "", "", "", "", ""), p);
+        assertEquals(active + 2, service.countCategory("active"));
+        assertEquals(completed + 1, service.countCategory("completed"));
+        assertEquals(cancelled + 1, service.countCategory("cancelled"));
+    }
+
+    @Test
+    void filtersUseAndInclusiveDatesAndConvertedYearMonth() {
+        var p = order("-Match", "PLANNED", "2026-09-10", null, null);
+        var noDue = order("-Null", "PLANNED", null, null, null);
+        var october = order("-October", "PLANNED", "2026-10-10", null, null);
+        em.createNativeQuery("update t_production_order set plan_month=DATE '2026-10-01' where id=:id")
+                .setParameter("id", october.getId()).executeUpdate();
+        assertRows(search("active", " " + prefix.toUpperCase(java.util.Locale.ROOT) + "-mAtCh ",
+                " GUITAR%_!i ", " planned ", "2026-09", "2026-09-10", "2026-09-10"), p);
+        assertRows(search("active", prefix + "-Match", "model%_!i", "", "", "", ""), p);
+        assertRows(search("active", prefix, "", "", "2026-10", "", ""), october);
+        assertRows(search("active", prefix, "", "", "", "2026-09-10", "2026-09-10"), p);
+        assertRows(search("active", prefix, "", "", "", "2026-10-10", ""), october);
+        assertRows(search("active", prefix, "", "", "", "", "2026-09-10"), p);
+        assertRows(search("active", prefix + "-Match", "missing", "", "", "", ""));
+        assertRows(search("active", prefix, "", "PLAN", "", "", ""));
+        assertRows(search("active", prefix, "", "COMPLETED", "", "", ""));
+        assertRows(search("active", prefix + "-Null", "", "", "", "", ""), noDue);
+        assertRows(search("active", prefix + "-Null", "", "", "", "2026-01-01", ""));
+    }
+
+    @Test
+    void likeMetacharactersAreLiteralInNumberAndProduct() {
+        order("-abc", "PLANNED", null, null, null);
+        for (String character : List.of("%", "_", "!")) {
+            var literal = order("-" + character, "PLANNED", null, null, null);
+            assertRows(search("active", prefix + "-" + character, "", "", "", "", ""), literal);
+        }
+        // リテラルを含まない別製品も同じ注文番号prefixで用意し、ワイルドカード誤一致を検出。
+        var other = new Product();
+        other.setModelNo(prefix + "-MODELabcI");
+        other.setProductName(prefix + " GuitarabcI");
+        em.persist(other);
+        Product original = product;
+        product = other;
+        order("-Other", "PLANNED", null, null, null);
+        product = original;
+        for (String text : List.of("Guitar%", "Guitar%_", "Guitar%_!", "MODEL%", "MODEL%_", "MODEL%_!")) {
+            var result = search("active", prefix, text, "", "", "", "");
+            assertEquals(4, result.resultCount());
+            assertTrue(result.orders().stream().allMatch(o -> o.getProduct().getId().equals(original.getId())));
+        }
+    }
+
+    @Test
+    void activeSortUsesDueThenUpdatedNullsLastThenId() {
+        var early = order("E", "PLANNED", "2026-09-01", null, null);
+        var old = order("O", "IN_PROGRESS", "2026-09-02", "2026-09-01 10:00:00", null);
+        var recent1 = order("R1", "PLANNED", "2026-09-02", "2026-09-02 10:00:00", null);
+        var recent2 = order("R2", "PLANNED", "2026-09-02", "2026-09-02 10:00:00", null);
+        var noUpdated = order("U", "PLANNED", "2026-09-02", null, null);
+        var noDue = order("D", "PLANNED", null, "2026-09-03 10:00:00", null);
+        var bothNull1 = order("N1", "PLANNED", null, null, null);
+        var bothNull2 = order("N2", "PLANNED", null, null, null);
+        assertRows(search("active", prefix, "", "", "", "", ""),
+                early, recent2, recent1, old, noUpdated, noDue, bothNull2, bothNull1);
+    }
+
+    @Test
+    void completedAndCancelledSortTimestampsNullsLastThenId() {
+        for (String category : List.of("completed", "cancelled")) {
+            String status = category.toUpperCase(java.util.Locale.ROOT);
+            String key = status.substring(0, 3);
+            var old = order(key + "O", status, "2026-01-01", "2026-09-01 10:00:00", "2026-09-01 10:00:00");
+            var recent1 = order(key + "R1", status, null, "2026-09-02 10:00:00", "2026-09-02 10:00:00");
+            var recent2 = order(key + "R2", status, null, "2026-09-02 10:00:00", "2026-09-02 10:00:00");
+            // 並び順に使わない日時を逆転させ、completed/cancelledの列の取り違えも検出する。
+            em.createNativeQuery("update t_production_order set "
+                    + (category.equals("completed") ? "updated_at" : "completed_at")
+                    + "=TIMESTAMP '2099-01-01 00:00:00' where id=:id")
+                    .setParameter("id", old.getId()).executeUpdate();
+            var noTime1 = order(key + "N1", status, null, null, null);
+            var noTime2 = order(key + "N2", status, null, null, null);
+            assertRows(search(category, prefix, "", "", "", "", ""), recent2, recent1, old, noTime2, noTime1);
+        }
+    }
+}
+
+
+===== FILE: src/test/java/com/example/guitarmes/productionorder/ProductionOrderSearchTest.java =====
+ROLE: EDITABLE
+
+package com.example.guitarmes.productionorder;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Locale;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import com.example.guitarmes.exception.BusinessException;
+
+class ProductionOrderSearchTest {
+    private final ProductionOrderRepository repository = mock(ProductionOrderRepository.class);
+    private final ProductionOrderService service = new ProductionOrderService(repository, null, null);
+
+    @Test
+    void parsesNormalizesAndDelegatesIdenticalConditionsForListAndCount() {
+        var rows = List.of(new ProductionOrder());
+        when(repository.search(any())).thenReturn(rows);
+        when(repository.countMatching(any())).thenReturn(7L);
+        var result = service.searchProductionOrders(" ACTIVE ", " PO-I ", " GUITAR ",
+                " IN_PROGRESS ", " 2026-09 ", "2026-09-10", "2026-09-10");
+        var expected = new ProductionOrderSearchCriteria("active", List.of("PLANNED", "IN_PROGRESS"),
+                "po-i", "guitar", "in_progress", YearMonth.of(2026, 9),
+                LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 10));
+        verify(repository).search(expected);
+        verify(repository).countMatching(expected);
+        assertEquals(rows, result.orders());
+        assertEquals(7L, result.resultCount()); // 件数はList.sizeではなくDBのcount。
+        verify(repository, never()).findAllByOrderByIdDesc();
+    }
+
+    @Test
+    void invalidDatesAndReversedRangeAreRejectedBeforeQueries() {
+        assertEquals("計画月はyyyy-MM、納期はyyyy-MM-dd形式で正しく入力してください。",
+                assertThrows(BusinessException.class, () -> search("2026-13", "", "")).getMessage());
+        assertThrows(BusinessException.class, () -> search("", "2026-02-30", ""));
+        assertThrows(BusinessException.class, () -> search("", "", "bad"));
+        assertEquals("納期の開始日は終了日以前にしてください。",
+                assertThrows(BusinessException.class, () -> search("", "2026-10-01", "2026-09-01")).getMessage());
+        verifyNoInteractions(repository);
+    }
+
+    private void search(String month, String from, String to) {
+        service.searchProductionOrders("active", "", "", "", month, from, to);
+    }
+
+    @Test
+    void emptyConditionsAndUnknownCategoriesAreNormalized() {
+        for (String value : java.util.Arrays.asList(null, "", " ", "invalid", "undefined")) {
+            service.searchProductionOrders(value, null, " ", "", null, null, null);
+        }
+        var empty = new ProductionOrderSearchCriteria("active", List.of("PLANNED", "IN_PROGRESS"),
+                "", "", "", null, null, null);
+        verify(repository, times(5)).search(empty);
+        assertFalse(service.hasSearchCondition(null, " ", ""));
+        assertTrue(service.hasSearchCondition("2026-09"));
+        assertEquals(List.of("COMPLETED"), service.getCategoryStatuses(" COMPLETED "));
+        assertEquals(List.of("CANCELLED"), service.getCategoryStatuses("CANCELLED"));
+    }
+
+    @Test
+    void normalizationDoesNotDependOnDefaultLocale() {
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            service.searchProductionOrders("ACTIVE", "I", "I", "IN_PROGRESS", "", "", "");
+            var captor = ArgumentCaptor.forClass(ProductionOrderSearchCriteria.class);
+            verify(repository).search(captor.capture());
+            assertEquals("i", captor.getValue().orderNo());
+            assertEquals("i", captor.getValue().product());
+            assertEquals("in_progress", captor.getValue().status());
+        } finally {
+            Locale.setDefault(original);
+        }
+    }
+
+    @Test
+    void controllerKeepsInputsCountsAndErrorsForEachCategory() throws Exception {
+        when(repository.search(any())).thenReturn(List.of());
+        when(repository.countMatching(any())).thenAnswer(invocation -> {
+            ProductionOrderSearchCriteria c = invocation.getArgument(0);
+            if (!c.orderNo().isEmpty()) return 0L;
+            return switch (c.category()) { case "completed" -> 3L; case "cancelled" -> 4L; default -> 2L; };
+        });
+        var mvc = MockMvcBuilders.standaloneSetup(new ProductionOrderViewController(service, null, null, null)).build();
+        mvc.perform(get("/production-orders/view"))
+                .andExpect(model().attribute("category", "active"))
+                .andExpect(model().attribute("filterApplied", false));
+        for (String category : List.of("active", "completed", "cancelled")) {
+            mvc.perform(get("/production-orders/view").param("category", category)
+                    .param("orderNo", "missing").param("product", "ST").param("status", "PLANNED")
+                    .param("planMonth", "2026-09").param("dueFrom", "2026-09-10").param("dueTo", "2026-09-10"))
+                    .andExpect(status().isOk()).andExpect(view().name("production-order-list"))
+                    .andExpect(model().attribute("category", category))
+                    .andExpect(model().attribute("categoryStatuses", service.getCategoryStatuses(category)))
+                    .andExpect(model().attribute("activeCount", 2L)).andExpect(model().attribute("completedCount", 3L))
+                    .andExpect(model().attribute("cancelledCount", 4L)).andExpect(model().attribute("resultCount", 0L))
+                    .andExpect(model().attribute("orders", List.of())).andExpect(model().attribute("filterApplied", true))
+                    .andExpect(model().attribute("orderNo", "missing")).andExpect(model().attribute("product", "ST"))
+                    .andExpect(model().attribute("selectedStatus", "PLANNED"))
+                    .andExpect(model().attribute("planMonth", "2026-09"))
+                    .andExpect(model().attribute("dueFrom", "2026-09-10"))
+                    .andExpect(model().attribute("dueTo", "2026-09-10"))
+                    .andExpect(model().attributeDoesNotExist("searchError"));
+            for (String[] dates : List.of(new String[]{"bad", ""}, new String[]{"2026-10-01", "2026-09-01"})) {
+                mvc.perform(get("/production-orders/view").param("category", category)
+                        .param("dueFrom", dates[0]).param("dueTo", dates[1]))
+                        .andExpect(model().attribute("category", category))
+                        .andExpect(model().attribute("activeCount", 2L)).andExpect(model().attribute("completedCount", 3L))
+                        .andExpect(model().attribute("cancelledCount", 4L)).andExpect(model().attribute("resultCount", 0L))
+                        .andExpect(model().attribute("dueFrom", dates[0])).andExpect(model().attributeExists("searchError"));
+            }
+        }
+        for (String invalid : List.of("", " ", "invalid", "undefined")) {
+            mvc.perform(get("/production-orders/view").param("category", invalid))
+                    .andExpect(model().attribute("category", "active"));
+        }
+        verify(repository, never()).findAllByOrderByIdDesc();
+    }
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderRepository.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.productionorder;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProductionOrderRepository
+        extends JpaRepository<ProductionOrder, Long>, ProductionOrderSearchRepository {
+
+    Optional<ProductionOrder>
+            findTopByOrderNoStartingWithOrderByOrderNoDesc(
+                    String prefix);
+
+    List<ProductionOrder>
+            findAllByOrderByIdDesc();
+
+    List<ProductionOrder>
+            findByStatusOrderByIdDesc(
+                    String status);
+
+    List<ProductionOrder> findByProductId(
+            Long productId);
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderSearchCriteria.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.productionorder;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
+/** Serviceで正規化・検証済みの検索条件。 */
+public record ProductionOrderSearchCriteria(String category, List<String> categoryStatuses,
+        String orderNo, String product, String status, YearMonth planMonth,
+        LocalDate dueFrom, LocalDate dueTo) {
+    public ProductionOrderSearchCriteria {
+        categoryStatuses = List.copyOf(categoryStatuses);
+    }
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrderViewController.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.productionorder;
+
+import java.beans.PropertyEditorSupport;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.guitar.GuitarService;
+import com.example.guitarmes.product.ProductService;
+import com.example.guitarmes.productionschedule.ProductionSchedule;
+import com.example.guitarmes.productionschedule.ProductionScheduleService;
+
+@Controller
+public class ProductionOrderViewController {
+
+    private final ProductionOrderService productionOrderService;
+    private final ProductService productService;
+    private final GuitarService guitarService;
+    private final ProductionScheduleService productionScheduleService;
+
+    public ProductionOrderViewController(
+            ProductionOrderService productionOrderService,
+            ProductService productService,
+            GuitarService guitarService,
+            ProductionScheduleService productionScheduleService) {
+        this.productionOrderService = productionOrderService;
+        this.productService = productService;
+        this.guitarService = guitarService;
+        this.productionScheduleService = productionScheduleService;
+    }
+
+    @GetMapping("/production-orders/view")
+    public String showList(
+            @RequestParam(defaultValue = "active") String category,
+            @RequestParam(defaultValue = "") String orderNo,
+            @RequestParam(defaultValue = "") String product,
+            @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "") String planMonth,
+            @RequestParam(defaultValue = "") String dueFrom,
+            @RequestParam(defaultValue = "") String dueTo,
+            Model model) {
+        String selectedCategory = productionOrderService.normalizeCategory(category);
+        model.addAttribute("category", selectedCategory);
+        model.addAttribute("activeCount", productionOrderService.countCategory("active"));
+        model.addAttribute("completedCount", productionOrderService.countCategory("completed"));
+        model.addAttribute("cancelledCount", productionOrderService.countCategory("cancelled"));
+        model.addAttribute("categoryStatuses", productionOrderService.getCategoryStatuses(selectedCategory));
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("product", product);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("planMonth", planMonth);
+        model.addAttribute("dueFrom", dueFrom);
+        model.addAttribute("dueTo", dueTo);
+        model.addAttribute("filterApplied", productionOrderService.hasSearchCondition(
+                orderNo, product, status, planMonth, dueFrom, dueTo));
+        List<ProductionOrder> orders;
+        long resultCount = 0;
+        try {
+            var result = productionOrderService.searchProductionOrders(selectedCategory,
+                    orderNo, product, status, planMonth, dueFrom, dueTo);
+            orders = result.orders();
+            resultCount = result.resultCount();
+        } catch (BusinessException exception) {
+            orders = List.of();
+            model.addAttribute("searchError", exception.getMessage());
+        }
+        model.addAttribute("orders", orders);
+        model.addAttribute("resultCount", resultCount);
+        return "production-order-list";
+    }
+
+    @GetMapping("/production-orders/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("products", productService.getProducts());
+        ProductionOrderCreateRequest request =
+                new ProductionOrderCreateRequest();
+        LocalDate today = LocalDate.now();
+        request.setPlanMonth(java.time.YearMonth.from(today));
+        request.setPlannedStartDate(today);
+        request.setDueDate(today.plusDays(7));
+        model.addAttribute("request", request);
+        addDateRangeAttributes(model);
+        return "production-order-form";
+    }
+
+    @PostMapping("/production-orders/create")
+    public String create(ProductionOrderCreateRequest request) {
+        productionOrderService.createProductionOrder(
+                request.getProductId(),
+                request.getPlannedQuantity(),
+                request.getPlanMonth(),
+                request.getPlannedStartDate(),
+                request.getDueDate());
+        return "redirect:/production-orders/view";
+    }
+
+    @GetMapping("/production-orders/{id}/view")
+    public String showDetail(
+            @PathVariable Long id,
+            Model model) {
+        addDetailAttributes(id, model);
+        return "production-order-detail";
+    }
+
+    @GetMapping("/production-orders/{id}/edit")
+    public String showEditForm(
+            @PathVariable Long id,
+            Model model) {
+        model.addAttribute(
+                "request",
+                productionOrderService
+                        .getProductionOrderUpdateRequest(id));
+        model.addAttribute(
+                "order",
+                productionOrderService.getProductionOrderById(id));
+        model.addAttribute("products", productService.getProducts());
+        addDateRangeAttributes(model);
+        return "production-order-edit-form";
+    }
+
+    @PostMapping("/production-orders/{id}/edit")
+    public String update(
+            @PathVariable Long id,
+            @ModelAttribute("request")
+            ProductionOrderUpdateRequest request,
+            Model model) {
+        try {
+            productionOrderService.updateProductionOrder(id, request);
+            return "redirect:/production-orders/" + id + "/view";
+        } catch (BusinessException exception) {
+            model.addAttribute(
+                    "order",
+                    productionOrderService.getProductionOrderById(id));
+            model.addAttribute("products", productService.getProducts());
+            addDateRangeAttributes(model);
+            model.addAttribute("errorMessage", exception.getMessage());
+            return "production-order-edit-form";
+        }
+    }
+
+    @PostMapping("/production-orders/{id}/cancel")
+    public String cancel(
+            @PathVariable Long id,
+            Model model) {
+        try {
+            productionOrderService.cancelProductionOrder(id);
+            return "redirect:/production-orders/" + id + "/view";
+        } catch (BusinessException exception) {
+            addDetailAttributes(id, model);
+            model.addAttribute("errorMessage", exception.getMessage());
+            return "production-order-detail";
+        }
+    }
+
+    private void addDetailAttributes(Long id, Model model) {
+        model.addAttribute(
+                "order",
+                productionOrderService.getProductionOrderById(id));
+        model.addAttribute(
+                "guitars",
+                guitarService.getGuitarsByProductionOrderId(id));
+        List<ProductionSchedule> productionSchedules =
+                productionScheduleService
+                        .getProductionSchedulesByOrderId(id);
+        model.addAttribute(
+                "productionSchedules",
+                productionSchedules);
+        addIssueAttributes(productionSchedules, model);
+        model.addAttribute(
+                "allocatedQuantity",
+                productionScheduleService.getAllocatedQuantity(id));
+        model.addAttribute(
+                "unallocatedQuantity",
+                productionScheduleService.getUnallocatedQuantity(id));
+    }
+    private void addIssueAttributes(
+            List<ProductionSchedule> productionSchedules,
+            Model model) {
+        Map<Long, Long> issuedBodyCounts = new LinkedHashMap<>();
+        Map<Long, Long> issuedNeckCounts = new LinkedHashMap<>();
+        Map<Long, Boolean> componentsIssued = new LinkedHashMap<>();
+        Map<Long, Boolean> neckInstallAvailable = new LinkedHashMap<>();
+        for (ProductionSchedule schedule : productionSchedules) {
+            Long scheduleId = schedule.getId();
+            issuedBodyCounts.put(
+                    scheduleId,
+                    productionScheduleService
+                            .getIssuedBodyCount(scheduleId));
+            issuedNeckCounts.put(
+                    scheduleId,
+                    productionScheduleService
+                            .getIssuedNeckCount(scheduleId));
+            boolean issued = productionScheduleService
+                    .isComponentsIssued(schedule);
+            componentsIssued.put(scheduleId, issued);
+            ProductionOrder order = schedule.getProductionOrder();
+            boolean belowOrderLimit = order != null
+                    && order.getStartedQuantity() != null
+                    && order.getPlannedQuantity() != null
+                    && order.getStartedQuantity() < order.getPlannedQuantity();
+            neckInstallAvailable.put(
+                    scheduleId,
+                    issued && belowOrderLimit);
+        }
+        model.addAttribute("issuedBodyCounts", issuedBodyCounts);
+        model.addAttribute("issuedNeckCounts", issuedNeckCounts);
+        model.addAttribute("componentsIssued", componentsIssued);
+        model.addAttribute("neckInstallAvailable", neckInstallAvailable);
+    }
+
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(
+                LocalDate.class,
+                new FlexibleLocalDateEditor());
+    }
+
+    private void addDateRangeAttributes(Model model) {
+        LocalDate today = LocalDate.now();
+        model.addAttribute("minimumPlanDate", today);
+        model.addAttribute("maximumPlanDate", today.plusYears(5));
+    }
+
+    private static class FlexibleLocalDateEditor
+            extends PropertyEditorSupport {
+        private static final List<DateTimeFormatter> FORMATTERS = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("uuuu/MM/dd"),
+                DateTimeFormatter.BASIC_ISO_DATE);
+
+        @Override
+        public void setAsText(String text) {
+            if (text == null || text.isBlank()) {
+                setValue(null);
+                return;
+            }
+            String value = text.trim();
+            for (DateTimeFormatter formatter : FORMATTERS) {
+                try {
+                    setValue(LocalDate.parse(value, formatter));
+                    return;
+                } catch (DateTimeParseException ignored) {
+                    // 次の対応形式を試す。
+                }
+            }
+            throw new IllegalArgumentException(
+                    "日付はyyyy/MM/dd形式で入力してください。");
+        }
+    }
+}
+
+
+===== FILE: src/main/java/com/example/guitarmes/productionorder/ProductionOrder.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.productionorder;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostUpdate;
+import jakarta.persistence.Transient;
+
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+
+import com.example.guitarmes.common.YearMonthDateConverter;
+import com.example.guitarmes.product.Product;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "t_production_order")
+public class ProductionOrder {
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Transient
+    private LocalDateTime persistedUpdatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        // Serviceが設定したイベント時刻は保持し、通常編集だけ現在時刻にする。
+        // 読込時の値と比較するため、detached Entityのmergeでも明示時刻を保持できる。
+        if (Objects.equals(updatedAt, persistedUpdatedAt)) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PostLoad
+    @PostPersist
+    @PostUpdate
+    public void rememberUpdatedAt() {
+        persistedUpdatedAt = updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime value) { createdAt = value; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime value) { updatedAt = value; }
+    public LocalDateTime getCompletedAt() { return completedAt; }
+    public void setCompletedAt(LocalDateTime value) { completedAt = value; }
+
+
+    @Id
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(
+            nullable = false,
+            unique = true)
+    private String orderNo;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(
+            name = "product_id",
+            nullable = false)
+    private Product product;
+
+    @Column(nullable = false)
+    private Integer plannedQuantity;
+
+    @Column(nullable = false)
+    private Integer startedQuantity;
+
+    @Column(nullable = false)
+    private Integer completedQuantity;
+
+    @Convert(converter = YearMonthDateConverter.class)
+    @Column(
+            name = "plan_month",
+            nullable = false)
+    private YearMonth planMonth;
+
+    private LocalDate plannedStartDate;
+
+    private LocalDate dueDate;
+
+    @Column(nullable = false)
+    private String status;
+
+    public ProductionOrder() {
+    }
+
+    public ProductionOrder(
+            String orderNo,
+            Product product,
+            Integer plannedQuantity,
+            YearMonth planMonth,
+            LocalDate plannedStartDate,
+            LocalDate dueDate,
+            String status) {
+
+        this.orderNo = orderNo;
+        this.product = product;
+        this.plannedQuantity =
+                plannedQuantity;
+
+        this.startedQuantity = 0;
+        this.completedQuantity = 0;
+
+        this.planMonth = planMonth;
+
+        this.plannedStartDate =
+                plannedStartDate;
+
+        this.dueDate = dueDate;
+        this.status = status;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(
+            Long id) {
+
+        this.id = id;
+    }
+
+    public String getOrderNo() {
+        return orderNo;
+    }
+
+    public void setOrderNo(
+            String orderNo) {
+
+        this.orderNo = orderNo;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(
+            Product product) {
+
+        this.product = product;
+    }
+
+    public Integer getPlannedQuantity() {
+        return plannedQuantity;
+    }
+
+    public void setPlannedQuantity(
+            Integer plannedQuantity) {
+
+        this.plannedQuantity =
+                plannedQuantity;
+    }
+
+    public Integer getStartedQuantity() {
+        return startedQuantity;
+    }
+
+    public void setStartedQuantity(
+            Integer startedQuantity) {
+
+        this.startedQuantity =
+                startedQuantity;
+    }
+
+    public Integer getCompletedQuantity() {
+        return completedQuantity;
+    }
+
+    public void setCompletedQuantity(
+            Integer completedQuantity) {
+
+        this.completedQuantity =
+                completedQuantity;
+    }
+
+    public YearMonth getPlanMonth() {
+        return planMonth;
+    }
+
+    public void setPlanMonth(
+            YearMonth planMonth) {
+
+        this.planMonth = planMonth;
+    }
+
+    public LocalDate getPlannedStartDate() {
+        return plannedStartDate;
+    }
+
+    public void setPlannedStartDate(
+            LocalDate plannedStartDate) {
+
+        this.plannedStartDate =
+                plannedStartDate;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(
+            LocalDate dueDate) {
+
+        this.dueDate = dueDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(
+            String status) {
+
+        this.status = status;
+    }
+}
+
+===== FILE: src/main/java/com/example/guitarmes/product/Product.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.product;
+
+import com.example.guitarmes.master.body.BodyMaster;
+import com.example.guitarmes.master.neck.NeckMaster;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "m_product")
+public class Product {
+
+    @Id
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String modelNo;
+
+    @Column(name = "internal_model_code")
+    private String internalModelCode;
+
+    private String productName;
+
+    private String color;
+
+    private String bodyMaterial;
+
+    private String neckMaterial;
+
+    private String fingerboardMaterial;
+
+    private String pickupLayout;
+
+    private Integer fretCount;
+
+    private String scale;
+
+    @Column(
+            name = "image_file_name",
+            length = 255)
+    private String imageFileName;
+
+    @ManyToOne
+    @JoinColumn(name = "body_master_id")
+    private BodyMaster bodyMaster;
+
+    @ManyToOne
+    @JoinColumn(name = "neck_master_id")
+    private NeckMaster neckMaster;
+
+    public Product() {
+    }
+
+    public Product(
+            String modelNo,
+            String productName,
+            String color,
+            String bodyMaterial,
+            String neckMaterial,
+            String fingerboardMaterial,
+            String pickupLayout,
+            Integer fretCount,
+            String scale) {
+
+        this.modelNo = modelNo;
+        this.productName = productName;
+        this.color = color;
+        this.bodyMaterial = bodyMaterial;
+        this.neckMaterial = neckMaterial;
+        this.fingerboardMaterial =
+                fingerboardMaterial;
+        this.pickupLayout = pickupLayout;
+        this.fretCount = fretCount;
+        this.scale = scale;
+    }
+
+    public Product(
+            String modelNo,
+            String internalModelCode,
+            String productName,
+            String color,
+            String bodyMaterial,
+            String neckMaterial,
+            String fingerboardMaterial,
+            String pickupLayout,
+            Integer fretCount,
+            String scale,
+            BodyMaster bodyMaster,
+            NeckMaster neckMaster) {
+
+        this.modelNo = modelNo;
+        this.internalModelCode =
+                internalModelCode;
+        this.productName = productName;
+        this.color = color;
+        this.bodyMaterial = bodyMaterial;
+        this.neckMaterial = neckMaterial;
+        this.fingerboardMaterial =
+                fingerboardMaterial;
+        this.pickupLayout = pickupLayout;
+        this.fretCount = fretCount;
+        this.scale = scale;
+        this.bodyMaster = bodyMaster;
+        this.neckMaster = neckMaster;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(
+            Long id) {
+
+        this.id = id;
+    }
+
+    public String getModelNo() {
+        return modelNo;
+    }
+
+    public void setModelNo(
+            String modelNo) {
+
+        this.modelNo = modelNo;
+    }
+
+    public String getInternalModelCode() {
+        return internalModelCode;
+    }
+
+    public void setInternalModelCode(
+            String internalModelCode) {
+
+        this.internalModelCode =
+                internalModelCode;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(
+            String productName) {
+
+        this.productName = productName;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(
+            String color) {
+
+        this.color = color;
+    }
+
+    public String getBodyMaterial() {
+        return bodyMaterial;
+    }
+
+    public void setBodyMaterial(
+            String bodyMaterial) {
+
+        this.bodyMaterial = bodyMaterial;
+    }
+
+    public String getNeckMaterial() {
+        return neckMaterial;
+    }
+
+    public void setNeckMaterial(
+            String neckMaterial) {
+
+        this.neckMaterial = neckMaterial;
+    }
+
+    public String getFingerboardMaterial() {
+        return fingerboardMaterial;
+    }
+
+    public void setFingerboardMaterial(
+            String fingerboardMaterial) {
+
+        this.fingerboardMaterial =
+                fingerboardMaterial;
+    }
+
+    public String getPickupLayout() {
+        return pickupLayout;
+    }
+
+    public void setPickupLayout(
+            String pickupLayout) {
+
+        this.pickupLayout = pickupLayout;
+    }
+
+    public Integer getFretCount() {
+        return fretCount;
+    }
+
+    public void setFretCount(
+            Integer fretCount) {
+
+        this.fretCount = fretCount;
+    }
+
+    public String getScale() {
+        return scale;
+    }
+
+    public void setScale(
+            String scale) {
+
+        this.scale = scale;
+    }
+
+    public String getImageFileName() {
+        return imageFileName;
+    }
+
+    public void setImageFileName(
+            String imageFileName) {
+        this.imageFileName = imageFileName;
+    }
+
+    public BodyMaster getBodyMaster() {
+        return bodyMaster;
+    }
+
+    public void setBodyMaster(
+            BodyMaster bodyMaster) {
+
+        this.bodyMaster = bodyMaster;
+    }
+
+    public NeckMaster getNeckMaster() {
+        return neckMaster;
+    }
+
+    public void setNeckMaster(
+            NeckMaster neckMaster) {
+
+        this.neckMaster = neckMaster;
+    }
+}
+
+===== FILE: src/main/java/com/example/guitarmes/common/YearMonthDateConverter.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.common;
+
+import java.sql.Date;
+import java.time.YearMonth;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+
+@Converter(autoApply = false)
+public class YearMonthDateConverter
+        implements AttributeConverter<YearMonth, Date> {
+
+    @Override
+    public Date convertToDatabaseColumn(
+            YearMonth attribute) {
+
+        if (attribute == null) {
+            return null;
+        }
+
+        return Date.valueOf(
+                attribute.atDay(1));
+    }
+
+    @Override
+    public YearMonth convertToEntityAttribute(
+            Date dbData) {
+
+        if (dbData == null) {
+            return null;
+        }
+
+        return YearMonth.from(
+                dbData.toLocalDate());
+    }
+}
+
+
+===== FILE: src/test/java/com/example/guitarmes/productionorder/ProductionOrderServiceTest.java =====
+ROLE: REFERENCE ONLY
+
+package com.example.guitarmes.productionorder;
+
+import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.example.guitarmes.exception.BusinessException;
+import com.example.guitarmes.exception.NotFoundException;
+import com.example.guitarmes.guitar.GuitarRepository;
+import com.example.guitarmes.product.Product;
+import com.example.guitarmes.product.ProductRepository;
+import com.example.guitarmes.productionorder.ProductionOrder;
+import com.example.guitarmes.productionorder.ProductionOrderRepository;
+import com.example.guitarmes.productionorder.ProductionOrderService;
+import com.example.guitarmes.productionorder.ProductionOrderUpdateRequest;
+
+@ExtendWith(MockitoExtension.class)
+class ProductionOrderServiceTest {
+
+    @Mock
+    private ProductionOrderRepository productionOrderRepository;
+    @Mock
+    private ProductRepository productRepository;
+    @Mock
+    private GuitarRepository guitarRepository;
+
+    private ProductionOrderService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new ProductionOrderService(
+                productionOrderRepository,
+                productRepository,
+                guitarRepository);
+    }
+
+    @Test
+    @DisplayName("未着手の計画から編集DTOを作成できる")
+    void getUpdateRequest_planned_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        stubOrder(order);
+        ProductionOrderUpdateRequest request =
+                service.getProductionOrderUpdateRequest(1L);
+        assertEquals(10L, request.getProductId());
+        assertEquals(20, request.getPlannedQuantity());
+        assertEquals(YearMonth.of(2026, 9), request.getPlanMonth());
+        assertEquals(LocalDate.of(2026, 9, 1), request.getPlannedStartDate());
+        assertEquals(LocalDate.of(2026, 9, 30), request.getDueDate());
+    }
+
+    @Test
+    @DisplayName("未着手の計画を更新できる")
+    void update_planned_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        Product changedProduct = product(20L);
+        ProductionOrderUpdateRequest request = request();
+        request.setProductId(20L);
+        request.setPlannedQuantity(30);
+        request.setPlanMonth(YearMonth.of(2026, 10));
+        request.setPlannedStartDate(LocalDate.of(2026, 10, 1));
+        request.setDueDate(LocalDate.of(2026, 10, 31));
+        stubOrder(order);
+        when(productRepository.findById(20L))
+                .thenReturn(Optional.of(changedProduct));
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.updateProductionOrder(1L, request);
+        assertSame(changedProduct, result.getProduct());
+        assertEquals(30, result.getPlannedQuantity());
+        assertEquals(YearMonth.of(2026, 10), result.getPlanMonth());
+        assertEquals(LocalDate.of(2026, 10, 1), result.getPlannedStartDate());
+        assertEquals(LocalDate.of(2026, 10, 31), result.getDueDate());
+        assertEquals("PO260001", result.getOrderNo());
+        assertEquals(PLANNED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("未着手の計画を中止できる")
+    void cancel_planned_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        stubOrder(order);
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.cancelProductionOrder(1L);
+        assertEquals(CANCELLED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("製造中の計画は編集できない")
+    void update_inProgress_throws() {
+        ProductionOrder order = order(IN_PROGRESS, 1, 0);
+        stubOrderWithoutGuitarCheck(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request()));
+        assertTrue(ex.getMessage().contains("計画中"));
+        verify(productionOrderRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("着手実績がある計画は編集できない")
+    void update_started_throws() {
+        ProductionOrder order = order(PLANNED, 1, 0);
+        stubOrderWithoutGuitarCheck(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request()));
+        assertTrue(ex.getMessage().contains("着手済み"));
+    }
+
+    @Test
+    @DisplayName("完成実績がある計画は中止できない")
+    void cancel_completedQuantity_throws() {
+        ProductionOrder order = order(PLANNED, 0, 1);
+        stubOrderWithoutGuitarCheck(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.cancelProductionOrder(1L));
+        assertTrue(ex.getMessage().contains("完成実績"));
+    }
+
+    @Test
+    @DisplayName("Guitar発行済みの計画は編集できない")
+    void update_issuedGuitar_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(guitarRepository.existsByProductionOrderId(1L))
+                .thenReturn(true);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request()));
+        assertTrue(ex.getMessage().contains("ギター個体"));
+    }
+
+    @Test
+    @DisplayName("中止済み計画は再度中止できない")
+    void cancel_cancelled_throws() {
+        ProductionOrder order = order(CANCELLED, 0, 0);
+        stubOrderWithoutGuitarCheck(order);
+        assertThrows(
+                BusinessException.class,
+                () -> service.cancelProductionOrder(1L));
+    }
+
+    @Test
+    @DisplayName("計画数が0なら更新を拒否する")
+    void update_zeroQuantity_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedQuantity(0);
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertTrue(ex.getMessage().contains("1以上"));
+    }
+
+    @Test
+    @DisplayName("納期が開始予定日より前なら更新を拒否する")
+    void update_invalidDateRange_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.of(2026, 10, 10));
+        request.setDueDate(LocalDate.of(2026, 10, 9));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertTrue(ex.getMessage().contains("開始予定日以降"));
+    }
+
+    @Test
+    @DisplayName("存在しない製品への変更を拒否する")
+    void update_unknownProduct_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        stubOrder(order);
+        when(productRepository.findById(10L)).thenReturn(Optional.empty());
+        assertThrows(
+                NotFoundException.class,
+                () -> service.updateProductionOrder(1L, request()));
+    }
+
+    @Test
+    @DisplayName("nullの更新内容を拒否する")
+    void update_nullRequest_throws() {
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, null));
+        assertTrue(ex.getMessage().contains("指定されていません"));
+        verify(productionOrderRepository, never()).findById(any());
+    }
+
+    private void stubOrder(ProductionOrder order) {
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+        when(guitarRepository.existsByProductionOrderId(1L))
+                .thenReturn(false);
+    }
+
+    private void stubOrderWithoutGuitarCheck(ProductionOrder order) {
+        when(productionOrderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+    }
+
+    private ProductionOrder order(
+            String status,
+            int started,
+            int completed) {
+        ProductionOrder order = new ProductionOrder(
+                "PO260001",
+                product(10L),
+                20,
+                YearMonth.of(2026, 9),
+                LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 9, 30),
+                status);
+        order.setId(1L);
+        order.setStartedQuantity(started);
+        order.setCompletedQuantity(completed);
+        return order;
+    }
+
+    private Product product(Long id) {
+        Product product = new Product();
+        product.setId(id);
+        return product;
+    }
+
+    private ProductionOrderUpdateRequest request() {
+        ProductionOrderUpdateRequest request =
+                new ProductionOrderUpdateRequest();
+        request.setProductId(10L);
+        request.setPlannedQuantity(20);
+        request.setPlanMonth(YearMonth.of(2026, 9));
+        request.setPlannedStartDate(LocalDate.now().plusDays(1));
+        request.setDueDate(LocalDate.now().plusDays(30));
+        return request;
+    }
+
+    @Test
+    @DisplayName("過去の開始予定日は更新を拒否する")
+    void update_pastStartDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().minusDays(1));
+        request.setDueDate(LocalDate.now().plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals(
+                "生産開始予定日は当日以降にしてください。",
+                ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("5年を超える開始予定日は更新を拒否する")
+    void update_tooFarFuture_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().plusYears(5).plusDays(1));
+        request.setDueDate(LocalDate.now().plusYears(5).plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals(
+                "日付は当日から5年以内で入力してください。",
+                ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("開始予定日が未入力なら更新を拒否する")
+    void update_nullStartDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(null);
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("生産開始予定日を入力してください。", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("納期が未入力なら更新を拒否する")
+    void update_nullDueDate_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setDueDate(null);
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("納期を入力してください。", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("当日の開始予定日は更新できる")
+    void update_todayStartDate_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now());
+        request.setDueDate(LocalDate.now());
+        stubOrder(order);
+        when(productRepository.findById(10L))
+                .thenReturn(Optional.of(order.getProduct()));
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.updateProductionOrder(1L, request);
+        assertEquals(LocalDate.now(), result.getPlannedStartDate());
+        assertEquals(LocalDate.now(), result.getDueDate());
+    }
+
+    @Test
+    @DisplayName("5年後の境界日は更新できる")
+    void update_maximumDate_succeeds() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        LocalDate maximum = LocalDate.now().plusYears(5);
+        request.setPlannedStartDate(maximum);
+        request.setDueDate(maximum);
+        stubOrder(order);
+        when(productRepository.findById(10L))
+                .thenReturn(Optional.of(order.getProduct()));
+        when(productionOrderRepository.save(order)).thenReturn(order);
+        ProductionOrder result = service.updateProductionOrder(1L, request);
+        assertEquals(maximum, result.getPlannedStartDate());
+        assertEquals(maximum, result.getDueDate());
+    }
+
+    @Test
+    @DisplayName("5年を超える納期は更新を拒否する")
+    void update_dueDateTooFarFuture_throws() {
+        ProductionOrder order = order(PLANNED, 0, 0);
+        ProductionOrderUpdateRequest request = request();
+        request.setPlannedStartDate(LocalDate.now().plusDays(1));
+        request.setDueDate(LocalDate.now().plusYears(5).plusDays(1));
+        stubOrder(order);
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> service.updateProductionOrder(1L, request));
+        assertEquals("日付は当日から5年以内で入力してください。", ex.getMessage());
+    }
+}
+

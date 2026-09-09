@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.productionorder;
 
 import static com.example.guitarmes.productionorder.ProductionOrderStatusConstants.*;
@@ -6,6 +7,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,7 @@ import com.example.guitarmes.product.ProductRepository;
 
 @Service
 public class ProductionOrderService {
+    public static final int PAGE_SIZE = 20;
 
     private final ProductionOrderRepository productionOrderRepository;
     private final ProductRepository productRepository;
@@ -63,6 +67,23 @@ public class ProductionOrderService {
         var criteria = searchCriteria(category, orderNo, product, status, planMonth, dueFrom, dueTo);
         return new SearchResult(productionOrderRepository.search(criteria),
                 productionOrderRepository.countMatching(criteria));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductionOrder> searchProductionOrdersPaged(
+            String category,
+            String orderNo,
+            String product,
+            String status,
+            String planMonth,
+            String dueFrom,
+            String dueTo,
+            int page) {
+        var criteria = searchCriteria(
+                category, orderNo, product, status, planMonth, dueFrom, dueTo);
+        int requestedPage = Math.max(page, 0);
+        return productionOrderRepository.search(
+                criteria, PageRequest.of(requestedPage, PAGE_SIZE));
     }
 
     private ProductionOrderSearchCriteria searchCriteria(String category, String orderNo,

@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.productionorder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,6 +13,8 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.example.guitarmes.exception.BusinessException;
 
@@ -79,6 +82,41 @@ class ProductionOrderSearchTest {
         } finally {
             Locale.setDefault(original);
         }
+    }
+
+    @Test
+    void pagedSearchUsesFixedSizeAndNormalizesNegativePage() {
+        var row = new ProductionOrder();
+        var returned = new PageImpl<>(List.of(row), PageRequest.of(0, 20), 53);
+        when(repository.search(any(), any())).thenReturn(returned);
+
+        var result = service.searchProductionOrdersPaged(
+                "active", "PO", "Guitar", "PLANNED",
+                "2026-09", "2026-09-01", "2026-09-30", -5);
+
+        var criteriaCaptor = ArgumentCaptor.forClass(
+                ProductionOrderSearchCriteria.class);
+        var pageableCaptor = ArgumentCaptor.forClass(
+                org.springframework.data.domain.Pageable.class);
+        verify(repository).search(
+                criteriaCaptor.capture(), pageableCaptor.capture());
+        assertEquals(0, pageableCaptor.getValue().getPageNumber());
+        assertEquals(ProductionOrderService.PAGE_SIZE,
+                pageableCaptor.getValue().getPageSize());
+        assertTrue(pageableCaptor.getValue().getSort().isUnsorted());
+        assertEquals(53, result.getTotalElements());
+        assertEquals(1, result.getNumberOfElements());
+        verify(repository, never()).countMatching(criteriaCaptor.getValue());
+    }
+
+    @Test
+    void legacySearchRemainsAvailableForCurrentController() {
+        when(repository.search(any())).thenReturn(List.of());
+        when(repository.countMatching(any())).thenReturn(7L);
+        var result = service.searchProductionOrders(
+                "active", "", "", "", "", "", "");
+        assertEquals(7L, result.resultCount());
+        verify(repository).search(any(ProductionOrderSearchCriteria.class));
     }
 
     @Test
