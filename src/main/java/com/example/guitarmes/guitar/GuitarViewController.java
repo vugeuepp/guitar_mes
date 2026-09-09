@@ -1,4 +1,5 @@
 
+
 package com.example.guitarmes.guitar;
 
 import org.springframework.stereotype.Controller;
@@ -34,53 +35,46 @@ public class GuitarViewController {
             @RequestParam(required = false) String product,
             @RequestParam(required = false) String currentProcess,
             @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
             Model model) {
-        var allGuitars = guitarService.getGuitarProgressList(
-                processService,
-                assemblyService);
         String selectedCategory = guitarService.normalizeCategory(category);
-        var activeGuitars = guitarService.filterByCategory(allGuitars, "active");
-        var completedGuitars = guitarService.filterByCategory(allGuitars, "completed");
-        var categoryGuitars = "completed".equals(selectedCategory) ? completedGuitars : activeGuitars;
         String effectiveStatus = "completed".equals(selectedCategory) ? "" : status;
+        var result = guitarService.searchGuitarsPaged(
+                processService, selectedCategory, serial, product,
+                currentProcess, effectiveStatus, page);
         model.addAttribute("category", selectedCategory);
-        model.addAttribute("activeCount", activeGuitars.size());
-        model.addAttribute("completedCount", completedGuitars.size());
-        var guitars = guitarService.filterGuitarProgressList(
-                categoryGuitars,
-                serial,
-                product,
-                currentProcess,
-                effectiveStatus);
-        model.addAttribute("guitars", guitars);
+        model.addAttribute("activeCount", guitarService.countCategory("active"));
+        model.addAttribute("completedCount", guitarService.countCategory("completed"));
+        model.addAttribute("guitars", result.getContent());
         model.addAttribute("processes", processService.getAvailableGuitarProcesses());
-        model.addAttribute("productOptions", guitarService.getProductOptions(allGuitars));
+        model.addAttribute("productOptions", guitarService.getProductOptions());
         model.addAttribute("serial", serial == null ? "" : serial);
         model.addAttribute("selectedProduct", product == null ? "" : product);
         model.addAttribute("selectedCurrentProcess", currentProcess == null ? "" : currentProcess);
         model.addAttribute("selectedStatus", effectiveStatus == null ? "" : effectiveStatus);
         model.addAttribute("filterApplied", guitarService.hasSearchCondition(
-                serial,
-                product,
-                currentProcess,
-                effectiveStatus));
-        model.addAttribute("resultCount", guitars.size());
+                serial, product, currentProcess, effectiveStatus));
+        model.addAttribute("resultCount", result.getTotalElements());
+        model.addAttribute("currentPage", result.getNumber());
+        model.addAttribute("totalPages", result.getTotalPages());
+        model.addAttribute("pageSize", result.getSize());
+        model.addAttribute("hasPrevious", result.hasPrevious());
+        model.addAttribute("hasNext", result.hasNext());
 		return "guitar-list";
 	}
-	
 	@GetMapping("/guitars/new")
 	public String newGuitarForm(Model model) {
 		return "redirect:/production-orders/view";
 	}
-	
+
 	@GetMapping("/guitars/{id}/view")
 	public String guitarDetail(@PathVariable Long id, Model model) {
 		AssemblyResponse assembly = assemblyService.getAssemblyByGuitarId(id);
-		
+
 		model.addAttribute("guitar", guitarService.getGuitarById(id));
 		model.addAttribute("processStatuses", processService.getProcessStatuses(id));
 		model.addAttribute("assembly", assembly);
-		
+
 		ManufacturingProcess nextProcess = null;
 		try {
 			nextProcess = processService.getNextAvailableProcess(id);
@@ -88,7 +82,7 @@ public class GuitarViewController {
 			nextProcess = null;
 		}
 		model.addAttribute("nextProcess", nextProcess);
-		
+
 		boolean hasRunningProcess = processService.hasRunningProcess(id);
 		model.addAttribute("hasRunningProcess", hasRunningProcess);
 		return "guitar-detail";

@@ -1,3 +1,4 @@
+
 package com.example.guitarmes.guitar;
 
 import static com.example.guitarmes.process.common.GuitarProcessConstants.COMPLETED;
@@ -59,6 +60,20 @@ public class GuitarSearchRepositoryImpl implements GuitarSearchRepository {
                 .setMaxResults(size)
                 .getResultList();
         return new PageImpl<>(rows, corrected, total);
+    }
+
+    @Override
+    public List<String> findProductOptions() {
+        var cb = entityManager.getCriteriaBuilder();
+        var query = cb.createQuery(String.class);
+        var guitar = query.from(Guitar.class);
+        var product = guitar.join("product", JoinType.INNER);
+        Expression<String> name = cb.trim(product.get("productName"));
+        query.select(name).distinct(true)
+                .where(cb.isNotNull(product.get("productName")),
+                        cb.notEqual(name, ""))
+                .orderBy(cb.asc(name));
+        return entityManager.createQuery(query).getResultList();
     }
 
     @Override
