@@ -145,24 +145,56 @@ Git確認時点:
 
 ## テスト・検証
 
-リポジトリ直下での基本コマンド:
+### Mac側テストコマンドの提示形式
+
+ChatGPT・Copilot・Codexがユーザーへ提示するMac側テストコマンドは、以下の標準形式に統一します。Maven Wrapperと `-f "$PROJECT/pom.xml"` を使用し、`-Dstyle.color=always` でターミナルのカラー表示を維持します。
+
+通常テスト全件の例（括弧内のサブシェルで実行し、呼び出し元の設定を変えずに終了コードを返します）:
 
 ```bash
-# 通常テスト
-./mvnw test
+(
+  set +e
+  set -o pipefail
+  PROJECT="/Users/naokiyamada/git/guitar-mes/guitar_mes"
+  RUN_ID=$(date +%Y%m%d-%H%M%S)
+  DAY=${RUN_ID%-*}
+  LOGDIR="$PROJECT/logs/test-logs/$DAY"
+  LOGFILE="$LOGDIR/console-$RUN_ID.log"
+  cd "$PROJECT" || exit 1
+  mkdir -p "$LOGDIR" || exit 1
 
-# 対象E2E（例）
-./mvnw -Dplaywright.headless=true -Dtest=NeckSearchE2E test
+  "$PROJECT/mvnw" -f "$PROJECT/pom.xml" -Dstyle.color=always test 2>&1 | tee "$LOGFILE"
+  STATUS=$?
 
-# E2E全件
-./mvnw -Dplaywright.headless=true -Dtest='*E2E' test
+  printf '終了コード: %s\nログ: %s\n' "$STATUS" "$LOGFILE"
+  if [ "$STATUS" -eq 0 ]; then
+    printf 'テスト成功\n'
+  else
+    printf 'テスト失敗（ログ保存の失敗も含む）。ログを確認してください。\n'
+  fi
+  exit "$STATUS"
+)
 ```
+
+- `DAY`・`RUN_ID`・`LOGDIR`・`LOGFILE`を使用し、ログは `logs/test-logs/YYYYMMDD/console-YYYYMMDD-HHMMSS.log` に保存します。各実行で日時を取り直し、同名ログを上書きしないようにします。
+- `tee`でターミナル表示とログ保存を両立し、`set -o pipefail`でMavenの失敗を検出します。パイプライン直後に `STATUS=$?` を取得し、終了コード・ログパス・日本語の成功／失敗メッセージを表示します。
+- targeted testは標準形式のMaven呼び出しに `-Dtest=対象クラス名` を追加します。複数クラスはカンマ区切りにします。
+- E2Eは `-Dplaywright.headless=true` を追加し、E2E全件はさらに `-Dtest='*E2E'` を指定します。対象E2Eだけの場合は対象クラスを `-Dtest=...` で指定します。ブラウザ対象アプリのURLが既定と異なる場合は `-De2e.base.url=...` も明示します。
+- 通常テスト全件とE2E全件は別々の実行・ログにします。上記の共通部分を省略したMaven呼び出しだけを、実行用の標準コマンドとして提示しません。
+
+### E2Eの実行環境
+
+- ブラウザ対象アプリをe2e profileで起動し、アプリとテストセットアップの両方が同じ専用DB `guitar_mes_e2e` を使用することを確認します。Dev profileのアプリを起動したままE2Eを実行しません。
+- Eclipse運用では「Devを停止 → GuitarMES - E2Eを起動 → E2E実行 → E2E停止 → 必要ならDevへ戻す」を基本とします。
+
+### 検証範囲と結果の扱い
 
 - 実行前に既存のPlaywrightTestBase、E2E設定、`コマンド集.txt`で起動方法・前提条件を確認します。
 - 機能変更に応じてService・MockMvcテストを更新・実行します。HTML変更時は対応するPlaywright E2Eも更新・実行します。
 - E2Eはテスト自身が作成したデータを識別して検証・削除します。一覧先頭行、固定件数、一覧順に依存しません。
 - 機能変更のコミット前には通常テスト全件、主要業務フロー変更時にはE2E全件を実行します。検索横展開では対象検索E2Eに加えて既存の一括処理E2Eも確認します。
-- 最終の通常テスト・E2E全件ログは `logs/test-logs/<日付>/` に日時付きで保存します。`tee`使用時は`set -o pipefail`で失敗を見落とさないようにします。
+- 同じコード状態で必要な全テストをMac側ですでに完走済みの場合、実行結果を確認して扱い、意味のない再実行を要求しません。コード変更・失敗・未確認の影響範囲など再実行が必要な場合は、その理由を示します。
+- Codex自身が実行したテストと、Mac側でユーザーに実行してもらうテストを明確に区別して報告します。
 - 文書のみの変更は参照先・内容・差分を確認します。コードテストを実行したことにはしません。
 - 未実行、失敗、環境上実行できない検証は、その理由とともに報告します。過去の成功を今回の結果として報告しません。
 
