@@ -52,14 +52,12 @@ public class ProductionOrderViewController {
             @RequestParam(defaultValue = "") String dueFrom,
             @RequestParam(defaultValue = "") String dueTo,
             Model model) {
-        var allOrders = productionOrderService.getProductionOrders();
         String selectedCategory = productionOrderService.normalizeCategory(category);
         model.addAttribute("category", selectedCategory);
-        model.addAttribute("activeCount", productionOrderService.filterByCategory(allOrders, "active").size());
-        model.addAttribute("completedCount", productionOrderService.filterByCategory(allOrders, "completed").size());
-        model.addAttribute("cancelledCount", productionOrderService.filterByCategory(allOrders, "cancelled").size());
+        model.addAttribute("activeCount", productionOrderService.countCategory("active"));
+        model.addAttribute("completedCount", productionOrderService.countCategory("completed"));
+        model.addAttribute("cancelledCount", productionOrderService.countCategory("cancelled"));
         model.addAttribute("categoryStatuses", productionOrderService.getCategoryStatuses(selectedCategory));
-        var categoryOrders = productionOrderService.filterByCategory(allOrders, selectedCategory);
         model.addAttribute("orderNo", orderNo);
         model.addAttribute("product", product);
         model.addAttribute("selectedStatus", status);
@@ -69,16 +67,18 @@ public class ProductionOrderViewController {
         model.addAttribute("filterApplied", productionOrderService.hasSearchCondition(
                 orderNo, product, status, planMonth, dueFrom, dueTo));
         List<ProductionOrder> orders;
+        long resultCount = 0;
         try {
-            orders = productionOrderService.filterProductionOrders(
-                    categoryOrders,
+            var result = productionOrderService.searchProductionOrders(selectedCategory,
                     orderNo, product, status, planMonth, dueFrom, dueTo);
+            orders = result.orders();
+            resultCount = result.resultCount();
         } catch (BusinessException exception) {
             orders = List.of();
             model.addAttribute("searchError", exception.getMessage());
         }
         model.addAttribute("orders", orders);
-        model.addAttribute("resultCount", orders.size());
+        model.addAttribute("resultCount", resultCount);
         return "production-order-list";
     }
 

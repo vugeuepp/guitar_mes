@@ -50,17 +50,23 @@ public class ProductionOrderService {
         };
     }
 
-    /** 日付や数量ではなく既存statusだけで分類する。 */
-    public List<ProductionOrder> filterByCategory(List<ProductionOrder> orders, String category) {
-        var statuses = getCategoryStatuses(category).stream().map(this::normalizeSearch).toList();
-        return orders.stream()
-                .filter(order -> order != null && statuses.contains(normalizeSearch(order.getStatus())))
-                .toList();
+    public record SearchResult(List<ProductionOrder> orders, long resultCount) {}
+
+    @Transactional(readOnly = true)
+    public long countCategory(String category) {
+        return productionOrderRepository.countMatching(searchCriteria(category, "", "", "", "", "", ""));
     }
 
-    public List<ProductionOrder> filterProductionOrders(List<ProductionOrder> orders,
-            String orderNo, String product, String status, String planMonth,
-            String dueFrom, String dueTo) {
+    @Transactional(readOnly = true)
+    public SearchResult searchProductionOrders(String category, String orderNo, String product,
+            String status, String planMonth, String dueFrom, String dueTo) {
+        var criteria = searchCriteria(category, orderNo, product, status, planMonth, dueFrom, dueTo);
+        return new SearchResult(productionOrderRepository.search(criteria),
+                productionOrderRepository.countMatching(criteria));
+    }
+
+    private ProductionOrderSearchCriteria searchCriteria(String category, String orderNo,
+            String product, String status, String planMonth, String dueFrom, String dueTo) {
         String number = normalizeSearch(orderNo);
         String productText = normalizeSearch(product);
         String state = normalizeSearch(status);
@@ -77,16 +83,9 @@ public class ProductionOrderService {
         if (from != null && to != null && from.isAfter(to)) {
             throw new BusinessException("納期の開始日は終了日以前にしてください。");
         }
-        return orders.stream()
-                .filter(order -> number.isEmpty() || normalizeSearch(order.getOrderNo()).contains(number))
-                .filter(order -> productText.isEmpty() || (order.getProduct() != null
-                        && (normalizeSearch(order.getProduct().getProductName()).contains(productText)
-                        || normalizeSearch(order.getProduct().getModelNo()).contains(productText))))
-                .filter(order -> state.isEmpty() || normalizeSearch(order.getStatus()).equals(state))
-                .filter(order -> month == null || month.equals(order.getPlanMonth()))
-                .filter(order -> from == null || (order.getDueDate() != null && !order.getDueDate().isBefore(from)))
-                .filter(order -> to == null || (order.getDueDate() != null && !order.getDueDate().isAfter(to)))
-                .toList();
+        String selectedCategory = normalizeCategory(category);
+        return new ProductionOrderSearchCriteria(selectedCategory, getCategoryStatuses(selectedCategory),
+                number, productText, state, month, from, to);
     }
 
     public boolean hasSearchCondition(String... conditions) {

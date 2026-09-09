@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductionOrderRepository
-        extends JpaRepository<ProductionOrder, Long> {
+        extends JpaRepository<ProductionOrder, Long>, ProductionOrderSearchRepository {
 
     Optional<ProductionOrder>
             findTopByOrderNoStartingWithOrderByOrderNoDesc(

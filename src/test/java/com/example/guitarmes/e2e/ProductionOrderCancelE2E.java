@@ -11,6 +11,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -110,29 +112,60 @@ class ProductionOrderCancelE2E extends PlaywrightTestBase {
         captureScreenshot("02-create-input.png");
     }
 
-    private void registerProductionOrder() {
+    private void registerProductionOrder() throws Exception {
+        long productId = Long.parseLong(page.locator("#productId").inputValue());
+        LocalDate start = LocalDate.parse(page.locator("#plannedStartDate").inputValue().replace('/', '-'));
+        LocalDate due = LocalDate.parse(page.locator("#dueDate").inputValue().replace('/', '-'));
+        var before = matchingOrders(productId, start, due);
         page.locator("#registerButton").click();
         page.waitForLoadState();
 
         assertThat(page).hasURL(
                 Pattern.compile(".*/production-orders/view"));
 
-        Locator newestRow = page.locator("tbody tr").first();
-        createdOrderNo = newestRow
-                .locator(".order-number")
-                .textContent()
-                .trim();
+        var created = matchingOrders(productId, start, due);
+        created.keySet().removeAll(before.keySet());
+        assertEquals(1, created.size(), "作成した計画を一意に識別できません。取消操作は行いません。");
+        createdOrderNo = created.values().iterator().next();
+        Locator createdRow = page.locator("tbody tr")
+                .filter(new Locator.FilterOptions().setHasText(createdOrderNo));
 
         assertTrue(
                 createdOrderNo.matches("PO\\d{6}"),
                 "作成した生産指示番号を取得できませんでした。");
 
-        newestRow.getByRole(
+        createdRow.getByRole(
                 AriaRole.LINK,
                 new Locator.GetByRoleOptions()
                         .setName("詳細"))
                 .click();
         page.waitForLoadState();
+    }
+
+    private Map<Long, String> matchingOrders(long productId, LocalDate start, LocalDate due) throws Exception {
+        String sql = """
+                SELECT id, order_no FROM t_production_order
+                WHERE product_id = ? AND planned_quantity = 1
+                  AND planned_start_date = ? AND due_date = ?
+                  AND plan_month = ? AND status = 'PLANNED'
+                """;
+        try (Connection connection = DriverManager.getConnection(E2E_DB_URL, E2E_DB_USER, E2E_DB_PASSWORD)) {
+            try (var check = connection.createStatement(); var result = check.executeQuery("select current_database()")) {
+                assertTrue(result.next());
+                assertEquals("guitar_mes_e2e", result.getString(1));
+            }
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, productId);
+                statement.setObject(2, start);
+                statement.setObject(3, due);
+                statement.setObject(4, start.withDayOfMonth(1));
+                Map<Long, String> rows = new LinkedHashMap<>();
+                try (var result = statement.executeQuery()) {
+                    while (result.next()) rows.put(result.getLong(1), result.getString(2));
+                }
+                return rows;
+            }
+        }
     }
 
     private void openCreatedOrderDetail() {
