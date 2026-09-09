@@ -1,6 +1,10 @@
 tree > /Users/naokiyamada/git/guitar-mes/guitar_mes/guitar_mes_file_component.txt /Users/naokiyamada/git/guitar-mes/guitar_mes/src
 ./mvnw \ -Dtest=ProductionScheduleIssueE2E \ test
 
+GuitarMESの開発を続けます。\
+GitHubの `DEVELOPMENT_HANDOFF.md` と `AGENTS.md` を確認して、現在のGitHubの状態と照合してください。\
+現在地を整理したうえで、次に進める作業を一緒に決めましょう。
+
 ＃gitのステータス保存コマンド
 {
   echo "===== CURRENT BRANCH ====="
