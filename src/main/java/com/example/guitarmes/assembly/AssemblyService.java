@@ -162,7 +162,8 @@ public class AssemblyService {
          */
         Guitar guitar = guitarService.createGuitar(productionOrder);
 
-        Assembly assembly = new Assembly(guitar, targetNeck, targetBody, LocalDateTime.now(), workerName.trim());
+        LocalDateTime now = LocalDateTime.now();
+        Assembly assembly = new Assembly(guitar, targetNeck, targetBody, now, workerName.trim());
 
         Assembly savedAssembly = assemblyRepository.save(assembly);
 
@@ -171,6 +172,8 @@ public class AssemblyService {
          */
         targetNeck.setStatus(ASSEMBLED);
         targetBody.setStatus(ASSEMBLED);
+        targetBody.setUpdatedAt(now);
+        targetNeck.setUpdatedAt(now);
         neckRepository.save(targetNeck);
         bodyRepository.save(targetBody);
 
@@ -180,6 +183,7 @@ public class AssemblyService {
         int nextStartedQuantity = productionOrder.getStartedQuantity() + 1;
         productionOrder.setStartedQuantity(nextStartedQuantity);
         productionOrder.setStatus(ProductionOrderStatusConstants.IN_PROGRESS);
+        productionOrder.setUpdatedAt(now);
         productionOrderRepository.save(productionOrder);
         return savedAssembly;
     }
@@ -429,6 +433,8 @@ public class AssemblyService {
                     guitar, neck, body, now, workerName.trim()));
             neck.setStatus(ASSEMBLED);
             body.setStatus(ASSEMBLED);
+            body.setUpdatedAt(now);
+            neck.setUpdatedAt(now);
         }
 
         List<Assembly> saved = assemblyRepository.saveAll(assemblies);
@@ -438,6 +444,7 @@ public class AssemblyService {
                 productionOrder.getStartedQuantity() + count);
         productionOrder.setStatus(
                 ProductionOrderStatusConstants.IN_PROGRESS);
+        productionOrder.setUpdatedAt(now);
         productionOrderRepository.save(productionOrder);
         return saved;
     }

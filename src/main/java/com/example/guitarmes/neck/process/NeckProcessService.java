@@ -94,6 +94,8 @@ public class NeckProcessService {
 
         neck.setStatus(WORKING);
 
+        neck.setUpdatedAt(history.getStartTime());
+
         neckRepository.save(neck);
 
         return historyRepository.save(history);
@@ -157,7 +159,7 @@ public class NeckProcessService {
         updateNeckAfterProcess(
                 neck,
                 process.getProcessName(),
-                result);
+                result, history.getEndTime());
 
         neckRepository.save(neck);
 
@@ -367,7 +369,8 @@ public class NeckProcessService {
     private void updateNeckAfterProcess(
             Neck neck,
             String processName,
-            String result) {
+            String result, LocalDateTime eventTime) {
+        neck.setUpdatedAt(eventTime);
 
         /*
          * PLEK
@@ -432,6 +435,7 @@ public class NeckProcessService {
                     WAITING_FOR_ASSEMBLY);
 
             neck.setStatus(AVAILABLE);
+            neck.setAvailableAt(eventTime);
 
             return;
         }
@@ -631,6 +635,7 @@ public class NeckProcessService {
         for (Neck neck : necks) {
             neck.setCurrentProcess(process.getProcessName());
             neck.setStatus(WORKING);
+            neck.setUpdatedAt(now);
             histories.add(new NeckProcessHistory(
                     neck.getId(), processId, workerName.trim(), now));
         }
@@ -671,7 +676,7 @@ public class NeckProcessService {
             history.setNote(note);
             history.setEndTime(now);
             updateNeckAfterProcess(
-                    necks.get(i), process.getProcessName(), result);
+                    necks.get(i), process.getProcessName(), result, now);
         }
         neckRepository.saveAll(necks);
         return historyRepository.saveAll(histories);

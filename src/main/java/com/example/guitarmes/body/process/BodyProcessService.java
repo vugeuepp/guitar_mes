@@ -67,6 +67,8 @@ public class BodyProcessService {
 
         body.setStatus(WORKING);
 
+        body.setUpdatedAt(history.getStartTime());
+
         bodyRepository.save(body);
 
         return historyRepository.save(history);
@@ -99,7 +101,7 @@ public class BodyProcessService {
         history.setNote(note);
         history.setEndTime(LocalDateTime.now());
 
-        updateBodyAfterProcess(body, process.getProcessName(), result);
+        updateBodyAfterProcess(body, process.getProcessName(), result, history.getEndTime());
 
         bodyRepository.save(body);
         return historyRepository.save(history);
@@ -252,7 +254,8 @@ public class BodyProcessService {
 	        throw new BusinessException("未対応のボディ工程です。");
 	    }
 	
-	    private void updateBodyAfterProcess(Body body, String processName, String result) {
+	    private void updateBodyAfterProcess(Body body, String processName, String result, LocalDateTime eventTime) {
+        body.setUpdatedAt(eventTime);
 	        if (POST_PAINT_INSPECTION.equals(processName)) {
 	            updateAfterInspection(body, result);
 	            return;
@@ -267,6 +270,7 @@ public class BodyProcessService {
 	        if (PARTS_INSTALLATION.equals(processName)) {
 	            body.setCurrentProcess(WAITING_FOR_ASSEMBLY);
 	            body.setStatus(AVAILABLE);
+            body.setAvailableAt(eventTime);
 	            return;
 	        }
 	        throw new BusinessException(
@@ -402,6 +406,7 @@ public class BodyProcessService {
         for (Body body : bodies) {
             body.setCurrentProcess(process.getProcessName());
             body.setStatus(WORKING);
+            body.setUpdatedAt(now);
             histories.add(new BodyProcessHistory(
                     body.getId(), processId, workerName.trim(), now));
         }
@@ -443,7 +448,7 @@ public class BodyProcessService {
             history.setNote(note);
             history.setEndTime(now);
             updateBodyAfterProcess(
-                    bodies.get(i), process.getProcessName(), result);
+                    bodies.get(i), process.getProcessName(), result, now);
         }
         bodyRepository.saveAll(bodies);
         return historyRepository.saveAll(histories);

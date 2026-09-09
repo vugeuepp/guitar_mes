@@ -1,5 +1,16 @@
 package com.example.guitarmes.neck;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostUpdate;
+import jakarta.persistence.Transient;
+import jakarta.persistence.Column;
+
+
 import java.util.List;
 
 import com.example.guitarmes.assembly.Assembly;
@@ -21,6 +32,49 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "t_neck")
 public class Neck {
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "available_at")
+    private LocalDateTime availableAt;
+
+    @Transient
+    private LocalDateTime persistedUpdatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        // Serviceが設定したイベント時刻は保持し、通常編集だけ現在時刻にする。
+        // 読込時の値と比較するため、detached Entityのmergeでも明示時刻を保持できる。
+        if (Objects.equals(updatedAt, persistedUpdatedAt)) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PostLoad
+    @PostPersist
+    @PostUpdate
+    public void rememberUpdatedAt() {
+        persistedUpdatedAt = updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime value) { createdAt = value; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime value) { updatedAt = value; }
+    public LocalDateTime getAvailableAt() { return availableAt; }
+    public void setAvailableAt(LocalDateTime value) { availableAt = value; }
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

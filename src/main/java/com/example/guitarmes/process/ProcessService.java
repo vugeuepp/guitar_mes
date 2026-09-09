@@ -120,6 +120,8 @@ public class ProcessService {
         guitar.setCurrentProcess(
                 selectedProcess.getProcessName());
 
+        guitar.setUpdatedAt(history.getStartTime());
+
         guitarRepository.save(guitar);
 
         return historyRepository.save(history);
@@ -158,6 +160,8 @@ public class ProcessService {
         history.setEndTime(
                 LocalDateTime.now());
 
+        guitar.setUpdatedAt(history.getEndTime());
+
         ProcessHistory savedHistory =
                 historyRepository.save(history);
 
@@ -167,7 +171,7 @@ public class ProcessService {
 
         if (nextProcess == null) {
 
-            completeGuitar(guitar);
+            completeGuitar(guitar, history.getEndTime());
 
         } else {
 
@@ -211,7 +215,7 @@ public class ProcessService {
      * Guitarを完成状態へ変更する。
      */
     private void completeGuitar(
-            Guitar guitar) {
+            Guitar guitar, LocalDateTime eventTime) {
 
         if (GuitarProcessConstants.COMPLETED
                 .equals(guitar.getCurrentProcess())) {
@@ -222,18 +226,20 @@ public class ProcessService {
 
         guitar.setCurrentProcess(
                 GuitarProcessConstants.COMPLETED);
+        guitar.setCompletedAt(eventTime);
+        guitar.setUpdatedAt(eventTime);
 
         guitarRepository.save(guitar);
 
         updateProductionOrderAfterCompletion(
-                guitar);
+                guitar, eventTime);
     }
 
     /**
      * Guitar完成時にProductionOrderの完成数を更新する。
      */
     private void updateProductionOrderAfterCompletion(
-            Guitar guitar) {
+            Guitar guitar, LocalDateTime eventTime) {
 
         ProductionOrder productionOrder =
                 guitar.getProductionOrder();
@@ -294,11 +300,15 @@ public class ProcessService {
                     + "更新できません。");
         }
 
+        productionOrder.setUpdatedAt(eventTime);
         productionOrder.setCompletedQuantity(
                 nextCompletedQuantity);
 
         if (nextCompletedQuantity
                 == plannedQuantity) {
+            if (!ProductionOrderStatusConstants.COMPLETED.equals(productionOrder.getStatus())) {
+                productionOrder.setCompletedAt(eventTime);
+            }
 
             productionOrder.setStatus(
                     ProductionOrderStatusConstants
@@ -889,6 +899,7 @@ public class ProcessService {
         List<ProcessHistory> histories = new ArrayList<>();
         for (Guitar guitar : guitars) {
             guitar.setCurrentProcess(selectedProcess.getProcessName());
+            guitar.setUpdatedAt(now);
             histories.add(new ProcessHistory(
                     guitar.getId(), processId, workerName.trim(), now));
         }
@@ -924,9 +935,10 @@ public class ProcessService {
         LocalDateTime now = LocalDateTime.now();
         histories.forEach(history -> history.setEndTime(now));
         for (int i = 0; i < guitars.size(); i++) {
+            guitars.get(i).setUpdatedAt(now);
             ManufacturingProcess nextProcess = findNextProcessAfter(processes.get(i));
             if (nextProcess == null) {
-                completeGuitar(guitars.get(i));
+                completeGuitar(guitars.get(i), now);
             } else {
                 guitars.get(i).setCurrentProcess(nextProcess.getProcessName());
             }
