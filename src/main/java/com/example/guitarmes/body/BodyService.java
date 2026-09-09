@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.exception.NotFoundException;
@@ -34,6 +37,35 @@ public class BodyService {
 
     public List<Body> getBodies() {
         return bodyRepository.findAll();
+    }
+
+    public static final int PAGE_SIZE = 20;
+
+    public List<String> getCategoryStatuses(String category) {
+        return switch (normalizeCategory(category)) {
+            case "attention" -> List.of(REWORK, RETURNED);
+            case "passed" -> List.of(AVAILABLE, ASSEMBLED, REJECTED);
+            default -> List.of(WAITING_INSPECTION, WAITING, WORKING);
+        };
+    }
+
+    private BodySearchCriteria searchCriteria(String category, String serial, String modelName,
+            String currentProcess, String status) {
+        String selected = normalizeCategory(category);
+        return new BodySearchCriteria(selected, getCategoryStatuses(selected), normalize(serial),
+                normalize(modelName), normalize(currentProcess), normalize(status));
+    }
+
+    @Transactional(readOnly = true)
+    public long countCategory(String category) {
+        return bodyRepository.countMatching(searchCriteria(category, null, null, null, null));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Body> searchBodiesPaged(String category,
+            String serial, String modelName, String currentProcess, String status, int page) {
+        return bodyRepository.search(searchCriteria(category, serial, modelName, currentProcess, status),
+                PageRequest.of(Math.max(0, page), PAGE_SIZE));
     }
 
     /** 未指定・空・未知のカテゴリは対応中へ正規化する。 */

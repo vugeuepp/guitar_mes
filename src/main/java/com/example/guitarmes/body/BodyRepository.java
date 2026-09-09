@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BodyRepository
-        extends JpaRepository<Body, Long> {
+        extends JpaRepository<Body, Long>, BodySearchRepository {
 
     List<Body> findByStatusNot(
             String status);

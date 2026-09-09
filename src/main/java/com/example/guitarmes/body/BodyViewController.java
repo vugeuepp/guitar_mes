@@ -31,22 +31,16 @@ public class BodyViewController {
             @RequestParam(required = false) String modelName,
             @RequestParam(required = false) String currentProcess,
             @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
             Model model) {
-        var allBodies = bodyService.getBodies();
         String selectedCategory = bodyService.normalizeCategory(category);
-        var activeBodies = bodyService.filterByCategory(allBodies, "active");
-        var attentionBodies = bodyService.filterByCategory(allBodies, "attention");
-        var passedBodies = bodyService.filterByCategory(allBodies, "passed");
-        var categoryBodies = bodyService.filterByCategory(
-                allBodies, selectedCategory);
-        var bodies = bodyService.filterBodies(
-                categoryBodies, serial, modelName, currentProcess, status);
+        var result = bodyService.searchBodiesPaged(selectedCategory, serial, modelName, currentProcess, status, page);
 
         model.addAttribute("category", selectedCategory);
-        model.addAttribute("activeCount", activeBodies.size());
-        model.addAttribute("attentionCount", attentionBodies.size());
-        model.addAttribute("passedCount", passedBodies.size());
-        model.addAttribute("bodies", bodies);
+        model.addAttribute("activeCount", bodyService.countCategory("active"));
+        model.addAttribute("attentionCount", bodyService.countCategory("attention"));
+        model.addAttribute("passedCount", bodyService.countCategory("passed"));
+        model.addAttribute("bodies", result.getContent());
         model.addAttribute("bodyProcesses", bodyProcessService.getBodyProcesses());
         model.addAttribute("serial", serial == null ? "" : serial);
         model.addAttribute("modelName", modelName == null ? "" : modelName);
@@ -55,7 +49,12 @@ public class BodyViewController {
         model.addAttribute("selectedStatus", status == null ? "" : status);
         model.addAttribute("filterApplied", bodyService.hasSearchCondition(
                 serial, modelName, currentProcess, status));
-        model.addAttribute("resultCount", bodies.size());
+        model.addAttribute("resultCount", result.getTotalElements());
+        model.addAttribute("currentPage", result.getNumber());
+        model.addAttribute("totalPages", result.getTotalPages());
+        model.addAttribute("pageSize", BodyService.PAGE_SIZE);
+        model.addAttribute("hasPrevious", result.hasPrevious());
+        model.addAttribute("hasNext", result.hasNext());
         return "body-list";
     }
 

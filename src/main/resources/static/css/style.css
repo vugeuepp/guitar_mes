@@ -3147,3 +3147,13 @@ body {
     gap: 1rem;
     margin-top: 1rem;
 }
+
+/* Body / Neck一覧のページ切替 */
+.component-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}

@@ -165,9 +165,16 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         }
     }
 
+    private void filterFixtureRows() {
+        page.locator("#serial").fill(firstSerial.substring(firstSerial.lastIndexOf('-') + 1));
+        page.locator(".guitar-search-form button[type=submit]").click();
+        page.waitForLoadState();
+    }
+
     private void openBodyListAndVerifyInitialState() {
         page.navigate(BASE_URL + "/bodies/view");
         page.waitForLoadState();
+        filterFixtureRows();
         assertThat(page).hasTitle(Pattern.compile("ボディ管理一覧"));
         assertThat(page.locator(".bulk-process-guidance"))
                 .containsText("対象工程を選択すると、一致する個体だけを選択できます。");
@@ -232,6 +239,7 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasURL(Pattern.compile(".*/bodies/view"));
         assertThat(page.locator(".success-message"))
                 .containsText("2件のボディ工程を一括開始しました。");
+        filterFixtureRows();
         assertThat(bodyRow(firstSerial)).containsText("作業中");
         assertThat(bodyRow(secondSerial)).containsText("作業中");
         assertThat(bodyRow(otherSerial)).containsText("工程待ち");
@@ -312,6 +320,7 @@ class BodyBulkProcessE2E extends PlaywrightTestBase {
         assertThat(page).hasURL(Pattern.compile(".*/bodies/view"));
         assertThat(page.locator(".success-message"))
                 .containsText("2件のボディ工程を一括終了しました。");
+        filterFixtureRows();
         assertThat(bodyRow(firstSerial)).containsText(PARTS);
         assertThat(bodyRow(firstSerial)).containsText("工程待ち");
         assertThat(bodyRow(secondSerial)).containsText(PARTS);

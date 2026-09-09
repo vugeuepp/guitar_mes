@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NeckRepository
-        extends JpaRepository<Neck, Long> {
+        extends JpaRepository<Neck, Long>, NeckSearchRepository {
 
     List<Neck> findByStatusNot(
             String status);
