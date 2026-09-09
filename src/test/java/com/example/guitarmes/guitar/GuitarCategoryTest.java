@@ -50,6 +50,8 @@ class GuitarCategoryTest {
         when(repository.countMatching(any())).thenAnswer(invocation ->
                 "completed".equals(((GuitarSearchCriteria) invocation.getArgument(0)).category()) ? 1L : 3L);
         when(repository.findProductOptions()).thenReturn(List.of("Model"));
+        when(process.getPageProgress(anyList())).thenReturn(java.util.Map.of(
+                3L, new ProcessService.PageProgress(100, false, false)));
         when(process.getAvailableGuitarProcesses()).thenReturn(List.of());
         var mvc = MockMvcBuilders.standaloneSetup(new GuitarViewController(pagedService, process, assembly)).build();
         mvc.perform(get("/guitars/view"))
