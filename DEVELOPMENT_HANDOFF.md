@@ -6,8 +6,8 @@ Updated: 2026-09-10
 
 - Repository: `vugeuepp/guitar_mes`
 - Current working branch: `feature/phase6a-product-parts-spec`
-- Local HEAD at documentation review: `2d808bee7b78afddabc9b9d18045b1fddb05d682`
-- Local `main` and saved `origin/main` point to the same HEAD.
+- Local HEAD at documentation review: `615cda289f9a9ecd0942c0da01d18db16575e163`
+- Local `main` and saved `origin/main` remain at `2d808bee7b78afddabc9b9d18045b1fddb05d682`（作業branchのHEADとは異なる）。
 - Upstream recorded locally: `origin/feature/phase6a-guitar-parts-installation`（ローカルbranchと名称が異なる。設定変更はしていない）
 - Working tree was clean before this documentation update. Remote最新照会は今回未実施。
 
@@ -32,7 +32,7 @@ Recent completion summary for Phase 5C:
 
 ## Current Phase / Next Work
 
-Phase 6A「ギターパーツ取付工程」の設計文書を整備中。今回の文書変更はユーザー確認待ちであり、Java・HTML・DB等の実装には着手しない。
+Phase 6A-1の既存仕様調査はユーザーがChatGPTで確認済み。その設計判断をPhase 6A設計書へ反映した段階。今回の文書差分は改めてChatGPT確認待ちであり、実装には着手しない。
 
 ユーザー指定の開発順序:
 
@@ -42,9 +42,11 @@ Phase 6A「ギターパーツ取付工程」の設計文書を整備中。今回
 
 最初の対象はStratocaster系。詳細・対象作業・未確定事項は[Phase 6A設計方針](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)、開発順は[ロードマップ第11節](引き継ぎ書類/260902_Guitar_MES_新開発ロードマップ改訂版.md#11-phase-6-工程別専用ページ工程内作業)を参照する。
 
-文書確認後の次の作業候補は、6A-1に必要な既存製品仕様の棚卸しと不足項目・保存形式の設計。具体的な列や型はまだ確定していない。実装開始はユーザーの次の指示に従う。
+採用した第一案はProduct 1 : 0..1 ProductPartsSpec。正式項目候補、ST分類再利用、共通入力からProductごとに独立保存、既存製品への初回仕様補完と製造開始後の編集制限を設計書第2節へ集約した。
 
-今回の確認範囲は指定文書とGit状態。Phase 6Aのコード・実DBスキーマの棚卸しは未実施。`AGENTS.md`は恒久ルールのまま維持する。
+次の候補は6A-1-1の実装設計。Enum・必須条件・物理スキーマ・初回補完の対象識別等を確定してから、Entity／保存・検証Service／適用・確認・ロールバックSQL／関連テストの範囲を切り出す。これは実装開始の指示ではない。ChatGPTで今回の文書変更を確認してから、ユーザーの指示に従って進む。
+
+前回調査でProduct関連コード・テンプレート・テストと開発DBの実スキーマを確認済み。今回は指定文書・Git状態の確認と2文書の更新のみ。コード・DB変更、テスト実行はなし。AGENTS.mdとロードマップは変更しない。文書差分は未commit。
 
 ## AI Responsibilities
 
@@ -56,7 +58,7 @@ Phase 6A「ギターパーツ取付工程」の設計文書を整備中。今回
 ## Temporary Constraints
 
 - 旧記載の「2026-09-10 04:55 JSTまでCodex利用不可」は、今回の確認時点で期限経過済みのため削除した。現在の利用残量を確認したという意味ではない。
-- 今回は文書更新のみ。実装・テスト実行・commit・push・mergeは行わず、文書更新後にユーザー確認を待つ。
+- 今回は文書更新のみ。実装・テスト実行・commit・push・mergeは行わず、文書更新後に停止し、ChatGPT確認前に6A-1-1へ進まない。
 
 ## New Chat Startup
 
