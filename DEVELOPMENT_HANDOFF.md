@@ -5,15 +5,17 @@ Updated: 2026-09-10
 ## Repository State
 
 - Repository: `vugeuepp/guitar_mes`
-- Current working branch: `chore/ai-development-workflow`
-- Current base: `main`
-- Main HEAD at branch creation: `f4fa0fe9cdc35edb3808b6c56939a40811ff26bd`
+- Current working branch: `feature/phase6a-product-parts-spec`
+- Local HEAD at documentation review: `2d808bee7b78afddabc9b9d18045b1fddb05d682`
+- Local `main` and saved `origin/main` point to the same HEAD.
+- Upstream recorded locally: `origin/feature/phase6a-guitar-parts-installation`（ローカルbranchと名称が異なる。設定変更はしていない）
+- Working tree was clean before this documentation update. Remote最新照会は今回未実施。
 
 ## Current State
 
 Phase 5C completed and merged into main.
 
-Latest verified test results:
+Previously recorded verification results（既存Handoffから継承。今回はログ再検証・テスト再実行なし）:
 
 - Normal tests: 339 passed, 0 failures, 0 errors, 0 skipped
 - E2E tests: 26 passed, 0 failures, 0 errors, 0 skipped
@@ -28,15 +30,21 @@ Recent completion summary for Phase 5C:
 - current-page bulk selection
 - datetime display
 
-## Next Major Roadmap Candidate
+## Current Phase / Next Work
 
-Phase 6 - 工程別専用ページ・工程内作業
+Phase 6A「ギターパーツ取付工程」の設計文書を整備中。今回の文書変更はユーザー確認待ちであり、Java・HTML・DB等の実装には着手しない。
 
-参照ロードマップは2026-09-02時点の文書です。Phase 6を無条件に次の確定タスクとして扱わず、実装開始前に次を照合します。
+ユーザー指定の開発順序:
 
-- actual Git state
-- latest roadmap / development documents
-- user intent
+1. **6A-1 製品仕様拡張**: Bridge / Tuner / Electronicsの不足仕様 / Stringを対象候補に、作業判断に必要な製品仕様を整える。
+2. **6A-2 工程内作業記録基盤**: 汎用`ProcessHistory`を維持し、工程固有情報を別の作業記録層へ分離する。
+3. **6A-3 専用画面・工程連携**: 製品仕様に応じた作業チェック・検査・途中保存・完了判定を行い、既存`ProcessService.endProcess()`へ接続する。
+
+最初の対象はStratocaster系。詳細・対象作業・未確定事項は[Phase 6A設計方針](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)、開発順は[ロードマップ第11節](引き継ぎ書類/260902_Guitar_MES_新開発ロードマップ改訂版.md#11-phase-6-工程別専用ページ工程内作業)を参照する。
+
+文書確認後の次の作業候補は、6A-1に必要な既存製品仕様の棚卸しと不足項目・保存形式の設計。具体的な列や型はまだ確定していない。実装開始はユーザーの次の指示に従う。
+
+今回の確認範囲は指定文書とGit状態。Phase 6Aのコード・実DBスキーマの棚卸しは未実施。`AGENTS.md`は恒久ルールのまま維持する。
 
 ## AI Responsibilities
 
@@ -47,12 +55,8 @@ Phase 6 - 工程別専用ページ・工程内作業
 
 ## Temporary Constraints
 
-- Codex is unavailable until 04:55 JST on 2026-09-10.
-- Until that time, do not delegate implementation to Codex.
-- Copilot may be used only with a task-specific Bundle.
-- ChatGPT may continue planning, GitHub review, document preparation, Bundle preparation, and Copilot delegation.
-
-このセクションは恒久情報ではありません。制約が解除または変更されたら、更新または削除します。
+- 旧記載の「2026-09-10 04:55 JSTまでCodex利用不可」は、今回の確認時点で期限経過済みのため削除した。現在の利用残量を確認したという意味ではない。
+- 今回は文書更新のみ。実装・テスト実行・commit・push・mergeは行わず、文書更新後にユーザー確認を待つ。
 
 ## New Chat Startup
 
