@@ -3,7 +3,19 @@ package com.example.guitarmes.product;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.guitarmes.product.parts.ProductPartsSpecRequest;
+
 public class ProductVariationCreateRequest {
+
+    private ProductPartsSpecRequest partsSpec = new ProductPartsSpecRequest();
+
+    public ProductPartsSpecRequest getPartsSpec() {
+        return partsSpec;
+    }
+
+    public void setPartsSpec(ProductPartsSpecRequest partsSpec) {
+        this.partsSpec = partsSpec == null ? new ProductPartsSpecRequest() : partsSpec;
+    }
 
     private String productSeries;
 

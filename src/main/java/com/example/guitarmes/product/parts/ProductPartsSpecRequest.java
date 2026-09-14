@@ -29,6 +29,40 @@ public class ProductPartsSpecRequest {
 
     private String stringGauge;
 
+    public boolean isEmpty() {
+        return bridgeType == null
+                && (bridgeModel == null || bridgeModel.isBlank())
+                && requiresStudHoleExpansion == null
+                && (tunerModel == null || tunerModel.isBlank())
+                && tunerMountingType == null
+                && tunerBushRequired == null
+                && tunerLayout == null
+                && selectorPositions == null
+                && (controlLayout == null || controlLayout.isBlank())
+                && jackMountingType == null
+                && (stringMaker == null || stringMaker.isBlank())
+                && (stringModel == null || stringModel.isBlank())
+                && (stringGauge == null || stringGauge.isBlank());
+    }
+
+    public static ProductPartsSpecRequest from(ProductPartsSpec spec) {
+        ProductPartsSpecRequest request = new ProductPartsSpecRequest();
+        request.setBridgeType(spec.getBridgeType());
+        request.setBridgeModel(spec.getBridgeModel());
+        request.setRequiresStudHoleExpansion(spec.getRequiresStudHoleExpansion());
+        request.setTunerModel(spec.getTunerModel());
+        request.setTunerMountingType(spec.getTunerMountingType());
+        request.setTunerBushRequired(spec.getTunerBushRequired());
+        request.setTunerLayout(spec.getTunerLayout());
+        request.setSelectorPositions(spec.getSelectorPositions());
+        request.setControlLayout(spec.getControlLayout());
+        request.setJackMountingType(spec.getJackMountingType());
+        request.setStringMaker(spec.getStringMaker());
+        request.setStringModel(spec.getStringModel());
+        request.setStringGauge(spec.getStringGauge());
+        return request;
+    }
+
     public BridgeType getBridgeType() {
         return bridgeType;
     }
