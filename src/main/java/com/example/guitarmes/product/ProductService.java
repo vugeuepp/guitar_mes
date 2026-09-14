@@ -350,8 +350,14 @@ public class ProductService {
             return;
         }
 
+        validateManufacturingSpecificationChange(product.getId());
+    }
+
+    /** 製造仕様の変更可否を共通判定する。呼出元でProductの存在を確認する。 */
+    public void validateManufacturingSpecificationChange(Long productId) {
+
         if (guitarRepository.existsByProductId(
-                product.getId())) {
+                productId)) {
 
             throw new BusinessException(
                     "製造個体が発行済みのため、"
@@ -363,7 +369,7 @@ public class ProductService {
         List<ProductionOrder> productionOrders =
                 productionOrderRepository
                         .findByProductId(
-                                product.getId());
+                                productId);
 
         boolean productionStarted =
                 productionOrders
