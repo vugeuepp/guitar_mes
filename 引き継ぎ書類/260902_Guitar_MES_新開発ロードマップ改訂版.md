@@ -1,12 +1,14 @@
 # Guitar MES 新開発ロードマップ 改訂版
 
-- 改訂日: 2026-09-02
+- 基礎改訂日: 2026-09-02
+- 方針追記日: 2026-09-10（Phase 6A）
 - 対象プロジェクト: Guitar Manufacturing Execution System（Guitar MES）
 - 技術構成: Java 17 / Spring Boot / Thymeleaf / PostgreSQL / JUnit / Mockito / MockMvc / Playwright
 - 開発環境: macOS / Eclipse（Pleiades日本語化版） / DBeaver / GitHub Desktop
 - DBスキーマ管理方針: `spring.jpa.hibernate.ddl-auto=validate`
 - DB変更方針: 適用SQL・確認SQL・ロールバックSQLによる明示管理
-- 現在地: Phase 4B完了。通常テスト230件、E2E 14件成功
+- 現在地・branch・最新検証結果: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)を参照
+- 第1〜10節および第16節Step 0〜6の進捗表現は、2026-09-02時点の計画・記録。現在の未完了タスク一覧として扱わない。
 
 ---
 
@@ -117,6 +119,8 @@ GuitarはProductionOrder登録時には生成しない。BodyとNeckを組み合
 ---
 
 ## 4. フェーズ全体像
+
+以下の状態表記は基礎改訂時点の記録。Phase 6の開発分割は第11節、実際の現在地はHandoffを参照する。
 
 ```text
 Phase 1   主要UI・CRUD・自動テスト基盤                     完了
@@ -660,32 +664,35 @@ Body・Neck・Guitarの作業対象:
 
 ## 11. Phase 6: 工程別専用ページ・工程内作業
 
-目的:
+### 11.1 目的と初期対象
 
-- 工程ごとに異なる作業内容、チェック項目、測定値、進捗を管理する
-- 作業者が担当工程ページ内で作業を完結できるようにする
+工程ごとに異なる作業内容・チェック・検査結果を記録し、作業者が担当工程ページ内で作業を完結できるようにする。
 
-候補:
+Phase 6AはStratocaster系の「ギターパーツ取付工程」を最初の対象とする。調整・調音、最終検品、Body・Neck工程別ページは後続の展開候補とし、6Aへ一括で含めない。
 
-- ギターパーツ取付
-- 調整・調音
-- 最終検品
-- Body工程別ページ
-- Neck工程別ページ
+### 11.2 Phase 6Aの開発分割
 
-データモデル候補:
+| 段階 | 開発内容 |
+| --- | --- |
+| 6A-1 製品仕様拡張 | Bridge、Tuner、Electronicsの不足仕様、Stringを対象候補に、作業判断に必要な仕様を製品マスタへ保存する。製品詳細の電子仕様書化を目指す |
+| 6A-2 工程内作業記録基盤 | 汎用ProcessHistoryを維持し、ProcessWork / ProcessWorkItem等の別層で、確定済み作業項目と実績・検査結果を記録する |
+| 6A-3 専用画面・工程連携 | 作業チェック、OK / NG検査、NGコメント、途中保存、完了条件判定、工程終了を専用画面で扱う。終了処理は既存ProcessService.endProcess()を再利用する |
 
-```text
-ProcessTaskDefinition
-ProcessTaskHistory
-```
+### 11.3 設計原則
 
-完了条件:
+- 製品仕様（何を作るか）、作業指示（何をするか）、作業実績（何を行ったか）、検査結果（OK / NG）を分離する。
+- 製品仕様はDBへ保存する。工程固有のチェック・検査列をProcessHistoryに直接追加しない。
+- Phase 6Aでは作業項目定義そのものを直ちにDBマスタ化せず、仕様から必要作業を決めるルールはService側に持たせる方向で検討する。
+- 作業開始時点で必要項目を確定して保存し、後の製品マスタ変更が開始済み個体の作業内容を勝手に変えない構造とする。
+- 旧候補ProcessTaskDefinition / ProcessTaskHistoryは採用確定ではない。ProcessWork / ProcessWorkItemも名称候補で、物理モデルは6A-2で確定する。
 
-- 工程固有の作業項目を表示できる
-- 必須作業が未完了なら工程終了できない
-- チェック、数値、文字、判定を保存できる
-- 工程内作業履歴を追跡できる
+### 11.4 対象作業と完了判定
+
+初期対象はトレモロユニット・スプリングハンガー取付、ピックガード・舟形ジャック取付、ペグ取付、指定弦による弦巻。
+
+仕様ごとの分岐、詳細作業、段階ごとの完了判定、未確定の設計論点は[Phase 6A設計方針](260910_Guitar_MES_Phase6A_設計方針.md)にまとめる。
+
+必須作業が未完了なら工程終了できないことを維持する。NGの扱い、具体的な必須項目・検査基準、既存の個別・一括終了経路との接続は詳細設計で決め、画面だけでなくServiceで検証する。
 
 ---
 
@@ -767,7 +774,7 @@ Guitar
 ↓
 ProcessHistory
 ↓
-ProcessTaskHistory
+工程内作業記録（ProcessWork / ProcessWorkItem等の候補）
 ↓
 Return / Rework / Inspection
 ↓
@@ -835,7 +842,7 @@ E2ECleanupSupport.java
 
 ---
 
-## 16. 直近の推奨実装順
+## 16. 推奨実装順（Step 0〜6は基礎改訂時点の計画）
 
 ### Step 0: Phase 4Bを確定・コミット
 
@@ -895,67 +902,24 @@ Body・Neck工程の一括開始・終了機能を追加
 - 明示的なデフォルト順
 - ページングとインデックス
 
-### Step 7: Phase 6以降
+### Step 7: Phase 6A
 
-工程別専用ページ、認証、品質管理、分析へ進む。
-
----
-
-## 17. 次回開始地点
-
-次回はPhase 4Bのコミット後、Phase 4CのGuitar一覧UI統一から開始する。
-
-最初に確認する項目:
-
-1. 現在のGuitar一覧HTML
-2. Guitar一覧Controller
-3. Guitar工程Serviceと一括処理Controller
-4. `BulkGuitarProcessE2E`
-5. Guitarの開始可能・完成済み状態
-6. 画面に表示されている内部ID一覧
-
-最初の実装目標:
-
-```text
-Guitar一覧
-↓
-対象工程を先に選択
-↓
-一致し、開始可能なGuitarだけ選択可能
-↓
-対象のない工程は候補から除外
-↓
-一括開始
-```
+製品仕様拡張（6A-1）→ 工程内作業記録基盤（6A-2）→ ギターパーツ取付専用画面・工程連携（6A-3）の順に進める。詳細は第11節とPhase 6A設計方針を参照する。
 
 ---
 
-## 18. 次回チャット開始用ショートメモ
+## 17. 作業開始時の確認
 
-```text
-Guitar MES開発を継続します。
-2026-09-02改訂版ロードマップを確認してください。
+現在地と次の作業は[DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)、恒久ルールは[AGENTS.md](../AGENTS.md)を確認し、実際のGit状態・ユーザー指示と照合する。
 
-完了済み:
-・Phase 1 主要UI・CRUD・自動テスト基盤
-・Phase 2 ProductionSchedule
-・Phase 3 Body・Neck一括発行
-・Phase 4A Guitar工程一括処理
-・Phase 4B Body・Neck工程一括処理
-・通常テスト230件成功
-・E2E 14件成功
+Phase 6Aの実装前には、既存製品仕様を棚卸しし、不足項目と各段階の未確定事項を決める。ロードマップの計画記述だけで実装開始や仕様確定とみなさない。
 
-次の作業:
-Phase 4C Guitar一覧の一括操作UI統一
-・対象工程を先に選択
-・一致するGuitarだけ活性化
-・対象のない工程を候補から除外
-・工程変更時に選択解除
-・不要な内部ID表示を整理
+---
 
-その後:
-・計画数到達後のネック取付導線修正
-・ネック取付一括登録
-・製造中、組立待ち、完成済み一覧の分離
-・検索、ソート、日時列、ページング
-```
+## 18. 次回チャット開始時の参照先
+
+1. DEVELOPMENT_HANDOFF.mdで現在のPhase・branch・検証状況・依頼範囲を確認する。
+2. AGENTS.mdと実際のGit状態を確認する。
+3. 本文書第11節とPhase 6A設計方針を読み、ユーザーが確認済みの仕様と未確定事項を区別する。
+
+進捗・テスト件数をこのショートメモへ複製せず、Handoffを参照する。

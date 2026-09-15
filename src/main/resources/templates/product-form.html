@@ -38,6 +38,8 @@
           id="productVariationForm"
           class="form-container">
 
+        <div th:if="${errorMessage}" class="error-message" role="alert" th:text="${errorMessage}"></div>
+
         <section class="form-section">
 
             <div class="form-section-heading">
@@ -455,6 +457,8 @@
             </div>
 
         </section>
+
+        <section th:replace="~{fragments/product-parts-fields :: fields(false)}"></section>
 
         <section class="form-section">
 

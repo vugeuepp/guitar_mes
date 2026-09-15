@@ -30,12 +30,16 @@ import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
 import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.product.image.ProductImageService;
+import com.example.guitarmes.product.parts.ProductPartsSpecService;
 
 @ExtendWith(MockitoExtension.class)
 class ProductViewControllerTest {
 
     @Mock
     private ProductService productService;
+
+    @Mock
+    private ProductFormService productFormService;
 
     @Mock
     private GuitarService guitarService;
@@ -49,6 +53,9 @@ class ProductViewControllerTest {
     @Mock
     private ProductImageService productImageService;
 
+    @Mock
+    private ProductPartsSpecService productPartsSpecService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -59,7 +66,9 @@ class ProductViewControllerTest {
                         guitarService,
                         productSeriesMasterService,
                         instrumentTypeMasterService,
-                        productImageService);
+                        productImageService,
+                        productFormService,
+                        productPartsSpecService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
@@ -145,7 +154,7 @@ class ProductViewControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/products/view"));
 
-        verify(productService)
+        verify(productFormService)
                 .createProductVariations(
                         any(ProductVariationCreateRequest.class));
     }
@@ -170,7 +179,7 @@ class ProductViewControllerTest {
     @DisplayName("製品編集画面を現在値と選択肢付きで表示できる")
     void editProductForm_succeeds() throws Exception {
         ProductUpdateRequest request = createUpdateRequest();
-        when(productService.getProductUpdateRequest(10L))
+        when(productFormService.getProductUpdateRequest(10L))
                 .thenReturn(request);
         when(productSeriesMasterService
                 .getProductSeriesMastersForEdit("MIJ-H2"))
@@ -215,7 +224,7 @@ class ProductViewControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/products/10/view"));
 
-        verify(productService)
+        verify(productFormService)
                 .updateProduct(
                         eq(10L),
                         any(ProductUpdateRequest.class));
@@ -226,7 +235,7 @@ class ProductViewControllerTest {
     void updateProduct_businessError_returnsEditForm()
             throws Exception {
 
-        when(productService.updateProduct(
+        when(productFormService.updateProduct(
                 eq(10L),
                 any(ProductUpdateRequest.class)))
                 .thenThrow(new BusinessException(

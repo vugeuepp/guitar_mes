@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,11 +23,19 @@ import com.example.guitarmes.master.ScaleLengthType;
 import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
 import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.product.image.ProductImageService;
+import com.example.guitarmes.product.parts.BridgeType;
+import com.example.guitarmes.product.parts.JackMountingType;
+import com.example.guitarmes.product.parts.ProductPartsSpecService;
+import com.example.guitarmes.product.parts.ProductPartsSpecView;
+import com.example.guitarmes.product.parts.TunerLayout;
+import com.example.guitarmes.product.parts.TunerMountingType;
 
 @Controller
 public class ProductViewController {
 
     private final ProductService productService;
+    private final ProductFormService productFormService;
+    private final ProductPartsSpecService productPartsSpecService;
 
     private final GuitarService guitarService;
 
@@ -43,9 +53,13 @@ public class ProductViewController {
                     productSeriesMasterService,
             InstrumentTypeMasterService
                     instrumentTypeMasterService,
-            ProductImageService productImageService) {
+            ProductImageService productImageService,
+            ProductFormService productFormService,
+            ProductPartsSpecService productPartsSpecService) {
 
         this.productService = productService;
+        this.productFormService = productFormService;
+        this.productPartsSpecService = productPartsSpecService;
         this.guitarService = guitarService;
         this.productSeriesMasterService =
                 productSeriesMasterService;
@@ -94,13 +108,20 @@ public class ProductViewController {
 
     @PostMapping("/products/create")
     public String createProduct(
-            @ModelAttribute("request")
-            ProductVariationCreateRequest request) {
-
-        productService.createProductVariations(
-                request);
-
-        return "redirect:/products/view";
+            @ModelAttribute("request") ProductVariationCreateRequest request,
+            BindingResult bindingResult, Model model) {
+        if (!bindingResult.hasErrors()) {
+            try {
+                productFormService.createProductVariations(request);
+                return "redirect:/products/view";
+            } catch (BusinessException exception) {
+                model.addAttribute("errorMessage", exception.getMessage());
+            }
+        } else {
+            model.addAttribute("errorMessage", "入力形式が正しくありません。各項目を確認してください。");
+        }
+        addNewProductFormOptions(model);
+        return "product-form";
     }
 
     @GetMapping("/products/{id}/view")
@@ -108,13 +129,7 @@ public class ProductViewController {
             @PathVariable Long id,
             Model model) {
 
-        model.addAttribute(
-                "product",
-                productService.getProductById(id));
-
-        model.addAttribute(
-                "guitars",
-                guitarService.getGuitarsByProductId(id));
+        addProductDetailAttributes(id, model);
 
         return "product-detail";
     }
@@ -158,7 +173,7 @@ public class ProductViewController {
             Model model) {
 
         ProductUpdateRequest request =
-                productService.getProductUpdateRequest(
+                productFormService.getProductUpdateRequest(
                         id);
 
         model.addAttribute(
@@ -168,6 +183,7 @@ public class ProductViewController {
                 "productId",
                 id);
 
+        model.addAttribute("partsLocked", productFormService.isPartsLocked(id));
         addEditProductFormOptions(
                 model,
                 request.getProductSeries(),
@@ -181,10 +197,14 @@ public class ProductViewController {
             @PathVariable Long id,
             @ModelAttribute("request")
             ProductUpdateRequest request,
+            BindingResult bindingResult,
             Model model) {
 
         try {
-            productService.updateProduct(
+            if (bindingResult.hasErrors()) {
+                throw new BusinessException("入力形式が正しくありません。各項目を確認してください。");
+            }
+            productFormService.updateProduct(
                     id,
                     request);
 
@@ -202,6 +222,7 @@ public class ProductViewController {
                     "errorMessage",
                     exception.getMessage());
 
+            model.addAttribute("partsLocked", productFormService.isPartsLocked(id));
             addEditProductFormOptions(
                     model,
                     request.getProductSeries(),
@@ -215,9 +236,11 @@ public class ProductViewController {
             Long id,
             Model model) {
 
-        model.addAttribute(
-                "product",
-                productService.getProductById(id));
+        Product product = productService.getProductById(id);
+        model.addAttribute("product", product);
+        model.addAttribute("partsSpecView", productPartsSpecService.findByProductId(id)
+                .map(spec -> ProductPartsSpecView.from(spec, product.getPickupLayout()))
+                .orElse(null));
         model.addAttribute(
                 "guitars",
                 guitarService.getGuitarsByProductId(id));
@@ -264,6 +287,10 @@ public class ProductViewController {
     private void addCommonProductFormOptions(
             Model model) {
 
+        model.addAttribute("bridgeTypes", BridgeType.values());
+        model.addAttribute("tunerMountingTypes", TunerMountingType.values());
+        model.addAttribute("tunerLayouts", TunerLayout.values());
+        model.addAttribute("jackMountingTypes", JackMountingType.values());
         model.addAttribute(
                 "bodyMaterialTypeList",
                 BodyMaterialType.values());

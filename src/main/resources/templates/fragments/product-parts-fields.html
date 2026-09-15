@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="fields(locked)" class="form-section" id="partsSpecSection">
+    <div class="form-section-heading">
+        <div><p class="form-section-caption">Parts Specifications</p>
+            <h2 class="form-section-title">パーツ取付仕様</h2></div>
+    </div>
+    <p class="form-help">仕様未登録の場合、全項目が空欄なら未設定のまま保存します。登録済み仕様を空欄で削除することはできません。入力する場合は必要項目をすべて指定してください。ブリッジ型番・弦メーカーは任意です。</p>
+    <p th:if="${locked}" class="information-message" id="partsSpecLockedMessage">製造開始済みのためパーツ取付仕様は変更できません。製品名など変更可能な項目は保存できます。</p>
+    <fieldset th:disabled="${locked}" id="partsSpecFields" style="border: 0; padding: 0; margin: 0; min-width: 0;">
+        <legend class="form-help">必要／不要も明示的に選択してください。</legend>
+        <h3 class="form-section-title">Bridge</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="partsSpec.bridgeType" class="form-label">ブリッジ方式</label>
+                <select th:field="*{partsSpec.bridgeType}" class="form-select">
+                    <option value="">未選択</option>
+                    <option th:each="option : ${bridgeTypes}" th:value="${option.name()}" th:text="${option.label}"></option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.bridgeType')}" th:errors="*{partsSpec.bridgeType}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.bridgeModel" class="form-label">ブリッジ型番（任意）</label>
+                <input type="text" th:field="*{partsSpec.bridgeModel}" maxlength="255" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.bridgeModel')}" th:errors="*{partsSpec.bridgeModel}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.requiresStudHoleExpansion" class="form-label">スタッド穴拡張</label>
+                <select th:field="*{partsSpec.requiresStudHoleExpansion}" class="form-select">
+                    <option value="">未選択</option>
+                    <option value="true">必要</option>
+                    <option value="false">不要</option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.requiresStudHoleExpansion')}" th:errors="*{partsSpec.requiresStudHoleExpansion}" class="error-message"></p>
+            </div>
+        </div>
+        <h3 class="form-section-title">Tuner</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="partsSpec.tunerModel" class="form-label">ペグ型番</label>
+                <input type="text" th:field="*{partsSpec.tunerModel}" maxlength="255" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.tunerModel')}" th:errors="*{partsSpec.tunerModel}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.tunerMountingType" class="form-label">ペグ取付方式</label>
+                <select th:field="*{partsSpec.tunerMountingType}" class="form-select">
+                    <option value="">未選択</option>
+                    <option th:each="option : ${tunerMountingTypes}" th:value="${option.name()}" th:text="${option.label}"></option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.tunerMountingType')}" th:errors="*{partsSpec.tunerMountingType}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.tunerBushRequired" class="form-label">ペグブッシュ</label>
+                <select th:field="*{partsSpec.tunerBushRequired}" class="form-select">
+                    <option value="">未選択</option>
+                    <option value="true">必要</option>
+                    <option value="false">不要</option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.tunerBushRequired')}" th:errors="*{partsSpec.tunerBushRequired}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.tunerLayout" class="form-label">ペグ配列</label>
+                <select th:field="*{partsSpec.tunerLayout}" class="form-select">
+                    <option value="">未選択</option>
+                    <option th:each="option : ${tunerLayouts}" th:value="${option.name()}" th:text="${option.label}"></option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.tunerLayout')}" th:errors="*{partsSpec.tunerLayout}" class="error-message"></p>
+            </div>
+        </div>
+        <h3 class="form-section-title">Electronics</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="partsSpec.selectorPositions" class="form-label">セレクターポジション数</label>
+                <input type="number" th:field="*{partsSpec.selectorPositions}" step="1" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.selectorPositions')}" th:errors="*{partsSpec.selectorPositions}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.controlLayout" class="form-label">コントロール構成</label>
+                <input type="text" th:field="*{partsSpec.controlLayout}" maxlength="255" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.controlLayout')}" th:errors="*{partsSpec.controlLayout}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.jackMountingType" class="form-label">ジャック取付形状</label>
+                <select th:field="*{partsSpec.jackMountingType}" class="form-select">
+                    <option value="">未選択</option>
+                    <option th:each="option : ${jackMountingTypes}" th:value="${option.name()}" th:text="${option.label}"></option>
+                </select>
+                <p th:if="${#fields.hasErrors('partsSpec.jackMountingType')}" th:errors="*{partsSpec.jackMountingType}" class="error-message"></p>
+            </div>
+        </div>
+        <h3 class="form-section-title">String</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="partsSpec.stringMaker" class="form-label">弦メーカー（任意）</label>
+                <input type="text" th:field="*{partsSpec.stringMaker}" maxlength="150" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.stringMaker')}" th:errors="*{partsSpec.stringMaker}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.stringModel" class="form-label">指定弦</label>
+                <input type="text" th:field="*{partsSpec.stringModel}" maxlength="255" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.stringModel')}" th:errors="*{partsSpec.stringModel}" class="error-message"></p>
+            </div>
+            <div class="form-group">
+                <label for="partsSpec.stringGauge" class="form-label">弦ゲージ</label>
+                <input type="text" th:field="*{partsSpec.stringGauge}" maxlength="100" class="form-input">
+                <p th:if="${#fields.hasErrors('partsSpec.stringGauge')}" th:errors="*{partsSpec.stringGauge}" class="error-message"></p>
+            </div>
+        </div>
+    </fieldset>
+</section>
+</body>
+</html>

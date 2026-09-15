@@ -1,6 +1,18 @@
 package com.example.guitarmes.product;
 
+import com.example.guitarmes.product.parts.ProductPartsSpecRequest;
+
 public class ProductUpdateRequest {
+
+    private ProductPartsSpecRequest partsSpec = new ProductPartsSpecRequest();
+
+    public ProductPartsSpecRequest getPartsSpec() {
+        return partsSpec;
+    }
+
+    public void setPartsSpec(ProductPartsSpecRequest partsSpec) {
+        this.partsSpec = partsSpec == null ? new ProductPartsSpecRequest() : partsSpec;
+    }
 
     private String productSeries;
 
