@@ -3,7 +3,7 @@
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
 - 改訂日: 2026-09-15
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。実装結果を反映した本MarkdownはChatGPTレビュー待ち。6A-2 / 6A-3は未実装。
+- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2はDomain設計中で、ChatGPTレビューによる決定を本書へ反映。今回のMarkdown差分は再レビュー待ち。6A-2のJava / SQL / test実装は未着手、6A-3も未実装。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -133,77 +133,165 @@ Product masterに明示された値をsource of truthとする。Product名、mo
 
 将来のST対象判定は既存InstrumentTypeMaster・MES内部モデルコードの正式分類と`resolveProductClassification()`相当のロジックを再利用する方針を維持する。正式分類の利用と不足パーツ仕様の推測は別である。Productへの新規InstrumentType FKは追加していない。6A-1のSpec保存はST限定判定を追加しておらず、作業対象への接続は後続課題とする。
 
-## 3. 情報の責務分離
+## 3. 6A-2 Domainの責務と関係（設計方針・未実装）
 
-| 情報 | 意味 | Phase 6Aの扱い |
-| --- | --- | --- |
-| 製品仕様 | 何を作る製品か | ProductPartsSpecにパーツ仕様を保存し、既存Product.pickupLayoutも再利用する |
-| 作業指示 | その仕様なら何をする必要があるか | 製品仕様からService側のルールで必要作業を決定する方向で検討 |
-| 作業実績 | 実際に何を行ったか | チェックや途中保存を工程内作業記録として保持 |
-| 検査結果 | 結果がOK / NGのどちらだったか | 作業実施のチェックと区別し、NGコメントも記録 |
-
-作業項目定義そのものをPhase 6AでいきなりDBマスタ化しない。これは「実行時に確定した作業項目をDBに保存しない」という意味ではない。実行時の指示と記録は保存し、再表示で復元できる構造にする。
-
-既存`ProcessHistory`はGuitar・工程・作業者・開始日時・終了日時を管理する汎用履歴として維持する。工程固有のチェック項目や検査結果を直接追加しない。
-
-別層の名前は`ProcessWork` / `ProcessWorkItem`等を候補とする。履歴に対応する作業記録と、その配下の確定済み項目・実施結果を表現する方向で検討するが、関連の多重度、具体的なEntity名、DB列は未確定。旧ロードマップの`ProcessTaskDefinition` / `ProcessTaskHistory`は旧候補であり、そのまま実装する指示ではない。
-
-## 4. 最初の対象作業
-
-| 作業グループ | 製品仕様による分岐・対象作業 |
+| 構成 | 責務 |
 | --- | --- |
-| トレモロユニット・スプリングハンガー取付 | 6点支持 / 2点支持 / Floyd Roseで作業内容を分岐 |
-| ピックガード・舟形ジャック取付 | 穴加工、配線、半田付け、PU音出し、セレクター全ポジション確認、コントロール確認、不具合確認、固定 |
-| ペグ取付 | 使用ペグ（tunerModel）、ブッシュ有無、固定方式によって分岐。Kluson / Schaller等を曖昧なtunerType分類として追加しない |
-| 弦巻 | 製品仕様に登録された指定弦を使用 |
+| ProductPartsSpec | 現在の製品標準仕様。「何を作るか」 |
+| ProcessHistory | 1回の工程実施。「この工程をいつ誰が実施したか」 |
+| ProcessWork | その履歴の工程開始時に確定した作業指示・製品仕様snapshot |
+| ProcessWorkItem | Workに属する個々の作業項目と実施状態 |
 
-これらは作業グループと分岐軸の指定であり、個々の必須チェック、検査基準、作業順、数値規格をすべて確定したものではない。穴寸法、締付値、弦ゲージなどを推測で設定しない。
+正式方針は`ProcessHistory 1 : 0..1 ProcessWork 1 : N ProcessWorkItem`。WorkはGuitar＋Processの組ではなく、1回のProcessHistoryに属する。同じGuitar・工程を将来再実施して新しい履歴を作る場合も、新しいWorkに分離できる。
 
-## 5. 開始時点の作業項目の保存
+Work→HistoryはWork所有の片方向`@OneToOne`、LAZY、cascadeなし、orphanRemovalなし。Historyへの逆参照は追加しない。DB候補は`process_history_id NOT NULL / FK / UNIQUE`。ItemはWorkの子とするが、子関連の具体的なJPA設定は今回指定していない。
 
-目指す流れ:
+Product master変更後も開始済みWork / Itemを再生成・自動変更しない。作業項目定義自体を直ちにDBマスタ化せず、Serviceで導出して実行時の項目を保存する。ProductPartsSpecを作業結果テーブルとして使用しない。
 
-1. 作業開始時点の製品仕様を参照し、必要仕様の不足をServiceで検証する。不足時は開始しない。
-2. Service側のルールから、その個体に必要な作業項目を決定する。
-3. 決定した項目を工程内作業記録側へ保存する。
-4. 途中保存・再表示・完了判定では、保存済みの項目を使用する。
+### 3.1 ProcessWorkと14項目snapshot
 
-後から製品マスタを変更しても、開始済み個体の作業内容が勝手に変わらないことを原則とする。画面を開くたびに最新マスタから項目を再生成する方式は、この原則と整合しない。
+候補項目は`id`、`processHistory`、`createdAt`と次の14項目。
 
-確定項目に加えて、分岐根拠の仕様値、表示文言、ルールの版などをどこまで保存するかは6A-2で判断する。「作業開始」が既存工程開始と同時なのか、専用画面での作業開始なのかも設計時に確定する。
+| 領域 | snapshot項目 |
+| --- | --- |
+| Bridge | bridgeType、bridgeModel、requiresStudHoleExpansion |
+| Tuner | tunerModel、tunerMountingType、tunerBushRequired、tunerLayout |
+| Electronics | pickupLayout、selectorPositions、controlLayout、jackMountingType |
+| String | stringMaker、stringModel、stringGauge |
 
-## 6. 専用画面と既存工程処理の接続
+13項目はProductPartsSpec、pickupLayoutのみProductから開始時に値をコピーする。ProductPartsSpecへのFKは持たない。型・長さの既存基準は第2節を参照するが、pickupLayoutの実DB長は未確認。
 
-6A-3の対象機能は、必要作業の表示、作業チェック、OK / NG検査、NGコメント、途中保存、完了条件判定、工程終了。
+snapshot部分は原則immutable。WorkはcreatedAtのみを持ち、updatedAtとstatusは現時点で持たせない。Item操作でもsnapshotを書き換えず、工程全体の状態はHistory、工程内の実施状態はItemをsource of truthとする。
 
-工程終了そのものは既存`ProcessService.endProcess()`を再利用する。工程遷移、履歴終了、業務日時や完成数量更新を専用画面側へ複製しない。完了条件は画面だけでなくService側で判定する。
+productIdの追加snapshotは6A-2では行わない。通常運用にGuitar生成後のProduct差し替え機能がなく、History→guitarId→Guitar→Productで追跡できるため。将来の監査要件による追加余地は残す。
 
-必須作業が未完了なら工程終了できないというロードマップの原則を維持する。ただし、NG時の終了可否、再検査、コメント必須条件、必須・任意項目の区別などは詳細仕様が必要。既存の個別・一括終了や直接リクエストが完了条件を迂回しない接続方法も、6A-3着手前に決める。
+将来の対象製品拡張を考慮し、snapshot列を機械的にすべてNOT NULLにしない。生成時の完全性はServiceで保証する。各列の最終NULL制約はSQL実装前に確認する。
 
-作業記録の保存と工程終了のトランザクション境界、途中保存と終了の同時操作、二重終了・作業項目の重複生成の防止は、既存の排他・全件検証方針と照合して設計する。
+### 3.2 ProcessWorkItem
 
-## 7. 段階ごとの完了判定の観点
+正式候補項目は`id`、`processWork`、`itemKey`、`itemOrder`、`status`、`completedAt`、`createdAt`、`updatedAt`。順序名は既存processOrderと揃え、sequenceではなくitemOrderを採用する方針。生成時の作業順序を保存する。
 
-- **6A-1（完了）**: 第2節の基盤・登録編集・電子仕様書を実装済み。テストの確認時点・出典はHandoffに記録する。
-- **6A-2**: 汎用履歴と工程固有記録が分離され、必要項目が開始時点で保存されること。途中保存・再表示で復元でき、製品変更で開始済み記録が変化しないこと。
-- **6A-3**: 各分岐の必要作業と検査を記録でき、確定した完了条件をServiceで判定して既存工程終了に接続できること。
+itemKeyは安定した業務識別子としてEnumType.STRINGで保存する方向。DBはVARCHAR＋CHECK、VARCHAR(64)を第一候補とする。表示文言とは分離し、EnumのgetLabel()等で表示する。本番保存後の安易なEnum名renameは永続コードを変えるため禁止する設計意図とする。ordinal保存はしない。
 
-実装時の検証候補は、仕様分岐、仕様未設定、開始後のマスタ変更、途中保存と再読込、未完了・NGの終了制御、個別・一括経路、同時保存・終了、既存工程の回帰。具体的なテストは各段階の仕様確定後に作成する。検証の責任分担・E2E専用DB・fixture cleanupはAGENTS.mdに従う。
+| 日時 | 意味 |
+| --- | --- |
+| createdAt | Itemが生成された時刻 |
+| updatedAt | Itemの状態を最後に変更した時刻 |
+| completedAt | 現在のCOMPLETED状態になった時刻 |
 
-## 8. 6A-2以降へ引き継ぐ設計課題
+初期statusはNOT_STARTED / COMPLETEDのみ。EnumType.STRINGを候補とする。
 
-解決済み: Spec初回作成は存在確認に加えてDB UNIQUEで二重行を防御する。create / updateおよびフォーム全体のtransactionは実装済み。UNIQUE競合はDB整合性例外として伝播しロールバックする。これをすべての並行性問題の解決とみなさない。
+| 状態・操作 | completedAt / updatedAt |
+| --- | --- |
+| NOT_STARTED | completedAtはnull |
+| COMPLETED | completedAtは非null |
+| 工程終了前のチェック解除 | NOT_STARTED、completedAt=null、updatedAt=now |
+| 再チェック | COMPLETED、completedAt=now、updatedAt=同じnow |
 
-未解決 / 要レビュー:
+誤操作修正のため工程終了前のチェック解除を可能にする方向。History.endTime設定後はWork / Itemをread-onlyにする。NG / RETEST_REQUIRED / comment等は未確定であり、ここへ先回りして追加しない。
 
-1. 初回補完の対象・期限。導入後Productにも適用される移行措置の見直し。
-2. 同時初回作成の競合時の利用者向けエラー扱い、およびSpec更新と製造開始のrace。現在の存在確認・業務判定・transactionだけで競合を解消済みとはしない。
-3. work開始のタイミング、必要仕様検証、必須作業項目の導出条件、ST分類不能・未対応製品の扱い。
-4. work-start時のsnapshot transaction境界と二重作業生成防止。snapshotのEntity構造・保存範囲・version方式は未確定。
-5. NG、再試験、コメント、未完了時の扱い、途中保存と完了の整合性。
-6. generic / bulk工程終了が専用validationを迂回しない設計と`ProcessService.endProcess()`への統合。
-7. 既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性、controlLayoutを構造化検査へ使う場合の再検討。
+### 3.3 一意制約と並行性
 
-第3〜6節の責務分離・作業開始時snapshot原則を維持する。ProductPartsSpec自体をチェックリスト・作業結果テーブルとして使用しない。今回はこれらの課題を引き継ぐだけで、6A-2のEntity / API / UIを詳細設計しない。
+採用方向の制約は以下。
 
-本MarkdownをChatGPTでレビューしてから、ユーザーの次の指示に従う。文書更新だけで6A-2へ進まない。
+- Work: UNIQUE(process_history_id) — 同じ履歴への二重生成防止。
+- Item: UNIQUE(process_work_id, item_key) — 同じ作業キーの二重生成防止。
+- Item: UNIQUE(process_work_id, item_order) — 同じWork内の順序重複防止。
+
+存在確認だけで並行性を保証せず、既存GuitarのPESSIMISTIC_WRITE、transaction、DB UNIQUEを組み合わせる。将来同じitemKeyを複数回必要とするならitemIndex等を含むモデルを再検討し、現時点では追加しない。
+
+## 4. 初期作業項目と導出方針
+
+Stratocaster系のギターパーツ取付を初期対象とする。以下は初期itemKey候補と現在の導出方針であり、詳細作業標準の追加に応じて拡張可能。穴寸法・締付値等を推測で定めない。
+
+| グループ・条件 | 生成する項目（記載順） |
+| --- | --- |
+| Bridge / SIX_POINT | BRIDGE_SIX_POINT_INSTALL → BRIDGE_MOVEMENT_CHECK → SPRING_HANGER_INSTALL |
+| Bridge / TWO_POINT | requiresStudHoleExpansion=trueならSTUD_HOLE_EXPANSION → STUD_INSTALL → BRIDGE_TWO_POINT_INSTALL → SPRING_HANGER_INSTALL |
+| Bridge / FLOYD_ROSE | requiresStudHoleExpansion=trueならSTUD_HOLE_EXPANSION → STUD_INSTALL → SPRING_HANGER_INSTALL |
+| Electronics（現時点の候補） | PICKGUARD_INSTALL → JACK_PLATE_INSTALL → JACK_WIRING → GROUND_WIRING → ELECTRONICS_SOUND_CHECK → ELECTRONICS_PARTS_CHECK → ELECTRONICS_FINAL_FASTENING |
+| Tuner | tunerBushRequired=trueならTUNER_BUSHING_INSTALL、その後TUNER_INSTALL |
+| String | STRING_INSTALL |
+
+Bridgeの条件はSTUD_HOLE_EXPANSIONの有無にだけ適用し、後続の項目は含める。Floyd Roseはこの工程ではスタッド側の作業を扱い、ブリッジ本体は後工程の調整・調音で取り付ける。FLOYD_ROSE_BRIDGE_INSTALL等は追加しない。
+
+selectorPositionsはELECTRONICS_SOUND_CHECKで「全Nポジション確認」のためにsnapshotを参照する。現時点でPositionごとにItemを分割しない。stringModel / stringGauge等は弦巻き時の参照情報として表示する方向。
+
+Product名、modelNo、bridgeModel、tunerModel、pickupLayout等から不足仕様を推測しない。明示されたSpecと正式なProduct分類を根拠に導出する。
+
+## 5. 対象判定と工程開始transaction
+
+### 5.1 生成タイミング
+
+対象製品のギターパーツ取付工程開始時に、Historyと同じtransactionでWork / Itemを生成する。専用画面初回表示・GETでは生成しない。Historyだけが存在してWorkがない中間状態や、同時閲覧による二重生成を避ける。
+
+概念フロー:
+
+GuitarのPESSIMISTIC_WRITE → 既存工程開始validation → 対象判定 → Product / Spec取得 → 工程開始可能validation → Item導出 → History生成 → Work snapshot生成 → Item生成 → Guitar.currentProcess更新 → COMMIT。
+
+途中失敗は全体rollback。これは実装予定の流れであり、現行Serviceへ接続済みではない。
+
+bulk開始もall-or-nothing。全対象Guitarを既存順序でlockし、全台の既存検証、分類確認、対象Spec確認、生成内容導出を済ませてから保存する。1台のSpec不備でも先行個体だけ開始済みにはせず、何も残さない。
+
+### 5.2 対象・対象外・分類不能
+
+正式分類上のStratocaster系を対象とし、製品名・modelNo・pickupLayout等から推測しない。既存InstrumentTypeMaster、internalModelCode、resolveProductClassification()相当の正式分類を再利用する方向。
+
+分類メソッドは現状private。単純なpublic化とは決めず、分類責務を再利用可能にする具体的方法を実装前の論点とする。
+
+- 6A対象Product: 必要Specが存在し、作業生成に必要な仕様が有効ならWork生成。
+- Spec未設定・必要仕様不備の対象Product: ギターパーツ取付工程を開始させない方向。
+- 6A対象外と判定できたProduct: 当面はWorkを強制せず従来工程開始を維持。
+- 分類不能Product: 開始拒否か従来処理か未確定。対象外と混同しない。
+
+ProductPartsSpecServiceはSpec自体の保存・完全性を担い、Parts Installation側は工程開始可否とItem導出可否を担う。private normalizeAndValidate()を保存以外の目的でそのまま呼ぶ構造にはしない。
+
+### 5.3 package責務の候補
+
+| package候補 | 責務 |
+| --- | --- |
+| process.work | ProcessWork / Item、Repository、Item状態更新、汎用取得 |
+| process.partsinstallation | 対象判定、Spec開始可能validation、snapshot生成、Item導出、工程固有の完了判定 |
+
+既存の汎用工程APIにProcessWorkControllerがあるため、将来の専用Controllerには同名を使わない。具体名・専用UIは未確定。
+
+## 6. processCodeの段階導入方針
+
+B案としてManufacturingProcess / m_processへ表示名と別の安定processCodeを追加する方向。全体UNIQUE、初期NULL許可、6A対象工程へ設定する。初期コード候補はGUITAR_PARTS_INSTALLATION。
+
+6A固有の対象工程判定から段階利用し、既存全工程を一度にcodeへ置換しない。Body / Neck / currentProcess等の名前依存は別design debtとする。
+
+**移行時STOP条件**: m_processの本番・開発DB初期投入方法は確認不能。SQL実装時にはtargetType＋processName等で対象を限定し、想定するギターパーツ取付行が1件であることをverifyする。0件・複数件を黙って成功扱いにしない。実DB確認前に未知の工程へ推測でcodeを割り当てない。
+
+## 7. 工程終了との接続（主に6A-3）
+
+必須ItemがすべてCOMPLETEDでなければ、6A対象Workを持つHistoryを終了できない方針。個別終了とbulk終了は現状別実装のため、両方から共通利用するService validationにする。専用画面だけに検証を置かず、ProcessService.endProcess()の遷移・日時・数量更新を画面へコピーしない。
+
+既存終了入口:
+
+- POST /processes/end
+- POST /processes/bulk/end
+- POST /api/process/end
+- POST /api/process/bulk/end
+
+**迂回経路候補**: PUT /api/guitars/{id}はcurrentProcessを直接変更し、History終了・Work完了検証を経由しない。6A-2では改修せずdesign debtとして残す。将来は専用画面・上記4入口・直接更新APIのいずれからも未完了状態を不正に抜けられない設計を検討する。
+
+再実施時に新History→新Workを持てるDomainとするが、現行履歴表示・進捗は同一工程原則1回を前提とする。再実施の業務フローは6A-2で実装しない。
+
+## 8. 未確定事項と後続の確認
+
+以下は今回の決定事項へ混ぜず、未確定として残す。
+
+- 分類不能Productの開始可否、分類ロジックの具体的な再利用方法。
+- NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
+- 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
+- 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
+- processCodeの全工程展開時期、Body / Neckの名前依存解消。
+- currentProcess直接更新APIの具体的な改修方法。
+- Work専用UI・Controller名、Item関連の具体的JPA設定。
+- 各snapshot列の最終NULL制約、pickupLayoutの実DB長。
+- Item順序の開始番号、日時初期値・precision等の物理定義、必要な実装詳細。
+
+既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
+
+6A-1は完了済み。6A-2はDomain設計中で、今回の正式方針・候補を文書へ反映した段階。Java / SQL / test実装は未開始、6A-3も未実装。Markdown更新後に停止し、ChatGPTレビュー後に次の実装タスクを決める。
