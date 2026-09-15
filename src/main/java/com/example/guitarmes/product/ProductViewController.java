@@ -25,6 +25,8 @@ import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.product.image.ProductImageService;
 import com.example.guitarmes.product.parts.BridgeType;
 import com.example.guitarmes.product.parts.JackMountingType;
+import com.example.guitarmes.product.parts.ProductPartsSpecService;
+import com.example.guitarmes.product.parts.ProductPartsSpecView;
 import com.example.guitarmes.product.parts.TunerLayout;
 import com.example.guitarmes.product.parts.TunerMountingType;
 
@@ -33,6 +35,7 @@ public class ProductViewController {
 
     private final ProductService productService;
     private final ProductFormService productFormService;
+    private final ProductPartsSpecService productPartsSpecService;
 
     private final GuitarService guitarService;
 
@@ -51,10 +54,12 @@ public class ProductViewController {
             InstrumentTypeMasterService
                     instrumentTypeMasterService,
             ProductImageService productImageService,
-            ProductFormService productFormService) {
+            ProductFormService productFormService,
+            ProductPartsSpecService productPartsSpecService) {
 
         this.productService = productService;
         this.productFormService = productFormService;
+        this.productPartsSpecService = productPartsSpecService;
         this.guitarService = guitarService;
         this.productSeriesMasterService =
                 productSeriesMasterService;
@@ -124,13 +129,7 @@ public class ProductViewController {
             @PathVariable Long id,
             Model model) {
 
-        model.addAttribute(
-                "product",
-                productService.getProductById(id));
-
-        model.addAttribute(
-                "guitars",
-                guitarService.getGuitarsByProductId(id));
+        addProductDetailAttributes(id, model);
 
         return "product-detail";
     }
@@ -237,9 +236,11 @@ public class ProductViewController {
             Long id,
             Model model) {
 
-        model.addAttribute(
-                "product",
-                productService.getProductById(id));
+        Product product = productService.getProductById(id);
+        model.addAttribute("product", product);
+        model.addAttribute("partsSpecView", productPartsSpecService.findByProductId(id)
+                .map(spec -> ProductPartsSpecView.from(spec, product.getPickupLayout()))
+                .orElse(null));
         model.addAttribute(
                 "guitars",
                 guitarService.getGuitarsByProductId(id));

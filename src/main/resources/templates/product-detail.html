@@ -419,6 +419,30 @@
 
     </section>
 
+    <section class="detail-section" id="parts-specifications">
+        <div class="detail-section-heading">
+            <div>
+                <p class="detail-section-caption">PARTS SPECIFICATIONS</p>
+                <h2 class="detail-section-title">パーツ取付仕様</h2>
+            </div>
+        </div>
+        <div th:if="${partsSpecView == null}" class="empty-state">
+            <p>パーツ取付仕様：未設定</p>
+            <p>編集画面からパーツ取付仕様を登録できます。</p>
+        </div>
+        <th:block th:if="${partsSpecView != null}">
+            <div th:each="group : ${partsSpecView.groups}">
+                <h3 th:text="${group.title}"></h3>
+                <div class="detail-grid">
+                    <div class="detail-item" th:each="item : ${group.items}">
+                        <div class="detail-label" th:text="${item.label}"></div>
+                        <div class="detail-value" th:text="${item.value}"></div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </section>
+
     <section class="detail-section">
 
         <div class="detail-section-heading">

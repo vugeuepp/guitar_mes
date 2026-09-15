@@ -30,6 +30,7 @@ import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.master.instrumenttype.InstrumentTypeMasterService;
 import com.example.guitarmes.master.productseries.ProductSeriesMasterService;
 import com.example.guitarmes.product.image.ProductImageService;
+import com.example.guitarmes.product.parts.ProductPartsSpecService;
 
 @ExtendWith(MockitoExtension.class)
 class ProductViewControllerTest {
@@ -52,6 +53,9 @@ class ProductViewControllerTest {
     @Mock
     private ProductImageService productImageService;
 
+    @Mock
+    private ProductPartsSpecService productPartsSpecService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -63,7 +67,8 @@ class ProductViewControllerTest {
                         productSeriesMasterService,
                         instrumentTypeMasterService,
                         productImageService,
-                        productFormService);
+                        productFormService,
+                        productPartsSpecService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
