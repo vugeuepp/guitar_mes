@@ -1,14 +1,14 @@
 # Guitar MES Development Handoff
 
-Updated: 2026-09-16
+Updated: 2026-09-17
 
 ## Repository State
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- Local HEAD at this review: `b672eb9cf94a004e6e4446e0615545fb2eb4e9a3`（6A-2-1 processCode基盤の実装）
+- Local HEAD at this review: `587450e6ff3b5baaad03e14f518f3f90ca2c1e41`（6A-2-2 Work / Item Domain・DB基盤の実装）
 - 保存済みupstream: `origin/feature/phase6a-process-work`。今回はリモートへの最新照会なし。
-- 作業開始時のworking treeはクリーン。6A-2-1は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-2変更は未commit。
+- 作業開始時のworking treeはクリーン。6A-2-2は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-3変更は未commit。
 
 ## Current State / Next Work
 
@@ -21,7 +21,7 @@ Updated: 2026-09-16
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-2 Work / Item Domain・DB基盤 実装済み（DB未適用・ChatGPTレビュー待ち）**。6A-2全体は進行中。Work生成・工程開始統合、Item操作Service・工程終了統合は未実装。Phase 5Cは完了済み（既存記録）。
+次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-3 Strat Work plan生成ロジック 実装済み（未commit・ChatGPTレビュー待ち）**。6A-2全体は進行中。保存前のWork plan生成まで実装済み。Work / Item Entity生成・保存、工程開始統合、Item操作Service・工程終了統合は未実装。DB接続・適用は今回も行っていない。Phase 5Cは完了済み（既存記録）。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回は変更なし。
 
@@ -78,7 +78,15 @@ Updated: 2026-09-16
 - ElectronicsはPICKGUARD_INSTALL / JACK_PLATE_INSTALL / JACK_WIRING / GROUND_WIRING / ELECTRONICS_SOUND_CHECK / ELECTRONICS_PARTS_CHECK / ELECTRONICS_FINAL_FASTENINGへ確定。Enum、apply CHECK、verifyの照合コメント、Unit / Repository Testを整合した。
 - 穴あけは各取付作業に含め、独立Itemにしない。音出しもposition別Itemに分割しない。16キーを維持し、構造・snapshot・日時・Repository APIは変更なし。
 - 修正後のProcessWorkTest / ProcessWorkItemTestは計10件成功（失敗・エラー0）。ログ: `/tmp/guitar-mes-6a22-review.log`。前回の既存関連85件は今回再実行していない。
-- Repository Testはコンパイルのみ、DB接続・SQL適用なし。6A-2-3へは進まず再レビュー待ち。
+- Repository Testはコンパイルのみ、DB接続・SQL適用なし。この修正はその後ChatGPTレビュー・commit済み（ユーザー報告）。
+
+### 6A-2-3 今回の実装・検証（2026-09-17、Codex）
+
+- `ProductClassificationService`へ既存分類を抽出。正式な登録済みシリーズ＋楽器コードから`ST`を判定し、製品名・modelNo・pickupLayoutでは推測しない。対象／対象外／分類不能を区別し、分類不能時の工程開始可否は未決定。
+- `ProductPartsSpecValidator`を保存と生成で共用。保存時のtrim等は維持。生成時は保存済みSpecを再検証するが変更・保存せず、ProductのpickupLayoutと合わせて14項目を値コピーする。
+- `PartsInstallationWorkPlanGenerator`が不変のsnapshotと`itemKey / itemOrder`を返す。Bridge → Electronics → Tuner → String、1開始の欠番なし。Bridge3種、条件付き穴拡張、Floyd Roseのスタッド＋ハンガー、Electronics7件（穴あけ内包・音出し1件）、Spec値によるブッシュ、弦巻1件を実装。詳細はPhase6A設計書第4節。
+- DB不要の新規テスト32件、既存ProductService26件・ProductPartsSpecService56件・Work/Item Domain10件、合計124件成功（失敗・エラー・skipなし）。対象6クラスをMaven Wrapper offline＋Mockito javaagentで実行。ログ: `/tmp/guitar-mes-6a23-final-tests.log`。
+- 全ソース・テストのコンパイル成功。DB必須テスト・全通常テスト・E2Eは未実行。DB接続・SQL変更/適用、ProcessService・Controller/UI変更なし。
 
 ## Phase 6A-2 Domain Design / Next Gate
 
@@ -92,16 +100,16 @@ Updated: 2026-09-16
 - SQLは260916_04_create_process_work / 05_verify_process_work / 06_rollback_process_work.sql。新テーブル2件、既存データ補完なし、DB未適用。
 - bulkは全台の検証・導出後に保存するall-or-nothing。対象StratのSpec不備は開始拒否方向、明確な対象外は従来処理。分類不能の扱いは未確定。
 - processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。DB未適用。API JSONへnullableのprocessCodeを追加。既存工程判定は変更なし。
-- process.workへDomainを配置済み。process.partsinstallationの作業導出は後続候補。既存ProcessWorkController名は再利用しない。
+- process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。工程開始への接続は後続。既存ProcessWorkController名は再利用しない。
 - 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
-残論点は分類責務再利用・分類不能時の扱い、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点は分類不能時の扱い、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-2 Work / Item Domain・DB基盤と関連targeted testのみ。DB接続・適用、commit / push / mergeは行わない。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-3 保存前Work plan生成と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
 
-**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-3 Work生成・工程開始統合へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-4 工程開始統合へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

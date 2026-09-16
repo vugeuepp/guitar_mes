@@ -54,6 +54,8 @@ public class ProductService {
     private final InstrumentTypeMasterService
             instrumentTypeMasterService;
 
+    private final ProductClassificationService classificationService;
+
     public ProductService(
             ProductRepository productRepository,
             BodyMasterRepository bodyMasterRepository,
@@ -64,7 +66,10 @@ public class ProductService {
             ProductSeriesMasterService
                     productSeriesMasterService,
             InstrumentTypeMasterService
-                    instrumentTypeMasterService) {
+                    instrumentTypeMasterService,
+            ProductClassificationService classificationService) {
+
+        this.classificationService = classificationService;
 
         this.productRepository =
                 productRepository;
@@ -111,9 +116,9 @@ public class ProductService {
         Product product =
                 getProductById(id);
 
-        ResolvedProductClassification classification =
-                resolveProductClassification(
-                        product.getInternalModelCode());
+        ProductClassificationService.Classification classification =
+                classificationService.classify(
+                        product.getInternalModelCode()).orElse(null);
 
         ProductUpdateRequest request =
                 new ProductUpdateRequest();
@@ -485,9 +490,9 @@ public class ProductService {
                     "製品更新情報が指定されていません。");
         }
 
-        ResolvedProductClassification currentClassification =
-                resolveProductClassification(
-                        product.getInternalModelCode());
+        ProductClassificationService.Classification currentClassification =
+                classificationService.classify(
+                        product.getInternalModelCode()).orElse(null);
 
         if (currentClassification == null) {
             throw new BusinessException(
@@ -1114,58 +1119,6 @@ public class ProductService {
                 neckMaster);
     }
 
-    private ResolvedProductClassification
-            resolveProductClassification(
-                    String internalModelCode) {
-
-        if (internalModelCode == null
-                || internalModelCode.isBlank()) {
-            return null;
-        }
-
-        String normalizedCode =
-                internalModelCode.trim()
-                        .toUpperCase(Locale.ROOT);
-
-        for (InstrumentTypeMaster type
-                : instrumentTypeMasterService
-                        .getInstrumentTypeMasters()) {
-
-            String suffix =
-                    "-" + type.getInstrumentCode()
-                            .trim()
-                            .toUpperCase(Locale.ROOT);
-
-            if (!normalizedCode.endsWith(suffix)) {
-                continue;
-            }
-
-            String seriesCode =
-                    normalizedCode.substring(
-                            0,
-                            normalizedCode.length()
-                                    - suffix.length());
-
-            if (seriesCode.isBlank()) {
-                continue;
-            }
-
-            try {
-                ProductSeriesMaster series =
-                        productSeriesMasterService
-                                .getRequiredProductSeriesMaster(
-                                        seriesCode);
-                return new ResolvedProductClassification(
-                        series.getSeriesCode(),
-                        type.getInstrumentCode());
-            } catch (BusinessException exception) {
-                continue;
-            }
-        }
-
-        return null;
-    }
-
     private String resolveBodyType(
             Product product) {
 
@@ -1516,11 +1469,6 @@ public class ProductService {
     private interface CodeExistenceChecker {
 
         boolean exists(String modelCode);
-    }
-
-    private record ResolvedProductClassification(
-            String seriesCode,
-            String instrumentCode) {
     }
 
     private record NormalizedProductUpdate(

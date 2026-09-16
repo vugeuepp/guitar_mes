@@ -2,8 +2,8 @@
 
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
-- 改訂日: 2026-09-16
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2 Work / Item Domain・DB基盤は実装済み・DB未適用で今回の変更はレビュー待ち。6A-2全体は進行中。Work生成・工程開始統合、6A-3は未実装。
+- 改訂日: 2026-09-17
+- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-3 保存前Work plan生成を実装済み、今回の変更はレビュー待ち。DB接続・適用は今回も行っていない。6A-2全体は進行中。Work / Item Entity生成・保存、工程開始統合、6A-3は未実装。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -131,7 +131,7 @@ Controllerは既存`ProductPartsSpecService`から取得し、小さな`ProductP
 
 Product masterに明示された値をsource of truthとする。Product名、modelNo、internalModelCode、pickupLayout、bridgeModel、tunerModel等から不足仕様を勝手に推測・補完しない。
 
-将来のST対象判定は既存InstrumentTypeMaster・MES内部モデルコードの正式分類と`resolveProductClassification()`相当のロジックを再利用する方針を維持する。正式分類の利用と不足パーツ仕様の推測は別である。Productへの新規InstrumentType FKは追加していない。6A-1のSpec保存はST限定判定を追加しておらず、作業対象への接続は後続課題とする。
+6A-2-3のST対象判定は既存InstrumentTypeMaster・MES内部モデルコードの正式分類を再利用する。`resolveProductClassification()`相当のロジックを`ProductClassificationService`へ抽出した。正式分類の利用と不足パーツ仕様の推測は別である。Productへの新規InstrumentType FKは追加していない。6A-1のSpec保存はST限定判定を追加しておらず、作業対象への接続は後続課題とする。
 
 ## 3. 6A-2 Domainの責務と関係（6A-2-2基盤実装済み）
 
@@ -165,7 +165,7 @@ snapshot部分は原則immutable。WorkはcreatedAtのみを持ち、updatedAt�
 
 productIdの追加snapshotは6A-2では行わない。通常運用にGuitar生成後のProduct差し替え機能がなく、History→guitarId→Guitar→Productで追跡できるため。将来の監査要件による追加余地は残す。
 
-6A-2-2の明示仕様でNULL制約を確定した。bridgeModel / stringMakerのみ任意、他の12 snapshot列はNOT NULL。既存ProductPartsSpecの移行用nullableとは意味を分け、有効な開始時仕様を保存する。Enumは既存4型を再利用してSTRING保存し、同じEnum CHECKを設定する。業務validation・値コピーは後続の生成Serviceで実装する。既存仕様を推測して補完しない。
+6A-2-2の明示仕様でNULL制約を確定した。bridgeModel / stringMakerのみ任意、他の12 snapshot列はNOT NULL。既存ProductPartsSpecの移行用nullableとは意味を分け、有効な開始時仕様を保存する。Enumは既存4型を再利用してSTRING保存し、同じEnum CHECKを設定する。業務validation・値コピーは6A-2-3で保存前planに実装した。Entity保存への接続は後続とする。既存仕様を推測して補完しない。
 
 Work.createdAtはLocalDateTime / timestamp without time zone、NOT NULL、updatable=false。@PrePersistで未設定時のみ現在時刻を設定する。snapshotの業務上の変更禁止は後続Serviceの責務とし、今回のsetterを更新許可APIとして扱わない。
 
@@ -220,7 +220,7 @@ itemOrderはInteger / integer、NOT NULL、CHECK(item_order > 0)。開始番号1
 
 ## 4. 初期作業項目と導出方針
 
-Stratocaster系のギターパーツ取付を初期対象とする。以下の16 itemKeyは6A-2-2でEnumへ定義した。導出方針は未実装であり、詳細作業標準の追加に応じて拡張可能。穴寸法・締付値等を推測で定めない。
+Stratocaster系のギターパーツ取付を初期対象とする。以下の16 itemKeyは6A-2-2でEnumへ定義した。6A-2-3で以下の導出を保存前planに実装した。詳細作業標準の追加に応じて拡張可能。穴寸法・締付値等を推測で定めない。
 
 | グループ・条件 | 生成する項目（記載順） |
 | --- | --- |
@@ -237,17 +237,25 @@ Electronicsは6A-2-2のChatGPTレビューにより上記7キーへ確定した�
 | --- | --- |
 | PICKGUARD_INSTALL | 穴あけを含むピックガード取付 |
 | JACK_PLATE_INSTALL | 穴あけを含む舟形ジャックプレート取付 |
-| JACK_WIRING | ジャックとピックガード側を接続する配線 |
-| GROUND_WIRING | スプリングハンガーからのアース配線 |
+| JACK_WIRING | ジャックとピックガード側を接続する2本の配線 |
+| GROUND_WIRING | スプリングハンガーからのアース線1本の配線 |
 | ELECTRONICS_SOUND_CHECK | 全Pickup・全selector positionの音出し確認。position別Itemへ分割せずselectorPositions snapshotを作業指示に使用 |
 | ELECTRONICS_PARTS_CHECK | 電装部品の不良確認 |
 | ELECTRONICS_FINAL_FASTENING | 電装確認後の最終ねじ締め |
 
 Bridgeの条件はSTUD_HOLE_EXPANSIONの有無にだけ適用し、後続の項目は含める。Floyd Roseはこの工程ではスタッド側の作業を扱い、ブリッジ本体は後工程の調整・調音で取り付ける。FLOYD_ROSE_BRIDGE_INSTALL等は追加しない。
 
-selectorPositionsはSOUND_CHECKで「全Nポジション確認」のためにsnapshotを参照する。現時点でPositionごとにItemを分割しない。stringModel / stringGauge等は弦巻き時の参照情報として表示する方向。
+selectorPositionsはELECTRONICS_SOUND_CHECKで「全Nポジション確認」のためにsnapshotを参照する。現時点でPositionごとにItemを分割しない。stringModel / stringGauge等は弦巻き時の参照情報として表示する方向。
 
 Product名、modelNo、bridgeModel、tunerModel、pickupLayout等から不足仕様を推測しない。明示されたSpecと正式なProduct分類を根拠に導出する。
+
+### 4.1 6A-2-3の保存前plan
+
+`PartsInstallationWorkPlanGenerator.generate(Product)`は保存済みSpecをRepositoryから読み、対象なら`PartsInstallationWorkPlan`を返す。snapshotは第3.1節の14値ちょうどでEntity参照を含まない。保存値をtrim・補完・書き換えずコピーし、recordと変更不可Listで保持する。必須値欠落、不正な組合せ・文字数はBusinessExceptionとし、不完全なplanは返さない。pickupLayoutも必須・最大255文字を確認する。
+
+各ItemはitemKeyとitemOrderのみ。全体はBridge → Electronics → Tuner → Stringの順、itemOrderは1開始・欠番なし。status / completedAtやHistory IDは含めない。ProcessHistory / ProcessWork / ProcessWorkItem Entityの生成・保存は行わない。
+
+TunerはPRESS_BUSHINGならbush=true必須、NUT_FASTENINGならtrue/falseに従う。nullは拒否。弦やペグの型番文字列で作業を推測せず、Stringは常に1件。Floyd Rose本体・独立穴あけItemは追加しない。
 
 ## 5. 対象判定と工程開始transaction
 
@@ -265,16 +273,18 @@ bulk開始もall-or-nothing。全対象Guitarを既存順序でlockし、全台�
 
 ### 5.2 対象・対象外・分類不能
 
-正式分類上のStratocaster系を対象とし、製品名・modelNo・pickupLayout等から推測しない。既存InstrumentTypeMaster、internalModelCode、resolveProductClassification()相当の正式分類を再利用する方向。
+正式分類上のStratocaster系を対象とし、製品名・modelNo・pickupLayout等から推測しない。既存InstrumentTypeMaster、internalModelCode、ProductSeriesMasterを照合する正式分類を再利用する。
 
-分類メソッドは現状private。単純なpublic化とは決めず、分類責務を再利用可能にする具体的方法を実装前の論点とする。
+6A-2-3で`ProductClassificationService.classify()`へ分類責務を抽出し、ProductServiceの既存編集処理も共用する。入力はinternalModelCode、結果はOptional<Classification>（seriesCode / instrumentCode）。末尾の登録済み楽器コードと残りの登録済みシリーズコードを照合する。既存の大文字化・trim・非activeマスタの解決を維持する。正式なStrat楽器コードは`ST`（既存マスタ登録画面例・ProductServiceテストと一致）。
+
+生成結果は`STRAT_TARGET`（planあり）、`NON_TARGET`、`UNCLASSIFIABLE`（後二者はplanなし）を区別する。対象外・分類不能ではSpecを取得しない。対象のSpec不備は例外であり分類不能として扱わない。
 
 - 6A対象Product: 必要Specが存在し、作業生成に必要な仕様が有効ならWork生成。
 - Spec未設定・必要仕様不備の対象Product: ギターパーツ取付工程を開始させない方向。
 - 6A対象外と判定できたProduct: 当面はWorkを強制せず従来工程開始を維持。
 - 分類不能Product: 開始拒否か従来処理か未確定。対象外と混同しない。
 
-ProductPartsSpecServiceはSpec自体の保存・完全性を担い、Parts Installation側は工程開始可否とItem導出可否を担う。private normalizeAndValidate()を保存以外の目的でそのまま呼ぶ構造にはしない。
+ProductPartsSpecServiceはSpec自体の保存・完全性を担い、Parts Installation側は工程開始可否とItem導出可否を担う。6A-2-3で純粋な`ProductPartsSpecValidator`を共用した。保存用normalizeAndValidateは従来の正規化を維持し、validateStoredは保存済み値を変更・保存せず同じ業務規則を検証する。
 
 ### 5.3 package責務の候補
 
@@ -320,7 +330,7 @@ SQLは以下を追加済み。DB接続・適用・実行検証は行っていな
 
 以下は今回の決定事項へ混ぜず、未確定として残す。
 
-- 分類不能Productの開始可否、分類ロジックの具体的な再利用方法。
+- 分類不能Productの開始可否（拒否／従来処理とも未決定）。6A-2-4で決める。
 - NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
@@ -331,4 +341,4 @@ SQLは以下を追加済み。DB接続・適用・実行検証は行っていな
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2-2 Work / Item Domain・DB基盤は実装済み・DB未適用。6A-2全体は進行中。Work生成・工程開始統合、6A-3は未実装。今回の変更をChatGPTでレビューしてから次の実装タスクを決め、6A-2-3へ自動的に進まない。
+6A-1は完了済み。6A-2-3 保存前Work plan生成を実装済み。DB接続・適用は今回も行っていない。6A-2全体は進行中。Work / Item Entity生成・保存、工程開始統合、6A-3は未実装。今回の変更をChatGPTでレビューしてから次の実装タスクを決め、6A-2-4へ自動的に進まない。
