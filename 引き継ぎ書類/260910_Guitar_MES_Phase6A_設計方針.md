@@ -3,7 +3,7 @@
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
 - 改訂日: 2026-09-16
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1 processCode基盤は実装済み・DB未適用で今回の変更はレビュー待ち。6A-2全体は進行中、Work / Itemと6A-3は未実装。
+- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2 Work / Item Domain・DB基盤は実装済み・DB未適用で今回の変更はレビュー待ち。6A-2全体は進行中。Work生成・工程開始統合、6A-3は未実装。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -133,7 +133,7 @@ Product masterに明示された値をsource of truthとする。Product名、mo
 
 将来のST対象判定は既存InstrumentTypeMaster・MES内部モデルコードの正式分類と`resolveProductClassification()`相当のロジックを再利用する方針を維持する。正式分類の利用と不足パーツ仕様の推測は別である。Productへの新規InstrumentType FKは追加していない。6A-1のSpec保存はST限定判定を追加しておらず、作業対象への接続は後続課題とする。
 
-## 3. 6A-2 Domainの責務と関係（設計方針・未実装）
+## 3. 6A-2 Domainの責務と関係（6A-2-2基盤実装済み）
 
 | 構成 | 責務 |
 | --- | --- |
@@ -144,13 +144,13 @@ Product masterに明示された値をsource of truthとする。Product名、mo
 
 正式方針は`ProcessHistory 1 : 0..1 ProcessWork 1 : N ProcessWorkItem`。WorkはGuitar＋Processの組ではなく、1回のProcessHistoryに属する。同じGuitar・工程を将来再実施して新しい履歴を作る場合も、新しいWorkに分離できる。
 
-Work→HistoryはWork所有の片方向`@OneToOne`、LAZY、cascadeなし、orphanRemovalなし。Historyへの逆参照は追加しない。DB候補は`process_history_id NOT NULL / FK / UNIQUE`。ItemはWorkの子とするが、子関連の具体的なJPA設定は今回指定していない。
+Work→HistoryはWork所有の片方向`@OneToOne`、LAZY、cascadeなし、orphanRemovalなし。Historyへの逆参照は追加しない。DBは`process_history_id NOT NULL / FK / UNIQUE`。Item→Workも片方向`@ManyToOne`、LAZY、optional=false、cascadeなし。Workに子Listを追加しない。FKのON DELETE CASCADEなし。
 
 Product master変更後も開始済みWork / Itemを再生成・自動変更しない。作業項目定義自体を直ちにDBマスタ化せず、Serviceで導出して実行時の項目を保存する。ProductPartsSpecを作業結果テーブルとして使用しない。
 
 ### 3.1 ProcessWorkと14項目snapshot
 
-候補項目は`id`、`processHistory`、`createdAt`と次の14項目。
+実装項目は`id`、`processHistory`、`createdAt`と次の14項目。
 
 | 領域 | snapshot項目 |
 | --- | --- |
@@ -159,19 +159,21 @@ Product master変更後も開始済みWork / Itemを再生成・自動変更し�
 | Electronics | pickupLayout、selectorPositions、controlLayout、jackMountingType |
 | String | stringMaker、stringModel、stringGauge |
 
-13項目はProductPartsSpec、pickupLayoutのみProductから開始時に値をコピーする。ProductPartsSpecへのFKは持たない。型・長さの既存基準は第2節を参照するが、pickupLayoutの実DB長は未確認。
+13項目はProductPartsSpec、pickupLayoutのみProductから開始時に値をコピーする。ProductPartsSpecへのFKは持たない。13項目は第2節のJava型・保存長を再利用。pickupLayoutはString / varchar(255)。ProductのJava型はString、明示@Column長・該当DDL・上限validationはrepositoryから確認できないため、JPA標準長255を基準に採用した。実DB長と完全一致すると断定しない。ProductServiceはPU構成を必須入力として扱う。
 
 snapshot部分は原則immutable。WorkはcreatedAtのみを持ち、updatedAtとstatusは現時点で持たせない。Item操作でもsnapshotを書き換えず、工程全体の状態はHistory、工程内の実施状態はItemをsource of truthとする。
 
 productIdの追加snapshotは6A-2では行わない。通常運用にGuitar生成後のProduct差し替え機能がなく、History→guitarId→Guitar→Productで追跡できるため。将来の監査要件による追加余地は残す。
 
-将来の対象製品拡張を考慮し、snapshot列を機械的にすべてNOT NULLにしない。生成時の完全性はServiceで保証する。各列の最終NULL制約はSQL実装前に確認する。
+6A-2-2の明示仕様でNULL制約を確定した。bridgeModel / stringMakerのみ任意、他の12 snapshot列はNOT NULL。既存ProductPartsSpecの移行用nullableとは意味を分け、有効な開始時仕様を保存する。Enumは既存4型を再利用してSTRING保存し、同じEnum CHECKを設定する。業務validation・値コピーは後続の生成Serviceで実装する。既存仕様を推測して補完しない。
+
+Work.createdAtはLocalDateTime / timestamp without time zone、NOT NULL、updatable=false。@PrePersistで未設定時のみ現在時刻を設定する。snapshotの業務上の変更禁止は後続Serviceの責務とし、今回のsetterを更新許可APIとして扱わない。
 
 ### 3.2 ProcessWorkItem
 
-正式候補項目は`id`、`processWork`、`itemKey`、`itemOrder`、`status`、`completedAt`、`createdAt`、`updatedAt`。順序名は既存processOrderと揃え、sequenceではなくitemOrderを採用する方針。生成時の作業順序を保存する。
+実装項目は`id`、`processWork`、`itemKey`、`itemOrder`、`status`、`completedAt`、`createdAt`、`updatedAt`。順序名は既存processOrderと揃え、sequenceではなくitemOrderを採用する方針。生成時の作業順序を保存する。
 
-itemKeyは安定した業務識別子としてEnumType.STRINGで保存する方向。DBはVARCHAR＋CHECK、VARCHAR(64)を第一候補とする。表示文言とは分離し、EnumのgetLabel()等で表示する。本番保存後の安易なEnum名renameは永続コードを変えるため禁止する設計意図とする。ordinal保存はしない。
+itemKeyはProcessWorkItemKeyをEnumType.STRING、VARCHAR(64)＋CHECKで保存する。穴あけは各取付作業に含める。今回getLabel()等の表示APIは追加しない。本番保存後の安易なEnum名renameは永続コードを変えるため禁止する設計意図とする。ordinal保存はしない。
 
 | 日時 | 意味 |
 | --- | --- |
@@ -179,7 +181,7 @@ itemKeyは安定した業務識別子としてEnumType.STRINGで保存する方�
 | updatedAt | Itemの状態を最後に変更した時刻 |
 | completedAt | 現在のCOMPLETED状態になった時刻 |
 
-初期statusはNOT_STARTED / COMPLETEDのみ。EnumType.STRINGを候補とする。
+statusはProcessWorkItemStatusのNOT_STARTED / COMPLETEDのみ。EnumType.STRING / VARCHAR(32)＋CHECK、NOT NULL。初期値NOT_STARTEDはJava field initializerで設定し、DB DEFAULTは設けない。
 
 | 状態・操作 | completedAt / updatedAt |
 | --- | --- |
@@ -188,11 +190,17 @@ itemKeyは安定した業務識別子としてEnumType.STRINGで保存する方�
 | 工程終了前のチェック解除 | NOT_STARTED、completedAt=null、updatedAt=now |
 | 再チェック | COMPLETED、completedAt=now、updatedAt=同じnow |
 
-誤操作修正のため工程終了前のチェック解除を可能にする方向。History.endTime設定後はWork / Itemをread-onlyにする。NG / RETEST_REQUIRED / comment等は未確定であり、ここへ先回りして追加しない。
+6A-2-2でstatusとcompletedAtの上記整合をDB CHECKとして実装した。保存時に両列を同時に正しく設定する前提であり、callbackはstatus / completedAtを変更しない。complete / uncomplete等の業務操作は今回追加しない。
+
+Item.createdAt / updatedAtはLocalDateTime / timestamp without time zone、NOT NULL、createdAtはupdatable=false。新規時に未指定ならcreatedAt=now、updatedAt=createdAtとして揃える。明示された時刻は保持する。@PreUpdateは既存のpersistedUpdatedAt比較方式で通常編集をnowへ更新し、明示イベント時刻は保持する。DB DEFAULTは設けない。
+
+itemOrderはInteger / integer、NOT NULL、CHECK(item_order > 0)。開始番号1を想定し、同一Work内のUNIQUEを設定する。
+
+誤操作修正のため工程終了前のチェック解除を可能にする方向。History.endTime設定後はWork / Itemをread-onlyにする業務制御を後続Serviceで実装する（今回未接続）。NG / RETEST_REQUIRED / comment等は未確定であり、ここへ先回りして追加しない。
 
 ### 3.3 一意制約と並行性
 
-採用方向の制約は以下。
+6A-2-2で実装したUNIQUEは以下。
 
 - Work: UNIQUE(process_history_id) — 同じ履歴への二重生成防止。
 - Item: UNIQUE(process_work_id, item_key) — 同じ作業キーの二重生成防止。
@@ -200,22 +208,44 @@ itemKeyは安定した業務識別子としてEnumType.STRINGで保存する方�
 
 存在確認だけで並行性を保証せず、既存GuitarのPESSIMISTIC_WRITE、transaction、DB UNIQUEを組み合わせる。将来同じitemKeyを複数回必要とするならitemIndex等を含むモデルを再検討し、現時点では追加しない。
 
+### 3.4 基盤実装の配置・SQL
+
+- package: `process.work`。Work / Item / ItemKey / ItemStatusと2 Repository。
+- `ProcessWorkRepository.findByProcessHistoryId(Long)`。
+- `ProcessWorkItemRepository.findByProcessWorkIdOrderByItemOrderAsc(Long)`。
+- 適用: `sql/260916_04_create_process_work.sql`。t_process_work（17列）とt_process_work_item（8列）を作成。PK 2、FK 2、UNIQUE 3、CHECK 8。制約名はpk_ / fk_ / uk_ / ck_の既存規約。
+- 確認: `sql/260916_05_verify_process_work.sql`。全列の型・長さ・NULL・DEFAULT・IDENTITYと15制約の存在・種別・定義、indexを確認。
+- rollback: `sql/260916_06_rollback_process_work.sql`。Item→Workの順に削除、CASCADEなし。既存テーブルは変更しない。
+- DB接続・SQL適用は行っていない。Domainテスト実績とRepositoryテスト未実行の詳細はHandoffを参照。Work生成・工程開始・終了処理は未接続。
+
 ## 4. 初期作業項目と導出方針
 
-Stratocaster系のギターパーツ取付を初期対象とする。以下は初期itemKey候補と現在の導出方針であり、詳細作業標準の追加に応じて拡張可能。穴寸法・締付値等を推測で定めない。
+Stratocaster系のギターパーツ取付を初期対象とする。以下の16 itemKeyは6A-2-2でEnumへ定義した。導出方針は未実装であり、詳細作業標準の追加に応じて拡張可能。穴寸法・締付値等を推測で定めない。
 
 | グループ・条件 | 生成する項目（記載順） |
 | --- | --- |
 | Bridge / SIX_POINT | BRIDGE_SIX_POINT_INSTALL → BRIDGE_MOVEMENT_CHECK → SPRING_HANGER_INSTALL |
 | Bridge / TWO_POINT | requiresStudHoleExpansion=trueならSTUD_HOLE_EXPANSION → STUD_INSTALL → BRIDGE_TWO_POINT_INSTALL → SPRING_HANGER_INSTALL |
 | Bridge / FLOYD_ROSE | requiresStudHoleExpansion=trueならSTUD_HOLE_EXPANSION → STUD_INSTALL → SPRING_HANGER_INSTALL |
-| Electronics（現時点の候補） | PICKGUARD_INSTALL → JACK_PLATE_INSTALL → JACK_WIRING → GROUND_WIRING → ELECTRONICS_SOUND_CHECK → ELECTRONICS_PARTS_CHECK → ELECTRONICS_FINAL_FASTENING |
+| Electronics（レビュー確定） | PICKGUARD_INSTALL → JACK_PLATE_INSTALL → JACK_WIRING → GROUND_WIRING → ELECTRONICS_SOUND_CHECK → ELECTRONICS_PARTS_CHECK → ELECTRONICS_FINAL_FASTENING |
 | Tuner | tunerBushRequired=trueならTUNER_BUSHING_INSTALL、その後TUNER_INSTALL |
 | String | STRING_INSTALL |
 
+Electronicsは6A-2-2のChatGPTレビューにより上記7キーへ確定した。チェック項目が過剰にならないよう、穴あけはピックガード／舟形ジャックプレートの各取付作業に含め、独立したWorkItemにはしない。Item総数は16のまま。
+
+| itemKey | 作業の意味 |
+| --- | --- |
+| PICKGUARD_INSTALL | 穴あけを含むピックガード取付 |
+| JACK_PLATE_INSTALL | 穴あけを含む舟形ジャックプレート取付 |
+| JACK_WIRING | ジャックとピックガード側を接続する配線 |
+| GROUND_WIRING | スプリングハンガーからのアース配線 |
+| ELECTRONICS_SOUND_CHECK | 全Pickup・全selector positionの音出し確認。position別Itemへ分割せずselectorPositions snapshotを作業指示に使用 |
+| ELECTRONICS_PARTS_CHECK | 電装部品の不良確認 |
+| ELECTRONICS_FINAL_FASTENING | 電装確認後の最終ねじ締め |
+
 Bridgeの条件はSTUD_HOLE_EXPANSIONの有無にだけ適用し、後続の項目は含める。Floyd Roseはこの工程ではスタッド側の作業を扱い、ブリッジ本体は後工程の調整・調音で取り付ける。FLOYD_ROSE_BRIDGE_INSTALL等は追加しない。
 
-selectorPositionsはELECTRONICS_SOUND_CHECKで「全Nポジション確認」のためにsnapshotを参照する。現時点でPositionごとにItemを分割しない。stringModel / stringGauge等は弦巻き時の参照情報として表示する方向。
+selectorPositionsはSOUND_CHECKで「全Nポジション確認」のためにsnapshotを参照する。現時点でPositionごとにItemを分割しない。stringModel / stringGauge等は弦巻き時の参照情報として表示する方向。
 
 Product名、modelNo、bridgeModel、tunerModel、pickupLayout等から不足仕様を推測しない。明示されたSpecと正式なProduct分類を根拠に導出する。
 
@@ -296,10 +326,9 @@ SQLは以下を追加済み。DB接続・適用・実行検証は行っていな
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
 - processCodeの全工程展開時期、Body / Neckの名前依存解消。
 - currentProcess直接更新APIの具体的な改修方法。
-- Work専用UI・Controller名、Item関連の具体的JPA設定。
-- 各snapshot列の最終NULL制約、pickupLayoutの実DB長。
-- Item順序の開始番号、日時初期値・precision等の物理定義、必要な実装詳細。
+- Work専用UI・Controller名。
+- pickupLayoutの実DB長の照合。Work側255文字は今回採用済み。
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2-1 processCode基盤は実装済み・DB未適用、6A-2全体は進行中。Work / Itemと6A-3は未実装。今回の変更をChatGPTでレビューしてから次の実装タスクを決め、6A-2-2へ自動的に進まない。
+6A-1は完了済み。6A-2-2 Work / Item Domain・DB基盤は実装済み・DB未適用。6A-2全体は進行中。Work生成・工程開始統合、6A-3は未実装。今回の変更をChatGPTでレビューしてから次の実装タスクを決め、6A-2-3へ自動的に進まない。

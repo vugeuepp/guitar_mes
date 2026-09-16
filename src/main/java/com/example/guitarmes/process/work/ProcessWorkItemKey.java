@@ -1,0 +1,22 @@
+package com.example.guitarmes.process.work;
+
+/** 永続化する安定作業コード。穴あけは取付作業に含め、独立した作業コードを設けない。 */
+public enum ProcessWorkItemKey {
+
+    BRIDGE_SIX_POINT_INSTALL,
+    BRIDGE_MOVEMENT_CHECK,
+    STUD_HOLE_EXPANSION,
+    STUD_INSTALL,
+    BRIDGE_TWO_POINT_INSTALL,
+    SPRING_HANGER_INSTALL,
+    PICKGUARD_INSTALL,
+    JACK_PLATE_INSTALL,
+    JACK_WIRING,
+    GROUND_WIRING,
+    ELECTRONICS_SOUND_CHECK,
+    ELECTRONICS_PARTS_CHECK,
+    ELECTRONICS_FINAL_FASTENING,
+    TUNER_BUSHING_INSTALL,
+    TUNER_INSTALL,
+    STRING_INSTALL
+}
