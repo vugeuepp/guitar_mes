@@ -6,9 +6,9 @@ Updated: 2026-09-17
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- Local HEAD at this review: `587450e6ff3b5baaad03e14f518f3f90ca2c1e41`（6A-2-2 Work / Item Domain・DB基盤の実装）
+- Local HEAD at this review: `7ea3e8519d4a5f5bf421d8ffd94589e713bae825`（6A-2-3 Stratギターパーツ取付Work生成ロジック）
 - 保存済みupstream: `origin/feature/phase6a-process-work`。今回はリモートへの最新照会なし。
-- 作業開始時のworking treeはクリーン。6A-2-2は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-3変更は未commit。
+- 作業開始時のworking treeはクリーン。6A-2-3は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-4A変更は未commit。
 
 ## Current State / Next Work
 
@@ -21,7 +21,7 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-3 Strat Work plan生成ロジック 実装済み（未commit・ChatGPTレビュー待ち）**。6A-2全体は進行中。保存前のWork plan生成まで実装済み。Work / Item Entity生成・保存、工程開始統合、Item操作Service・工程終了統合は未実装。DB接続・適用は今回も行っていない。Phase 5Cは完了済み（既存記録）。
+次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-4A 個別工程開始へのWork統合 実装済み（未commit・ChatGPTレビュー待ち）**。6A-2全体は進行中。個別startでHistory / Work / Itemの生成・保存を同一transactionへ統合済み。bulk開始・Item操作Service・工程終了統合・Work UIは未実装。6A-2-1 / 6A-2-2 SQLはユーザー側でローカルDB適用・アプリ起動確認済み（ユーザー報告）。CodexはDB接続・適用を行っていない。Phase 5Cは完了済み（既存記録）。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回は変更なし。
 
@@ -88,28 +88,39 @@ Updated: 2026-09-17
 - DB不要の新規テスト32件、既存ProductService26件・ProductPartsSpecService56件・Work/Item Domain10件、合計124件成功（失敗・エラー・skipなし）。対象6クラスをMaven Wrapper offline＋Mockito javaagentで実行。ログ: `/tmp/guitar-mes-6a23-final-tests.log`。
 - 全ソース・テストのコンパイル成功。DB必須テスト・全通常テスト・E2Eは未実行。DB接続・SQL変更/適用、ProcessService・Controller/UI変更なし。
 
+### 6A-2-4A 今回の実装・検証（2026-09-17、Codex）
+
+- 個別`ProcessService.startProcess`のみ統合。既存Guitar PESSIMISTIC_WRITEと検証順を維持し、`processCode=GUITAR_PARTS_INSTALLATION`の場合だけHistory保存前にplanを生成する。
+- STRAT_TARGETはHistory → Work → Items → Guitar更新。NON_TARGETとnull/別工程コードは従来のHistory開始。UNCLASSIFIABLEは今回の確定方針として開始拒否。対象のSpec不備もHistory保存前に拒否する。
+- `PartsInstallationWorkWriter`はplanの14値・itemKey・itemOrderをそのまま使用し、Specを再取得しない。MANDATORYで開始transactionへの参加を要求。初期status・時刻は既存Domainを使用。例外は伝播する。
+- Spec更新はProduct取得 → Spec取得 → validation → Guitar参照/ProductionOrder実績チェック → 保存。明示的lockなし。既にcommit済みの対象Guitarが存在する通常の個別開始ではSpec更新が参照チェックで拒否されるため、新規lockは追加しない。Guitar生成前にチェックを通過した更新とのrace、初回補完との可視性は別の既存課題で、全面解消済みとはしない。
+- DB不要のtargeted/regression 11クラス、計160件成功（失敗・エラー・skip 0）。新規ProcessPartsInstallationStartTest 14件、既存ProcessService 16件・PageProgress 2件・Controller 4件、6A-2-3関連124件。Maven Wrapper offline＋Mockito javaagentで実行。ログ: `/tmp/guitar-mes-6a24a-final-tests.log`。
+- 初回は例外設定時のMock回答呼出しでテスト側2エラー。doThrowへ修正し、限定再実行31件成功後、上記160件が成功。業務コードの回避変更なし。
+- Spring transaction interceptor＋記録用transaction managerでHistory / Work / Item失敗時のrollback要求を検証。実DB上の行のrollbackは未検証。Writerの独立transaction開始拒否も検証。
+- 全テストソースをコンパイル。DB必須テスト、全通常テスト、E2Eは未実行。DB操作・SQL変更・bulk/end/Controller/API/UI変更なし。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
 
 - History 1 : 0..1 Work 1 : N Item。process.workにEntity / Enum / Repositoryを追加。Work→Historyは片方向LAZY one-to-one、Item→Workは片方向LAZY many-to-one。逆参照・cascade・orphanRemovalなし。
-- 将来、対象工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成する（今回未接続）。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
+- 対象の個別工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成する（6A-2-4A）。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
 - Work snapshotは12項目NOT NULL、bridgeModel / stringMakerのみ任意。pickupLayoutはString / varchar(255)を採用（Productの実DB長はrepositoryから確認不能）。
 - ItemはitemKey varchar(64)、itemOrderは正数・1始まり想定、status varchar(32)はNOT_STARTED / COMPLETED。Java初期値NOT_STARTED、DB DEFAULTなし。3 UNIQUE、Enum / 正数 / status-completedAt整合CHECKをSQLへ定義。
 - Work createdAtは未設定時のみ初期化。Item作成時は未指定ならcreatedAtとupdatedAtを同時刻へ設定し、明示時刻は保持。更新時は既存のpersistedUpdatedAt比較方式を再利用。終了前の解除・終了後read-onlyの業務制御、既存Guitarロックとの統合は後続Service。
-- SQLは260916_04_create_process_work / 05_verify_process_work / 06_rollback_process_work.sql。新テーブル2件、既存データ補完なし、DB未適用。
-- bulkは全台の検証・導出後に保存するall-or-nothing。対象StratのSpec不備は開始拒否方向、明確な対象外は従来処理。分類不能の扱いは未確定。
-- processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。DB未適用。API JSONへnullableのprocessCodeを追加。既存工程判定は変更なし。
-- process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。工程開始への接続は後続。既存ProcessWorkController名は再利用しない。
+- SQLは260916_04_create_process_work / 05_verify_process_work / 06_rollback_process_work.sql。新テーブル2件、既存データ補完なし。ユーザー側でローカルDB適用済み（ユーザー報告）。
+- bulkは全台の検証・導出後に保存するall-or-nothing。個別では対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkへの統合は6A-2-4Bで行う。
+- processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別startのWork対象判定へ使用し、他の工程判定は変更なし。
+- process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別startは接続済み、bulkは後続。既存ProcessWorkController名は再利用しない。
 - 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
-残論点は分類不能時の扱い、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点はbulk開始統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-3 保存前Work plan生成と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-4A 個別start統合と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
 
-**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-4 工程開始統合へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-4B bulk開始統合・end・UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

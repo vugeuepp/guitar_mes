@@ -51,7 +51,7 @@ class ProcessServiceTest {
                 historyRepository,
                 guitarRepository,
                 processRepository,
-                orderRepository);
+                orderRepository, null, null);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "entityManager", entityManager);
         org.mockito.Mockito.lenient().when(guitarRepository.findById(any())).thenAnswer(i -> guitarRepository.findForUpdate(i.getArgument(0)));
     }
