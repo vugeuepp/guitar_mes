@@ -1,18 +1,18 @@
 # Guitar MES Development Handoff
 
-Updated: 2026-09-15
+Updated: 2026-09-16
 
 ## Repository State
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- Local HEAD at this review: `101df95b731b0421fcff05dda108a97580f1da7d`（Merge pull request #21 from vugeuepp/feature/phase6a-guitar-parts-installation）
+- Local HEAD at this review: `26a607b4cff489d2d5c2c05dfe3132d9e7196619`（documents更新）
 - 保存済みupstream: `origin/feature/phase6a-process-work`。今回はリモートへの最新照会なし。
-- 文書更新開始時のworking treeはクリーン。今回の設計書・Handoff・ロードマップ更新は未commit。実装コードは変更していない。
+- 作業開始時のworking treeはクリーン。6A-2 Domain設計Markdownは上記HEADでcommit済み、ChatGPTレビュー済み（ユーザー報告）。今回の6A-2-1変更は未commit。
 
 ## Current State / Next Work
 
-**Phase 6A-1完了: Productパーツ取付仕様の基盤・登録編集・電子仕様書表示まで実装完了。** ChatGPTによる実画面確認も完了したとのユーザー報告を受け、確定仕様を文書化した。本Markdownのレビューはこれから行う。
+**Phase 6A-1完了: Productパーツ取付仕様の基盤・登録編集・電子仕様書表示まで実装完了。** ChatGPTによる実画面確認も完了したとのユーザー報告を受け、確定仕様を文書化した。6A-1の確定仕様は以下のとおり。
 
 | 完了範囲 | 内容 |
 | --- | --- |
@@ -21,9 +21,9 @@ Updated: 2026-09-15
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は6A-2 Domain設計中。ChatGPTレビューで決定した方針を設計書第3〜8節へ反映した。Java / SQL / test実装は未着手で、今回のMarkdownは再レビュー待ち。Phase 5Cは完了済み（既存記録）。
+次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-1 processCode基盤 実装済み（DB未適用・ChatGPTレビュー待ち）**。6A-2全体は進行中。Work / Itemと開始・終了への統合は未実装。Phase 5Cは完了済み（既存記録）。
 
-確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは旧名称候補の記述1行のみ設計書参照へ更新した。
+確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回は変更なし。
 
 ## Implementation Essentials
 
@@ -40,7 +40,7 @@ Updated: 2026-09-15
 
 ## Verification Record
 
-以下は6A-1文書整理時の記録であり、表の「今回」はその確認時点を指す。本6A-2文書更新ではテスト・ログ再検証・Playwright・DB操作を実行していない。過去の成功と現HEADでの全件再検証を区別する。
+以下は6A-1文書整理時の記録であり、表の「今回」はその確認時点を指す。下記の過去記録は今回再検証していない。6A-2-1の今回の検証結果は別記する。過去の成功と現HEADでの全件再検証を区別する。
 
 | 段階 | 記録された結果 | 今回の確認・出典 |
 | --- | --- | --- |
@@ -55,6 +55,15 @@ Updated: 2026-09-15
 
 登録編集E2EはUUID付きの自前fixture、E2E DB guard、自分のデータのみcleanupを使用。variation追加削除、入力エラーと保持、保存・再編集、製造開始後ロック、Specなし登録と開始後初回補完をカバーするコードがある。詳細の5テストは実Thymeleaf描画で表示名、Boolean、NULL、未設定カード、配置、画像エラー時の再表示を確認する。
 
+### 6A-2-1 今回の検証（2026-09-16、Codex）
+
+- ManufacturingProcessTest / ManufacturingProcessControllerTest: 3件成功。
+- ProcessServiceTest / ProcessWorkControllerTest / ProcessViewControllerTest / ProcessPageProgressTest / BodyProcessServiceTest / NeckProcessServiceTest: 28件成功。
+- Maven Wrapperをofflineで実行。初回APIテストはMockito self-attachの環境エラー。実行時のargLineでMockito 5.23.0のjavaagentを指定して再実行し成功（pom変更なし）。
+- ログ: `/tmp/guitar-mes-6a21-targeted-agent.log`、`/tmp/guitar-mes-6a21-regression.log`。一時ファイル。
+- ManufacturingProcessRepositoryTest 4件を追加・コンパイル済み、実行は未実施。SQL適用済みguitar_mes_e2eを前提とし、自前fixtureはtransaction rollback、初期コード確認は既存行の読み取りのみ。
+- DB接続・SQL適用・SQL実行検証、通常全件、E2Eは実施していない。SQLとRepositoryの実DB検証はユーザー側に残る。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
@@ -63,7 +72,7 @@ Updated: 2026-09-15
 - 対象工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
 - ItemはitemKey、itemOrder、NOT_STARTED / COMPLETED、createdAt / updatedAt / completedAt。終了前は解除可能、終了後read-only。3種のUNIQUEと既存Guitarロックを組み合わせる方針。
 - bulkは全台の検証・導出後に保存するall-or-nothing。対象StratのSpec不備は開始拒否方向、明確な対象外は従来処理。分類不能の扱いは未確定。
-- processCodeはNULL許可・全体UNIQUEで6Aから段階導入。対象行0件・複数件は移行STOP。まだ列・SQLは作っていない。
+- processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。DB未適用。API JSONへnullableのprocessCodeを追加。既存工程判定は変更なし。
 - process.work / process.partsinstallationへ責務分離する候補。既存ProcessWorkController名は再利用しない。
 - 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
@@ -71,9 +80,9 @@ Updated: 2026-09-15
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は本Handoff、Phase 6A設計方針、およびロードマップの整合性更新1行のみ。実装・テスト・DB操作・commit / push / mergeは行わない。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-1 processCode基盤と関連targeted testのみ。DB接続・適用、commit / push / mergeは行わない。
 
-**文書更新後に停止し、ChatGPTレビュー前に6A-2の実装へ進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-2 Work / Item実装へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

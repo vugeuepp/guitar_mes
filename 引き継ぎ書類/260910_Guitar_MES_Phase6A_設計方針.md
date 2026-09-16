@@ -2,8 +2,8 @@
 
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
-- 改訂日: 2026-09-15
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2はDomain設計中で、ChatGPTレビューによる決定を本書へ反映。今回のMarkdown差分は再レビュー待ち。6A-2のJava / SQL / test実装は未着手、6A-3も未実装。
+- 改訂日: 2026-09-16
+- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1 processCode基盤は実装済み・DB未適用で今回の変更はレビュー待ち。6A-2全体は進行中、Work / Itemと6A-3は未実装。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -257,11 +257,19 @@ ProductPartsSpecServiceはSpec自体の保存・完全性を担い、Parts Insta
 
 ## 6. processCodeの段階導入方針
 
-B案としてManufacturingProcess / m_processへ表示名と別の安定processCodeを追加する方向。全体UNIQUE、初期NULL許可、6A対象工程へ設定する。初期コード候補はGUITAR_PARTS_INSTALLATION。
+6A-2-1でManufacturingProcessへ表示名と別の安定processCodeを追加した。JavaはString、DBはprocess_code VARCHAR(64)、全体UNIQUE、NULL許可・DEFAULTなし。既存コード長は用途別で統一規約がないため、業務namespaceを含む安定コードとして64を採用。初期コードはProcessCodeConstants.GUITAR_PARTS_INSTALLATION。RepositoryにfindByProcessCodeを追加し、既存constructor・表示名定数・工程判定は維持する。APIは既存Entity返却を維持し、nullableのprocessCodeを追加項目として公開する。
 
 6A固有の対象工程判定から段階利用し、既存全工程を一度にcodeへ置換しない。Body / Neck / currentProcess等の名前依存は別design debtとする。
 
-**移行時STOP条件**: m_processの本番・開発DB初期投入方法は確認不能。SQL実装時にはtargetType＋processName等で対象を限定し、想定するギターパーツ取付行が1件であることをverifyする。0件・複数件を黙って成功扱いにしない。実DB確認前に未知の工程へ推測でcodeを割り当てない。
+**移行時STOP条件**: 本番・開発DBの初期投入方法・対象実データは未確認。適用SQLはtarget_type='GUITAR'＋process_name='ギターパーツ取付'がちょうど1件でなければDO blockのRAISE EXCEPTIONで失敗させる。列追加・UNIQUE・コード補完を同一transactionとし、ALTER TABLEのロックを保持して検証とUPDATE間の競合を防ぐ。未知の工程にはcodeを割り当てない。
+
+SQLは以下を追加済み。DB接続・適用・実行検証は行っていない。
+
+- 適用: `sql/260916_01_add_process_code.sql`
+- 確認: `sql/260916_02_verify_process_code.sql`（列・長さ・NULL・DEFAULT、単独UNIQUE、初期コード1件と対象、重複）
+- rollback: `sql/260916_03_rollback_process_code.sql`（初期コード解除→UNIQUE削除→列削除。後から付与したコードも失うため退避を確認。CASCADEなし）
+
+テストの実行結果・未実施事項はHandoffを参照する。既存開始・終了ロジックでのコード利用とWork生成には進んでいない。
 
 ## 7. 工程終了との接続（主に6A-3）
 
@@ -294,4 +302,4 @@ B案としてManufacturingProcess / m_processへ表示名と別の安定processC
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2はDomain設計中で、今回の正式方針・候補を文書へ反映した段階。Java / SQL / test実装は未開始、6A-3も未実装。Markdown更新後に停止し、ChatGPTレビュー後に次の実装タスクを決める。
+6A-1は完了済み。6A-2-1 processCode基盤は実装済み・DB未適用、6A-2全体は進行中。Work / Itemと6A-3は未実装。今回の変更をChatGPTでレビューしてから次の実装タスクを決め、6A-2-2へ自動的に進まない。

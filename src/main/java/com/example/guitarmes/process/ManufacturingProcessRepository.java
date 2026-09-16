@@ -13,4 +13,6 @@ public interface ManufacturingProcessRepository
     List<ManufacturingProcess>findByTargetTypeOrderByProcessOrderAsc(String targetType);
 
     Optional<ManufacturingProcess>findByTargetTypeAndProcessName(String targetType, String processName);
+
+    Optional<ManufacturingProcess>findByProcessCode(String processCode);
 }
