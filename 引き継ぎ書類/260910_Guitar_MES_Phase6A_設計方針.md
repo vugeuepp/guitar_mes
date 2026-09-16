@@ -3,7 +3,7 @@
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
 - 改訂日: 2026-09-17
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-3はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-4A 個別startへのWork保存統合を実装済み、今回の変更はレビュー待ち。6A-2-1 / 6A-2-2 SQLはユーザーがローカルDB適用・起動確認済み（ユーザー報告）。CodexによるDB接続・適用なし。6A-2全体は進行中。bulk開始統合・終了統合・Work UIは未実装。
+- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-3はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-4AはChatGPTレビュー・commit済み（ユーザー報告）。6A-2-4B bulk開始へのWork統合を実装済み、今回の変更はレビュー待ち。6A-2-1 / 6A-2-2 SQLはユーザーがローカルDB適用・起動確認済み（ユーザー報告）。CodexによるDB接続・適用なし。6A-2基盤の実装は個別・bulk開始統合まで完了。正式完了判定はChatGPTレビュー待ち。Item操作・終了統合・Work UIは6A-3の未実装範囲。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -165,7 +165,7 @@ snapshot部分は原則immutable。WorkはcreatedAtのみを持ち、updatedAt�
 
 productIdの追加snapshotは6A-2では行わない。通常運用にGuitar生成後のProduct差し替え機能がなく、History→guitarId→Guitar→Productで追跡できるため。将来の監査要件による追加余地は残す。
 
-6A-2-2の明示仕様でNULL制約を確定した。bridgeModel / stringMakerのみ任意、他の12 snapshot列はNOT NULL。既存ProductPartsSpecの移行用nullableとは意味を分け、有効な開始時仕様を保存する。Enumは既存4型を再利用してSTRING保存し、同じEnum CHECKを設定する。業務validation・値コピーは6A-2-3で保存前planに実装した。Entity保存への接続は6A-2-4Aで個別startに実装した。既存仕様を推測して補完しない。
+6A-2-2の明示仕様でNULL制約を確定した。bridgeModel / stringMakerのみ任意、他の12 snapshot列はNOT NULL。既存ProductPartsSpecの移行用nullableとは意味を分け、有効な開始時仕様を保存する。Enumは既存4型を再利用してSTRING保存し、同じEnum CHECKを設定する。業務validation・値コピーは6A-2-3で保存前planに実装した。Entity保存への接続は6A-2-4A/Bで個別・bulk startに実装した。既存仕様を推測して補完しない。
 
 Work.createdAtはLocalDateTime / timestamp without time zone、NOT NULL、updatable=false。@PrePersistで未設定時のみ現在時刻を設定する。snapshotの業務上の変更禁止は後続Serviceの責務とし、今回のsetterを更新許可APIとして扱わない。
 
@@ -273,7 +273,11 @@ GuitarのPESSIMISTIC_WRITE → 既存工程開始validation → 対象判定 →
 
 transaction境界は既存`startProcess`の@Transactional。WriterはMANDATORYで既存transactionへ参加し、独立したtransactionを開始しない。例外を握りつぶさず、Work / Item保存失敗時はGuitar更新へ進まない。DB不要テストで例外伝播・Springのrollback要求を検証したが、実DB上のrollbackは未検証。
 
-bulk開始は6A-2-4Bの未実装範囲。方針はall-or-nothing。全対象Guitarを既存順序でlockし、全台の既存検証、分類確認、対象Spec確認、生成内容導出を済ませてから保存する。1台のSpec不備でも先行個体だけ開始済みにはせず、何も残さない。
+6A-2-4Bでbulk開始を統合した。all-or-nothingで、IDの重複除去・昇順PESSIMISTIC_WRITE → 全台の既存validation → 全台の分類/Spec検証・plan生成を完了してから保存する。1台の分類不能・Spec不備でもpersistへ進まず、Guitarも変更しない。
+
+検証済みplanはGuitar IDをキーにMapで保持する。全Historyを共通startTimeでsaveAllした後、保存済みHistory.guitarIdに対応するplanだけを既存Writerへ渡し、Work → Itemsの順で保存。最後に全Guitar.currentProcess / updatedAtを更新する。保存戻り値の並び順への依存、Spec再取得、分類再判定、個別startの反復呼出しはない。
+
+STRAT / NON_TARGET混在を許可し、Historyは全台、Work / ItemsはSTRATだけ。既存bulkの@TransactionalとWriterのMANDATORYを維持する。途中保存失敗は例外を伝播して全体rollback対象とする。DB不要テストでrollback要求まで検証し、実DB rollbackは未検証。
 
 ### 5.2 対象・対象外・分類不能
 
@@ -284,9 +288,9 @@ bulk開始は6A-2-4Bの未実装範囲。方針はall-or-nothing。全対象Guit
 生成結果は`STRAT_TARGET`（planあり）、`NON_TARGET`、`UNCLASSIFIABLE`（後二者はplanなし）を区別する。対象外・分類不能ではSpecを取得しない。対象のSpec不備は例外であり分類不能として扱わない。
 
 - 6A対象Product: 必要Specが存在し、作業生成に必要な仕様が有効ならWork生成。
-- Spec未設定・必要仕様不備の対象Product: 個別startではHistory保存前に拒否。
+- Spec未設定・必要仕様不備の対象Product: 個別・bulk startともHistory保存前に拒否。
 - 6A対象外と判定できたProduct: 当面はWorkを強制せず従来工程開始を維持。
-- 分類不能Product: 6A-2-4Aで開始拒否を確定。個別startはHistory保存前にBusinessException。対象外と混同しない。
+- 分類不能Product: 6A-2-4Aで開始拒否を確定。個別・bulk startともHistory保存前にBusinessException。対象外と混同しない。
 
 ProductPartsSpecServiceはSpec自体の保存・完全性を担い、Parts Installation側は工程開始可否とItem導出可否を担う。6A-2-3で純粋な`ProductPartsSpecValidator`を共用した。保存用normalizeAndValidateは従来の正規化を維持し、validateStoredは保存済み値を変更・保存せず同じ業務規則を検証する。
 
@@ -319,7 +323,7 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 - 確認: `sql/260916_02_verify_process_code.sql`（列・長さ・NULL・DEFAULT、単独UNIQUE、初期コード1件と対象、重複）
 - rollback: `sql/260916_03_rollback_process_code.sql`（初期コード解除→UNIQUE削除→列削除。後から付与したコードも失うため退避を確認。CASCADEなし）
 
-テストの実行結果・未実施事項はHandoffを参照する。個別startのWork生成条件へprocessCodeを利用済み。bulk開始・終了処理には未統合。
+テストの実行結果・未実施事項はHandoffを参照する。個別・bulk startのWork生成条件へprocessCodeを利用済み。終了処理には未統合。
 
 ## 7. 工程終了との接続（主に6A-3）
 
@@ -340,7 +344,7 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 
 以下は今回の決定事項へ混ぜず、未確定として残す。
 
-- 6A-2-4Bでbulk開始にもWork生成・分類不能拒否を統合する。現時点では個別とbulkに差がある。
+- Item check/uncheck、Work専用画面、終了validation、直接currentProcess更新の迂回対策は6A-3。
 - NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
@@ -351,4 +355,4 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2-4A 個別startへのWork生成・保存統合を実装済み。6A-2全体は進行中。bulk開始・終了統合・Work UIは未実装。今回の変更をChatGPTでレビューしてから次のタスクを決め、6A-2-4B / end / UIへ自動的に進まない。
+6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。ロードマップの旧進捗記述との正式な整合・完了判定はChatGPTレビュー待ちとする。6A-3のItem操作・終了統合・Work UIへ自動的に進まない。

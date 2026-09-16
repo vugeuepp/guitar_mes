@@ -6,9 +6,9 @@ Updated: 2026-09-17
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- Local HEAD at this review: `7ea3e8519d4a5f5bf421d8ffd94589e713bae825`（6A-2-3 Stratギターパーツ取付Work生成ロジック）
+- Local HEAD at this review: `ab189000e1106a6f15dab9d73c203df15d9fba5a`（6A-2-4A 個別工程開始へのWork統合）
 - 保存済みupstream: `origin/feature/phase6a-process-work`。今回はリモートへの最新照会なし。
-- 作業開始時のworking treeはクリーン。6A-2-3は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-4A変更は未commit。
+- 作業開始時のworking treeはクリーン。6A-2-4Aは上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-4B変更は未commit。
 
 ## Current State / Next Work
 
@@ -21,7 +21,7 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-4A 個別工程開始へのWork統合 実装済み（未commit・ChatGPTレビュー待ち）**。6A-2全体は進行中。個別startでHistory / Work / Itemの生成・保存を同一transactionへ統合済み。bulk開始・Item操作Service・工程終了統合・Work UIは未実装。6A-2-1 / 6A-2-2 SQLはユーザー側でローカルDB適用・アプリ起動確認済み（ユーザー報告）。CodexはDB接続・適用を行っていない。Phase 5Cは完了済み（既存記録）。
+次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-4B bulk工程開始へのWork統合 実装済み（未commit・ChatGPTレビュー待ち）**。個別・bulk開始統合までの6A-2基盤実装は完了。Phaseの正式完了判定はChatGPTレビュー待ち。Item操作Service・工程終了統合・Work UIは6A-3の未実装範囲。6A-2-1 / 6A-2-2 SQLはユーザー側でローカルDB適用・アプリ起動確認済み（ユーザー報告）。CodexはDB接続・適用を行っていない。Phase 5Cは完了済み（既存記録）。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回は変更なし。
 
@@ -99,28 +99,38 @@ Updated: 2026-09-17
 - Spring transaction interceptor＋記録用transaction managerでHistory / Work / Item失敗時のrollback要求を検証。実DB上の行のrollbackは未検証。Writerの独立transaction開始拒否も検証。
 - 全テストソースをコンパイル。DB必須テスト、全通常テスト、E2Eは未実行。DB操作・SQL変更・bulk/end/Controller/API/UI変更なし。
 
+### 6A-2-4B 今回の実装・検証（2026-09-17、Codex）
+
+- bulkはID重複除去・昇順PESSIMISTIC_WRITE → 全件既存validation → 全件plan生成 → 全History保存 → 対象Work/Items保存 → 全Guitar更新。途中のvalidation失敗では保存しないall-or-nothing。
+- 個別と同じprocessCode判定・3分類。STRATのみWorkあり、NON_TARGET混在を許可、分類不能・Spec不備は全体拒否。Guitar IDでplanを保持し、保存済みHistoryのguitarIdで照合する。Spec再取得・再導出なし。
+- 共通startTime、workerNameのtrim、重複ID除去を維持。既存WriterとMANDATORYを変更せず再利用。個別start・end・Entity・SQL・Controller/API/UIは変更なし。
+- 新規bulk Unit Test 12件。全台Strat、混在、null/別code、最後のplan失敗、既存validation優先、昇順lock、共通時刻、snapshot14値、Item、保存結果の順序を反転した対応確認、途中保存失敗のrollback要求を検証。
+- targeted 3クラス42件成功後、DB不要と確認した46クラス430件成功（失敗・エラー・skip 0）。個別start14件、generator・分類、Product/Spec、Domainを含む。Maven Wrapper offline＋Mockito javaagentを使用。ログ: `/tmp/guitar-mes-6a24b-targeted.log`、`/tmp/guitar-mes-6a24b-dbfree.log`。選択一覧: `/tmp/guitar-mes-6a24b-test-selection.txt`。
+- DB必須9クラスは未実行、全テストソースはコンパイル済み。通常全件・E2Eは未実行。実DBのrollback・並行実行は未検証。DB接続・SQL変更/適用なし。Spec更新とGuitar生成の既知raceは持ち越し、新規lockなし。
+- processCode、Domain/DB、plan導出、個別/bulk統合まで実装済み。ロードマップには過去の「設計中・未着手」記述が残るため、正式な6A-2完了・6A-3移行はChatGPT確認後とする（今回はロードマップ未変更）。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
 
 - History 1 : 0..1 Work 1 : N Item。process.workにEntity / Enum / Repositoryを追加。Work→Historyは片方向LAZY one-to-one、Item→Workは片方向LAZY many-to-one。逆参照・cascade・orphanRemovalなし。
-- 対象の個別工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成する（6A-2-4A）。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
+- 対象の個別・bulk工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成する（6A-2-4A/B）。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
 - Work snapshotは12項目NOT NULL、bridgeModel / stringMakerのみ任意。pickupLayoutはString / varchar(255)を採用（Productの実DB長はrepositoryから確認不能）。
 - ItemはitemKey varchar(64)、itemOrderは正数・1始まり想定、status varchar(32)はNOT_STARTED / COMPLETED。Java初期値NOT_STARTED、DB DEFAULTなし。3 UNIQUE、Enum / 正数 / status-completedAt整合CHECKをSQLへ定義。
 - Work createdAtは未設定時のみ初期化。Item作成時は未指定ならcreatedAtとupdatedAtを同時刻へ設定し、明示時刻は保持。更新時は既存のpersistedUpdatedAt比較方式を再利用。終了前の解除・終了後read-onlyの業務制御、既存Guitarロックとの統合は後続Service。
 - SQLは260916_04_create_process_work / 05_verify_process_work / 06_rollback_process_work.sql。新テーブル2件、既存データ補完なし。ユーザー側でローカルDB適用済み（ユーザー報告）。
-- bulkは全台の検証・導出後に保存するall-or-nothing。個別では対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkへの統合は6A-2-4Bで行う。
-- processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別startのWork対象判定へ使用し、他の工程判定は変更なし。
-- process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別startは接続済み、bulkは後続。既存ProcessWorkController名は再利用しない。
+- bulkは全台の検証・導出後に保存するall-or-nothing。個別・bulkとも対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkは全件validate/plan後に保存する。
+- processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別・bulk startのWork対象判定へ使用し、他の工程判定は変更なし。
+- process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別・bulk startとも接続済み。既存ProcessWorkController名は再利用しない。
 - 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
-残論点はbulk開始統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点はItem操作・終了統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-4A 個別start統合と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-4B bulk start統合と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
 
-**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-2-4B bulk開始統合・end・UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-3（Item操作・end・UI）へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

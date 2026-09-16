@@ -941,16 +941,38 @@ public class ProcessService {
         for (Guitar guitar : guitars) {
             validateStartable(guitar, selectedProcess);
         }
+        // 全台の検証・導出が終わるまで開始データを保存しない。
+        Map<Long, PartsInstallationWorkPlan> plansByGuitarId = new HashMap<>();
+        if (ProcessCodeConstants.GUITAR_PARTS_INSTALLATION.equals(selectedProcess.getProcessCode())) {
+            for (Guitar guitar : guitars) {
+                var result = workPlanGenerator.generate(guitar.getProduct());
+                if (result.target() == PartsInstallationWorkPlanGenerator.Target.UNCLASSIFIABLE) {
+                    throw new BusinessException(
+                            "製品分類を判定できないため、ギターパーツ取付工程を開始できません。ID: "
+                            + guitar.getId());
+                }
+                result.plan().ifPresent(plan -> plansByGuitarId.put(guitar.getId(), plan));
+            }
+        }
         LocalDateTime now = LocalDateTime.now();
         List<ProcessHistory> histories = new ArrayList<>();
         for (Guitar guitar : guitars) {
-            guitar.setCurrentProcess(selectedProcess.getProcessName());
-            guitar.setUpdatedAt(now);
             histories.add(new ProcessHistory(
                     guitar.getId(), processId, workerName.trim(), now));
         }
+        List<ProcessHistory> savedHistories = historyRepository.saveAll(histories);
+        for (ProcessHistory history : savedHistories) {
+            PartsInstallationWorkPlan plan = plansByGuitarId.get(history.getGuitarId());
+            if (plan != null) {
+                workWriter.save(history, plan);
+            }
+        }
+        for (Guitar guitar : guitars) {
+            guitar.setCurrentProcess(selectedProcess.getProcessName());
+            guitar.setUpdatedAt(now);
+        }
         guitarRepository.saveAll(guitars);
-        return historyRepository.saveAll(histories);
+        return savedHistories;
     }
 
     @Transactional
