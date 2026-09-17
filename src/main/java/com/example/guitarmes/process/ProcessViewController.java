@@ -18,15 +18,18 @@ public class ProcessViewController {
 	private final ProcessService processService;
 	private final GuitarService guitarService;
 	private final ManufacturingProcessRepository processRepository;
+	private final com.example.guitarmes.process.work.ProcessWorkRepository workRepository;
 	
 	public ProcessViewController(
 			ProcessService processService, 
 			GuitarService guitarService,
-			ManufacturingProcessRepository processRepository) {
+			ManufacturingProcessRepository processRepository,
+			com.example.guitarmes.process.work.ProcessWorkRepository workRepository) {
 		
 		this.processService = processService;
 		this.guitarService = guitarService;
 		this.processRepository = processRepository;
+		this.workRepository = workRepository;
 	}
 	
 	@GetMapping("/processes/start/view")
@@ -70,10 +73,15 @@ public class ProcessViewController {
 	        ProcessRunningResponse runningHistory = processService.getRunningProcessResponseByGuitarId(guitarId);
 
 	        model.addAttribute("runningHistory", runningHistory);
+	        model.addAttribute("workHistoryIds", runningHistory == null ? java.util.Set.of() :
+	                (workRepository.findByProcessHistoryId(runningHistory.historyId()).isPresent() ? java.util.Set.of(runningHistory.historyId()) : java.util.Set.of()));
 
 	    } else {
 	    	
-	        model.addAttribute("histories", processService.getRunningProcessResponses());
+	        java.util.List<ProcessRunningResponse> histories = processService.getRunningProcessResponses();
+	        model.addAttribute("histories", histories);
+	        model.addAttribute("workHistoryIds", histories.stream().map(ProcessRunningResponse::historyId)
+	                .filter(id -> workRepository.findByProcessHistoryId(id).isPresent()).collect(java.util.stream.Collectors.toSet()));
             model.addAttribute("processes", processService.getAvailableGuitarProcesses());
 	    }
 
