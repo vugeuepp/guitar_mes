@@ -45,7 +45,7 @@ class ProcessPartsInstallationBulkStartTest {
         items = mock(ProcessWorkItemRepository.class);
         generator = mock(PartsInstallationWorkPlanGenerator.class);
         service = new ProcessService(histories, guitars, processes, mock(ProductionOrderRepository.class),
-                generator, new PartsInstallationWorkWriter(works, items));
+                generator, new PartsInstallationWorkWriter(works, items), null);
         process = new ManufacturingProcess("GUITAR", "変更後の表示名", 1);
         process.setId(73L);
         process.setProcessCode(ProcessCodeConstants.GUITAR_PARTS_INSTALLATION);

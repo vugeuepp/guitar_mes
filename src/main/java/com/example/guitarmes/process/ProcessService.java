@@ -25,6 +25,7 @@ import com.example.guitarmes.process.common.ProcessTargetConstants;
 import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkPlan;
 import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkPlanGenerator;
 import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkWriter;
+import com.example.guitarmes.process.work.ProcessWorkCompletionValidator;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.productionorder.ProductionOrderStatusConstants;
@@ -42,6 +43,7 @@ public class ProcessService {
 
     private final PartsInstallationWorkPlanGenerator workPlanGenerator;
     private final PartsInstallationWorkWriter workWriter;
+    private final ProcessWorkCompletionValidator workCompletionValidator;
 
     public ProcessService(
             ProcessHistoryRepository historyRepository,
@@ -49,10 +51,12 @@ public class ProcessService {
             ManufacturingProcessRepository processRepository,
             ProductionOrderRepository productionOrderRepository,
             PartsInstallationWorkPlanGenerator workPlanGenerator,
-            PartsInstallationWorkWriter workWriter) {
+            PartsInstallationWorkWriter workWriter,
+            ProcessWorkCompletionValidator workCompletionValidator) {
 
         this.workPlanGenerator = workPlanGenerator;
         this.workWriter = workWriter;
+        this.workCompletionValidator = workCompletionValidator;
 
         this.historyRepository =
                 historyRepository;
@@ -182,6 +186,8 @@ public class ProcessService {
 
         validateGuitarProcess(
                 endedProcess);
+
+        workCompletionValidator.validateCompletable(history);
 
         Guitar guitar =
                 findGuitarForUpdate(
@@ -1004,6 +1010,9 @@ public class ProcessService {
         Long firstProcessId = histories.get(0).getProcessId();
         if (histories.stream().anyMatch(h -> !firstProcessId.equals(h.getProcessId()))) {
             throw new BusinessException("異なる工程をまとめて終了することはできません。");
+        }
+        for (ProcessHistory history : histories) {
+            workCompletionValidator.validateCompletable(history);
         }
         lockProductionOrders(guitars);
         LocalDateTime now = LocalDateTime.now();

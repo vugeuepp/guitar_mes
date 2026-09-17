@@ -12,7 +12,7 @@ class ProcessPageProgressTest {
     @Test void endedHistoryDoesNotCountAsRunning() {
         var histories = mock(ProcessHistoryRepository.class);
         var processes = mock(ManufacturingProcessRepository.class);
-        var service = new ProcessService(histories, mock(GuitarRepository.class), processes, mock(ProductionOrderRepository.class), null, null);
+        var service = new ProcessService(histories, mock(GuitarRepository.class), processes, mock(ProductionOrderRepository.class), null, null, null);
         var process = new ManufacturingProcess("GUITAR", "first", 1); process.setId(1L);
         when(processes.findByTargetTypeOrderByProcessOrderAsc("GUITAR")).thenReturn(List.of(process));
         var done = new ProcessHistory(10L, 1L, "worker", LocalDateTime.now()); done.setEndTime(LocalDateTime.now());
@@ -24,7 +24,7 @@ class ProcessPageProgressTest {
         var histories = mock(ProcessHistoryRepository.class);
         var guitars = mock(GuitarRepository.class);
         var processes = mock(ManufacturingProcessRepository.class);
-        var service = new ProcessService(histories, guitars, processes, mock(ProductionOrderRepository.class), null, null);
+        var service = new ProcessService(histories, guitars, processes, mock(ProductionOrderRepository.class), null, null, null);
         var first = new ManufacturingProcess("GUITAR", "first", 1); first.setId(1L);
         var second = new ManufacturingProcess("GUITAR", "second", 2); second.setId(2L);
         when(processes.findByTargetTypeOrderByProcessOrderAsc("GUITAR")).thenReturn(List.of(first, second));

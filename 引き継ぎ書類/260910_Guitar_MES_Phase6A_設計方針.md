@@ -3,7 +3,7 @@
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
 - 改訂日: 2026-09-17
-- 文書状態: 6A-1・6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1 WorkItem操作Service・共通完了Validatorを実装。end接続は6A-3-2、Controller/API/UIは後続。6A-2 SQL適用・ローカル起動成功はユーザー報告。CodexによるDB操作なし。
+- 文書状態: 6A-1・6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1はChatGPT承認済み（ユーザー報告）。6A-3-2で共通完了Validatorを個別/bulk終了へ接続済み。Work操作用Controller/API/UIは後続。6A-2 SQL適用・ローカル起動成功はユーザー報告。CodexによるDB操作なし。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -335,17 +335,21 @@ History終了済みならcheck/uncheckを拒否する。Item/親関連の不存�
 
 ロック順はItemからscalar queryでhistoryIdを取得 → 既存History.findForUpdate(PESSIMISTIC_WRITE) → History refresh/endTime確認 → Item取得/refresh → 状態変更・保存。先にItemをロック・Entityロードせず、ロック待機前のキャッシュ状態も使用しない。Historyロックで同じHistoryのItem操作と既存終了処理を直列化し、Guitarロックは追加しない。Item/Work親関連は生成後変更しない既存方針を維持する。実DBでの並行動作検証は未実施。
 
-`ProcessWorkCompletionValidator.validateCompletable(history)`は呼出元のロック済みHistoryを受け取り、再取得・再ロックしない読み取り専用検証。Workなしは許可。WorkありならItemsは1件以上かつ全件COMPLETEDが必要。0件・未完了・null statusを拒否し、Work/Item/Historyは変更しない。6A-3-2では必ずHistoryロック取得後、終了更新と同一transactionで呼ぶ。今回ProcessServiceへは未接続。
+`ProcessWorkCompletionValidator.validateCompletable(history)`は呼出元のロック済みHistoryを受け取り、再取得・再ロックしない読み取り専用検証。Workなしは許可。WorkありならItemsは1件以上かつ全件COMPLETEDが必要。0件・未完了・null statusを拒否し、Work/Item/Historyは変更しない。6A-3-2でHistoryロック取得後、終了更新と同一transactionでProcessServiceから呼ぶよう接続済み。
 
 ### 7.2 後続UIの確定方針（未実装）
 
 checkboxクリック時に即時保存し、保存ボタンは設けない。completedAtを小さく表示し、History終了後はread-only。完了数/全件数とWork snapshot14項目を表示し、Product現在値を作業票に使わない。ELECTRONICS_SOUND_CHECKは1件のまま、selectorPositionsから「全Nポジションで音出し確認」を表示する。
 
-### 7.3 終了処理への接続（6A-3-2、未実装）
+### 7.3 終了処理への接続（6A-3-2、実装済み）
 
-必須ItemがすべてCOMPLETEDでなければ、6A対象Workを持つHistoryを終了できない方針。個別終了とbulk終了は現状別実装のため、両方から共通利用するService validationにする。専用画面だけに検証を置かず、ProcessService.endProcess()の遷移・日時・数量更新を画面へコピーしない。
+ProcessService.endProcess() / endProcesses()の両方で既存ProcessWorkCompletionValidatorを共通利用する。Workなしはlegacyとして従来どおり終了可能。WorkありはItemが1件以上かつ全件COMPLETED必須であり、0件・NOT_STARTED・null statusは拒否する。Product / Spec / classification / processCode / snapshot値を終了時に再判定しない。
 
-既存終了入口:
+個別はHistoryロック・既存終了済み/工程検証後、Guitarロック前に完了検証する。bulkは既存のHistory ID重複除去・昇順ロック、Guitar昇順ロック、工程検証の順序を維持し、全対象のWork検証を完了してからOrderロック・endTime・currentProcess・数量更新へ進む。未完了が最後にあっても先行対象の状態を変更しない。
+
+Historyロック取得から検証・終了更新まで既存の同一transactionで実施するため、Item check/uncheckと同じHistoryロックで直列化する。ValidatorとItemServiceは変更せず、ロック順逆転も追加しない。既存の開始処理、工程進行・完成数量・timestamp、Controller/API、SQL/schemaは変更しない。DB不要テストで順序・状態不変を検証したが、実DB並行テストは未実施。UIは6A-3-3以降であり、終了ロジックを画面へコピーしない。
+
+以下の既存4終了入口はすべて上記ProcessServiceへ委譲することを確認済み（Controller/API変更なし）:
 
 - POST /processes/end
 - POST /processes/bulk/end
@@ -360,7 +364,7 @@ checkboxクリック時に即時保存し、保存ボタンは設けない。com
 
 以下は今回の決定事項へ混ぜず、未確定として残す。
 
-- Work専用画面、終了ValidatorのProcessService統合、直接currentProcess更新の迂回対策は後続。Item check/uncheckと共通Validator単体は6A-3-1で実装済み。
+- Work専用画面、直接currentProcess更新の迂回対策は後続。Item check/uncheckと共通Validator単体は6A-3-1、個別/bulk終了統合は6A-3-2で実装済み。
 - NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
@@ -371,4 +375,4 @@ checkboxクリック時に即時保存し、保存ボタンは設けない。com
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。6A-2のChatGPT完了判定済み（ユーザー報告）。6A-3-1まで実装し、commit / push後のChatGPTレビューを待つ。6A-3-2終了統合・Work UIへ自動的に進まない。
+6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。6A-2のChatGPT完了判定済み（ユーザー報告）。6A-3-2まで実装し、commit / push後のChatGPTレビューを待つ。6A-3-3 Work UIへ自動的に進まない。

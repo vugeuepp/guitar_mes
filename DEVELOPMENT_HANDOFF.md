@@ -6,9 +6,9 @@ Updated: 2026-09-17
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- 作業開始HEAD: `989767de6543eccfead678d3e266c1726e2ef6d4`（6A-2-4B bulk工程開始へのWork統合）
-- 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-1のcommit / push結果はGit履歴で確認する。
-- 作業開始時のworking treeはクリーン。6A-2-4Bは上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
+- 作業開始HEAD: `1e169d04a52c7c058f99f2ae0776572743ff72f1`（6A-3-1 WorkItem操作・工程終了Validator基盤）
+- 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-2のcommit / push結果はGit履歴と最新リモート照会で確認する。
+- 作業開始時のworking treeはクリーン。6A-3-1は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
 
 ## Current State / Next Work
 
@@ -21,7 +21,7 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。Phase 6A-3を開始し、6A-3-1 WorkItem操作Service・共通完了Validatorを実装。** 終了処理への接続は6A-3-2、Controller/API/UIは後続。6A-2 SQLのローカルDB適用・起動成功はユーザー報告であり、CodexはDB操作をしていない。
+**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1はChatGPT承認済み（ユーザー報告）、6A-3-2で共通完了Validatorを個別/bulk終了へ接続済み。** 既存Controller/APIは変更せず、Work操作用Controller/API/UIは後続。6A-2 SQLのローカルDB適用・起動成功はユーザー報告であり、CodexはDB操作をしていない。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回はロードマップに残る6A-2未着手の旧記述のみ、完了の事実へ更新。
 
@@ -119,6 +119,16 @@ Updated: 2026-09-17
 - 親History ID問い合わせのRepository Testを1件追加し、全テストソースをコンパイル。DB必須9クラスは未実行。DB操作・SQL/schema・ProcessService・Controller/API/UI変更なし。通常全件・E2Eは未実行。
 - 6A-3-2は個別/bulk終了へ共通Validatorを同時接続する。Workなし互換、全件検証後更新、History lock維持を確認する。既知のSpec更新race・直接currentProcess APIの迂回対策は持ち越し。
 
+### 6A-3-2 実装・検証（2026-09-17、Codex）
+
+- ProcessServiceの個別/bulk終了へ既存ProcessWorkCompletionValidatorを接続。Workなしはlegacy互換、Workありは1件以上のItemが全件COMPLETED必須。0件・NOT_STARTED・null statusを拒否。Product / Spec / classification / snapshotの再判定なし。
+- 個別はHistoryのPESSIMISTIC_WRITE取得・既存終了済み/工程検証後、Guitar取得前に検証。bulkはHistory ID重複除去・昇順ロック、既存Guitarロック・工程検証を維持し、全件Work検証後にOrderロック・終了更新へ進む。最後の検証失敗でも先行History/Guitar/Orderを変更しない。
+- 検証と終了更新は既存の同一transaction。Item操作とendは同じHistoryロックで直列化する。Validator / ItemService / start処理・終了日時・完成数量の既存ロジックは変更なし。実DBでの並行テストは未実施。
+- Web/APIの個別/bulk終了4経路がProcessServiceへ委譲することを確認。Controller/API/UI変更なし。専用UIは未実装。direct currentProcess APIの迂回対策は持ち越し。
+- 新規ProcessWorkEndIntegrationTestは実Validatorとmock Repositoryを使うDB不要14件。既存4テストクラスはconstructor依存追加へ追従。初回testCompileでテスト修正の引数誤りを検出・修正後、targeted 4クラス52件成功。DB不要49クラス466件成功（失敗・エラー・skip 0）。個別/bulk開始、Item操作、generator/分類、ProductionOrder完成の回帰を含む。
+- ログ: `/tmp/guitar-mes-6a32-targeted.log`、`/tmp/guitar-mes-6a32-regression.log`。選択一覧: `/tmp/guitar-mes-6a32-test-selection.txt`。全テストソースのcompile成功。DB必須9クラス・全通常テスト・E2Eは未実行。DB操作・SQL/schema変更なし。
+- 6A-3-3 UIへは進まず、commit / push後のGitHub差分をChatGPTでレビューしてから次の指示を受ける。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
@@ -132,15 +142,15 @@ Updated: 2026-09-17
 - bulkは全台の検証・導出後に保存するall-or-nothing。個別・bulkとも対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkは全件validate/plan後に保存する。
 - processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別・bulk startのWork対象判定へ使用し、他の工程判定は変更なし。
 - process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別・bulk startとも接続済み。既存ProcessWorkController名は再利用しない。
-- 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
+- 終了validationの個別/bulk共通利用は6A-3-2で実装済み。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
-残論点は終了Validator統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点はpickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-3-1 Service / Validator・関連テスト・文書更新。DB接続・適用・mergeは禁止。仕様未決事項や重大問題がなければcommit / pushを行う（今回の明示指示）。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-3-2 個別/bulk終了へのValidator接続・関連テスト・文書更新。DB接続・適用・mergeは禁止。仕様未決事項や重大問題がなければcommit / pushを行う（今回の明示指示）。
 
-**commit / push後、GitHub差分をChatGPTでレビューしてから次のタスクを決める。6A-3-2終了統合・UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**commit / push後、GitHub差分をChatGPTでレビューしてから次のタスクを決める。6A-3-3 UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 
