@@ -73,7 +73,14 @@ class ProcessConcurrencyTest {
                 .setParameter("type", kind.toUpperCase(Locale.ROOT)).setMaxResults(1).getSingleResult();
     }
     private ProductionOrder order() {
+        // 正式分類できるNON_TARGET製品。Work固有条件で並行性検証を妨げない。
+        var series = new com.example.guitarmes.master.productseries.ProductSeriesMaster(prefix, prefix, true);
+        persist(series, "m_product_series");
+        var type = new com.example.guitarmes.master.instrumenttype.InstrumentTypeMaster(
+                prefix, prefix, prefix, prefix, true);
+        persist(type, "m_instrument_type");
         Product product = new Product(); product.setProductName(prefix); product.setModelNo(prefix);
+        product.setInternalModelCode(prefix + "-" + prefix);
         persist(product, "m_product");
         ProductionOrder order = new ProductionOrder(); order.setOrderNo(prefix); order.setProduct(product);
         order.setPlannedQuantity(2); order.setStartedQuantity(2); order.setCompletedQuantity(0); order.setStatus("IN_PROGRESS"); order.setPlanMonth(java.time.YearMonth.of(2026, 9)); order.setDueDate(java.time.LocalDate.of(2026, 9, 30));

@@ -12,4 +12,49 @@
 <section class="detail-section"><div class="detail-section-heading"><h2 class="detail-section-title">開始時仕様スナップショット</h2></div><div class="detail-grid">
 <div class="detail-item" th:each="entry : ${ {'ブリッジ方式':workView.snapshot.bridgeType,'ブリッジモデル':workView.snapshot.bridgeModel,'スタッド穴拡張':workView.snapshot.requiresStudHoleExpansion,'ペグモデル':workView.snapshot.tunerModel,'ペグ取付方式':workView.snapshot.tunerMountingType,'ペグブッシュ':workView.snapshot.tunerBushRequired,'ペグ配列':workView.snapshot.tunerLayout,'PU構成':workView.snapshot.pickupLayout,'セレクターポジション':workView.snapshot.selectorPositions,'コントロール構成':workView.snapshot.controlLayout,'ジャック取付方式':workView.snapshot.jackMountingType,'弦メーカー':workView.snapshot.stringMaker,'弦モデル':workView.snapshot.stringModel,'弦ゲージ':workView.snapshot.stringGauge} }"><div class="detail-label" th:text="${entry.key}"></div><div class="detail-value" th:text="${entry.value}"></div></div></div></section>
 <section class="detail-section" th:unless="${workView.readOnly}"><form th:action="@{/processes/end}" method="post"><input type="hidden" name="historyId" th:value="${workView.historyId}"><button class="btn btn-process-end" type="submit">工程終了</button></form></section>
-</main><script th:inline="none">(()=>{const root=document.getElementById('parts-work');if(!root||root.dataset.readOnly==='true')return;const error=document.getElementById('work-error');document.querySelectorAll('.work-checkbox').forEach(box=>box.addEventListener('change',async()=>{const before=!box.checked;box.disabled=true;error.hidden=true;const row=box.closest('.work-item');try{const response=await fetch('/api/process-work-items/'+row.dataset.itemId+'/complete',{method:box.checked?'PUT':'DELETE',headers:{'Accept':'application/json'}});if(!response.ok){let data={};try{data=await response.json();}catch(e){}throw new Error(data.message||'作業項目を保存できませんでした。');}const data=await response.json();box.checked=data.checked;document.getElementById('completed-count').textContent=data.completedCount;document.getElementById('total-count').textContent=data.totalCount;const at=row.querySelector('.completed-at');at.hidden=!data.checked;at.textContent=data.checked?'完了: '+data.completedAt:'';if(data.readOnly)location.reload();}catch(e){box.checked=before;error.textContent=e.message;error.hidden=false;}finally{box.disabled=false;}}));})();</script></body></html>
+</main><script th:inline="none">
+(() => {
+    const root = document.getElementById('parts-work');
+    if (!root || root.dataset.readOnly === 'true') return;
+    const error = document.getElementById('work-error');
+    const boxes = root.querySelectorAll('.work-checkbox');
+    const endButton = root.querySelector('button[type="submit"]');
+    let saving = false;
+    boxes.forEach(box => box.addEventListener('change', async () => {
+        const before = !box.checked;
+        if (saving) { box.checked = before; return; }
+        saving = true;
+        boxes.forEach(item => item.disabled = true);
+        if (endButton) endButton.disabled = true;
+        error.hidden = true;
+        const row = box.closest('.work-item');
+        try {
+            const response = await fetch('/api/process-work-items/' + row.dataset.itemId + '/complete', {
+                method: box.checked ? 'PUT' : 'DELETE',
+                headers: {'Accept': 'application/json'}
+            });
+            if (!response.ok) {
+                let data = {};
+                try { data = await response.json(); } catch (ignored) {}
+                throw new Error(data.message || '作業項目を保存できませんでした。');
+            }
+            const data = await response.json();
+            box.checked = data.checked;
+            document.getElementById('completed-count').textContent = data.completedCount;
+            document.getElementById('total-count').textContent = data.totalCount;
+            const at = row.querySelector('.completed-at');
+            at.hidden = !data.checked;
+            at.textContent = data.checked ? '完了: ' + data.completedAt : '';
+            if (data.readOnly) location.reload();
+        } catch (failure) {
+            box.checked = before;
+            error.textContent = failure.message;
+            error.hidden = false;
+        } finally {
+            saving = false;
+            boxes.forEach(item => item.disabled = false);
+            if (endButton) endButton.disabled = false;
+        }
+    }));
+})();
+</script></body></html>

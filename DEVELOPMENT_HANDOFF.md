@@ -6,9 +6,9 @@ Updated: 2026-09-17
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- 作業開始HEAD: `1e169d04a52c7c058f99f2ae0776572743ff72f1`（6A-3-1 WorkItem操作・工程終了Validator基盤）
-- 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-2のcommit / push結果はGit履歴と最新リモート照会で確認する。
-- 作業開始時のworking treeはクリーン。6A-3-1は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
+- 作業開始HEAD: `d78cbed23e7ed00ce5fd95c172775405e61aad43`（6A-3-3、Copilot成果物適用）
+- 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-3仕上げのcommit / push結果はGit履歴と最新リモート照会で確認する。
+- 作業開始時のworking treeはクリーン。6A-3-3 Copilot成果物は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
 
 ## Current State / Next Work
 
@@ -21,7 +21,7 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1はChatGPT承認済み（ユーザー報告）、6A-3-2で共通完了Validatorを個別/bulk終了へ接続済み。** 既存Controller/APIは変更せず、Work操作用Controller/API/UIは後続。6A-2 SQLのローカルDB適用・起動成功はユーザー報告であり、CodexはDB操作をしていない。
+**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1はChatGPT承認済み（ユーザー報告）、6A-3-2で共通完了Validatorを個別/bulk終了へ接続済み。** 6A-3-3のWork表示・Item操作API/UIも実装済み。今回Copilot成果物をrepo文脈でレビューし、テストと最小修正を追加。6A-2 SQLのローカルDB適用・起動成功はユーザー報告。今回Codexは専用E2E DBでテストを実行したが、SQL/schemaの変更・適用は行っていない。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回はロードマップに残る6A-2未着手の旧記述のみ、完了の事実へ更新。
 
@@ -129,6 +129,17 @@ Updated: 2026-09-17
 - ログ: `/tmp/guitar-mes-6a32-targeted.log`、`/tmp/guitar-mes-6a32-regression.log`。選択一覧: `/tmp/guitar-mes-6a32-test-selection.txt`。全テストソースのcompile成功。DB必須9クラス・全通常テスト・E2Eは未実行。DB操作・SQL/schema変更なし。
 - 6A-3-3 UIへは進まず、commit / push後のGitHub差分をChatGPTでレビューしてから次の指示を受ける。
 
+### 6A-3-3 仕上げ・検証（2026-09-17、Codex）
+
+- 開始時HEAD d78cbedを親634b28dとの差分でレビュー。remote HEADも照会して一致を確認。History基準、保存済みWork snapshot14項目・itemOrder、4グループ、日本語表示、即保存API委譲、read-only、Workなし拒否・0件不整合、既存終了routeの再利用を確認。
+- 通常テスト8 Errorsを修正。GuitarRepositorySearchTestのProcessServiceは4クエリ性能検証に必要なため維持し、検索で使わない開始/終了依存3Beanのみmock。ProcessConcurrencyTestは自前のシリーズ・楽器マスタとinternalModelCodeで正式分類できるNON_TARGET fixtureに追従し、自分のデータだけcleanupする。本番分類・Work生成・開始終了の業務ロジックは未変更。
+- checkboxの並行応答で進捗が古く表示される可能性を防ぐため、保存中は同一作業票のcheckboxと工程終了ボタンを一時無効化。失敗時はチェックを復元しメッセージ表示、操作を再開する。
+- targeted DB 2クラス20件、表示/API targeted 4クラス11件、通常テスト全554件成功（すべて失敗・エラー・skip 0）。ログ: `/tmp/guitar-mes-6a33-targeted-db.log`、`/tmp/guitar-mes-6a33-ui-targeted.log`、`/tmp/guitar-mes-6a33-all-tests.log`。
+- PartsInstallationWorkE2Eを追加。e2e profile・random portでブラウザ対象アプリを自動起動し、fixtureと同じguitar_mes_e2eを使用。独自History/Work/Item/Guitar/工程を作成・ID限定cleanup。即保存・再読込・解除・失敗復元、個別/bulk終了画面のリンク、既存route終了、終了後API拒否・read-only・0件不整合の2シナリオ成功。ログ: `/tmp/guitar-mes-6a33-e2e-retry.log`。初回はテストのFormData型を修正。サンドボックス内のブラウザ初期化停止は中断し、許可された環境で再実行成功。全E2Eは未実行。
+- 実テンプレート描画・ブラウザ証跡も確認。DB/schema/SQL、enum値、Product/Spec、ProcessService業務ロジックは未変更。テストは専用DBの既存スキーマを利用。
+- AGENTS.mdにfallback入口、COPILOT_WORKFLOW.mdに完全版TXT・fresh chat・成果物配置確認・復帰後repoレビューの恒久ルールを追記。6A-3-4 navigation/UX、6A-3-5 direct currentProcess迂回、spec-start raceへは進まない。
+- 終了一覧のWork有無問い合わせは現状Historyごとの取得。6A-3-4で一覧規模と合わせて一括取得を検討する。設計書7.2の「未実装」は6A-3-3着手前の記述であり、今回の実装事実は本節を参照する。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
@@ -148,9 +159,9 @@ Updated: 2026-09-17
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-3-2 個別/bulk終了へのValidator接続・関連テスト・文書更新。DB接続・適用・mergeは禁止。仕様未決事項や重大問題がなければcommit / pushを行う（今回の明示指示）。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-3-3仕上げ・通常テスト全件・対象E2E・fallbackルール整備。専用E2E DBでテスト実行可。DB/schema/SQL変更・mergeは禁止。仕様未決事項や重大問題がなければcommit / pushを行う（今回の明示指示）。
 
-**commit / push後、GitHub差分をChatGPTでレビューしてから次のタスクを決める。6A-3-3 UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**commit / push後、GitHub差分をChatGPTでレビューしてから次のタスクを決める。6A-3-4 / 6A-3-5へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

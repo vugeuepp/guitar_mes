@@ -58,7 +58,7 @@ Copilotは `REFERENCE ONLY` のファイルを変更してはいけません。B
 - 過去チャットの記憶で補わない。
 - 必要なファイルを具体的に要求する。
 - 必要な型・メソッド・仕様を具体的に要求する。
-- 追加Bundleを受け取ってから続行する。
+- 原則として不足分を統合した完全版context TXTを再構築し、fresh Copilot chatのFIRST MESSAGEで渡して再開する。
 
 不足情報がある状態で、架空のAPI、型、メソッド、既存仕様を作りません。
 
@@ -96,10 +96,24 @@ promptには少なくとも次を明記します。
 - full suite、manual UI、commit、pushの担当
 - 作業終了時に報告すべき変更ファイル、変更内容、検証、未実行事項
 
+## Codex → Copilot Fallback
+
+Codexが利用不能、または残容量が次の作業の完遂には明らかに不足する場合に適用します。通常のBundleルールと責任分担は維持します。
+
+1. GitHub remote HEAD / branch / working treeを確認し、source of truthと作業範囲を決める。
+2. ChatGPTで仕様を確定し、必要ファイルを選定する。
+3. 1つの自己完結したTXT contextに、finalized specification、scope、prohibitions / non-goals、output contract、EDITABLE FILES、REFERENCE_ONLY FILES、NEW FILES、および必要なsource contextを収録する。各区分は既存のROLEと一致させる。
+4. 新しいCopilot chatを開始し、FIRST MESSAGEでTXTを一度に渡す。そのcontextだけを実装根拠にする。
+5. 必須contextが不足したら推測実装せず停止し、不足ファイル・型・仕様を具体的に報告する。原則、完全版TXTを再構築してfresh chatからやり直す。
+6. 実際に生成していないZIP / files / artifactsを「生成した」と報告しない。output contractに従い、提供物とrepository-relative pathを明示する。
+7. 以下の配置確認と適用後のcompile / tests / diff / reviewを行う。問題なければcommit / pushし、GitHub上の実コードを確認する。
+8. Codexの容量が十分に戻ったらCodexへ引き継ぎ、repo全体の文脈で成果物をレビューする。
+
 ## Apply, Review, and Completion
 
 Copilotの完了報告だけで実装完了と判断しません。
 
+- 配置先はcompletion report / manifestのrepository-relative path → Javaの場合はpackage declaration → repo既存構造の順で照合する。ファイル名だけから推測しない。不明・矛盾がある場合はコピーせず確認する。同名classの別packageへの誤配置・Spring bean conflictを防ぐ。
 - User / Macが生成された変更をlocal working treeへ適用する。
 - `git diff`、`git status --short`、`git diff --check`相当で対象と不要な空白を確認する。
 - 変更内容に応じたtargeted test / validationを確認する。

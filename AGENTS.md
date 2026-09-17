@@ -78,6 +78,14 @@ ChatGPTは実装担当を決める前に、次の4点を確認します。
 
 利用できないAIを実装担当として提案しません。Copilotを使用する場合は、implementation promptより先にtask-specific Bundleを作成します。
 
+### Codexが利用できない場合のfallback
+
+Codexの利用上限・一時的利用不能、または次の作業を安全に完遂するには残容量が明らかに不足する場合、無理に開始せずChatGPT + Copilotへ切り替えます。残容量が不明な場合は推測しません。
+
+GitHub remote HEAD・branch・working treeとsource of truthを確認し、ChatGPTで仕様を確定してから、必要なsource・役割・禁止事項を含む自己完結したTXTを作成します。新しいCopilot chatのFIRST MESSAGEで一括提供し、不足時は推測せず、原則として完全版TXTとfresh chatで再開します。詳細は[COPILOT_WORKFLOW.md](COPILOT_WORKFLOW.md#codex--copilot-fallback)に従います。
+
+成果物はファイル名から配置先を推測せず、completion report / manifestのrepository-relative path → Java package declaration → 既存repo構造の順で照合します。不明・矛盾があればコピーしません。適用後はcompile・tests・diff・review、commit / push後はGitHub上の実コードを確認します。Codexの容量が十分に戻ったらrepo全体の文脈で再レビューします。
+
 ## Codex Scope Control
 
 Codexは実装開始前に次を行います。

@@ -34,6 +34,13 @@ import jakarta.persistence.EntityManager;
 @ActiveProfiles("e2e")
 @org.springframework.context.annotation.Import({GuitarService.class, com.example.guitarmes.process.ProcessService.class})
 class GuitarRepositorySearchTest {
+    // ページ進捗の実クエリは検証する。検索で使わない開始/終了専用依存のみmock。
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.example.guitarmes.process.partsinstallation.PartsInstallationWorkPlanGenerator workPlanGenerator;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.example.guitarmes.process.partsinstallation.PartsInstallationWorkWriter workWriter;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.example.guitarmes.process.work.ProcessWorkCompletionValidator completionValidator;
     @Autowired GuitarService service;
     @Autowired com.example.guitarmes.process.ProcessService processService;
     @Autowired EntityManager entityManager;
