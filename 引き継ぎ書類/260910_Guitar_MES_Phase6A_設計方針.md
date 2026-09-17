@@ -3,7 +3,7 @@
 - 作成日: 2026-09-10
 - 対象: Phase 6A ギターパーツ取付工程
 - 改訂日: 2026-09-17
-- 文書状態: 6A-1は実装・ChatGPTによる実画面確認完了（ユーザー報告）。6A-2 Domain設計はChatGPTレビュー済み（ユーザー報告）。6A-2-1はChatGPT承認済み。6A-2-2はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-3はChatGPTレビュー・commit済み（ユーザー報告）。6A-2-4AはChatGPTレビュー・commit済み（ユーザー報告）。6A-2-4B bulk開始へのWork統合を実装済み、今回の変更はレビュー待ち。6A-2-1 / 6A-2-2 SQLはユーザーがローカルDB適用・起動確認済み（ユーザー報告）。CodexによるDB接続・適用なし。6A-2基盤の実装は個別・bulk開始統合まで完了。正式完了判定はChatGPTレビュー待ち。Item操作・終了統合・Work UIは6A-3の未実装範囲。
+- 文書状態: 6A-1・6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1 WorkItem操作Service・共通完了Validatorを実装。end接続は6A-3-2、Controller/API/UIは後続。6A-2 SQL適用・ローカル起動成功はユーザー報告。CodexによるDB操作なし。
 - 恒久ルール: [AGENTS.md](../AGENTS.md)
 - 現在地・Git・検証状況: [DEVELOPMENT_HANDOFF.md](../DEVELOPMENT_HANDOFF.md)
 - 全体計画: [新開発ロードマップ](260902_Guitar_MES_新開発ロードマップ改訂版.md)
@@ -325,7 +325,23 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 
 テストの実行結果・未実施事項はHandoffを参照する。個別・bulk startのWork生成条件へprocessCodeを利用済み。終了処理には未統合。
 
-## 7. 工程終了との接続（主に6A-3）
+## 7. WorkItem操作と工程終了（6A-3）
+
+### 7.1 6A-3-1の実装
+
+`ProcessWorkItemService.completeItem(itemId)` / `uncompleteItem(itemId)`はgeneric process.work責務。partsinstallationの条件を含めない。checkはCOMPLETEDとcompletedAt=操作時刻、uncheckはNOT_STARTEDとcompletedAt=null。どちらも状態変更時のみupdatedAtを同じ操作時刻へ更新する。同一状態への再操作は時刻・状態を維持し、saveしない。既存LocalDateTime.nowとDomain callbackを利用し、Clock基盤は追加しない。
+
+History終了済みならcheck/uncheckを拒否する。Item/親関連の不存在・異常、statusとcompletedAtの不整合は明示的に失敗させる。
+
+ロック順はItemからscalar queryでhistoryIdを取得 → 既存History.findForUpdate(PESSIMISTIC_WRITE) → History refresh/endTime確認 → Item取得/refresh → 状態変更・保存。先にItemをロック・Entityロードせず、ロック待機前のキャッシュ状態も使用しない。Historyロックで同じHistoryのItem操作と既存終了処理を直列化し、Guitarロックは追加しない。Item/Work親関連は生成後変更しない既存方針を維持する。実DBでの並行動作検証は未実施。
+
+`ProcessWorkCompletionValidator.validateCompletable(history)`は呼出元のロック済みHistoryを受け取り、再取得・再ロックしない読み取り専用検証。Workなしは許可。WorkありならItemsは1件以上かつ全件COMPLETEDが必要。0件・未完了・null statusを拒否し、Work/Item/Historyは変更しない。6A-3-2では必ずHistoryロック取得後、終了更新と同一transactionで呼ぶ。今回ProcessServiceへは未接続。
+
+### 7.2 後続UIの確定方針（未実装）
+
+checkboxクリック時に即時保存し、保存ボタンは設けない。completedAtを小さく表示し、History終了後はread-only。完了数/全件数とWork snapshot14項目を表示し、Product現在値を作業票に使わない。ELECTRONICS_SOUND_CHECKは1件のまま、selectorPositionsから「全Nポジションで音出し確認」を表示する。
+
+### 7.3 終了処理への接続（6A-3-2、未実装）
 
 必須ItemがすべてCOMPLETEDでなければ、6A対象Workを持つHistoryを終了できない方針。個別終了とbulk終了は現状別実装のため、両方から共通利用するService validationにする。専用画面だけに検証を置かず、ProcessService.endProcess()の遷移・日時・数量更新を画面へコピーしない。
 
@@ -344,7 +360,7 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 
 以下は今回の決定事項へ混ぜず、未確定として残す。
 
-- Item check/uncheck、Work専用画面、終了validation、直接currentProcess更新の迂回対策は6A-3。
+- Work専用画面、終了ValidatorのProcessService統合、直接currentProcess更新の迂回対策は後続。Item check/uncheckと共通Validator単体は6A-3-1で実装済み。
 - NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
@@ -355,4 +371,4 @@ SQLは以下を追加済み。ユーザーが6A-2-1 / 6A-2-2 SQLのローカルD
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。ロードマップの旧進捗記述との正式な整合・完了判定はChatGPTレビュー待ちとする。6A-3のItem操作・終了統合・Work UIへ自動的に進まない。
+6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。6A-2のChatGPT完了判定済み（ユーザー報告）。6A-3-1まで実装し、commit / push後のChatGPTレビューを待つ。6A-3-2終了統合・Work UIへ自動的に進まない。

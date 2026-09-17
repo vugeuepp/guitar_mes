@@ -6,9 +6,9 @@ Updated: 2026-09-17
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- Local HEAD at this review: `ab189000e1106a6f15dab9d73c203df15d9fba5a`（6A-2-4A 個別工程開始へのWork統合）
-- 保存済みupstream: `origin/feature/phase6a-process-work`。今回はリモートへの最新照会なし。
-- 作業開始時のworking treeはクリーン。6A-2-4Aは上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回の6A-2-4B変更は未commit。
+- 作業開始HEAD: `989767de6543eccfead678d3e266c1726e2ef6d4`（6A-2-4B bulk工程開始へのWork統合）
+- 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-1のcommit / push結果はGit履歴で確認する。
+- 作業開始時のworking treeはクリーン。6A-2-4Bは上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
 
 ## Current State / Next Work
 
@@ -21,9 +21,9 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-次は**6A-2 工程内作業記録基盤**。その後に**6A-3 専用画面・工程連携**。現在は**6A-2-4B bulk工程開始へのWork統合 実装済み（未commit・ChatGPTレビュー待ち）**。個別・bulk開始統合までの6A-2基盤実装は完了。Phaseの正式完了判定はChatGPTレビュー待ち。Item操作Service・工程終了統合・Work UIは6A-3の未実装範囲。6A-2-1 / 6A-2-2 SQLはユーザー側でローカルDB適用・アプリ起動確認済み（ユーザー報告）。CodexはDB接続・適用を行っていない。Phase 5Cは完了済み（既存記録）。
+**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。Phase 6A-3を開始し、6A-3-1 WorkItem操作Service・共通完了Validatorを実装。** 終了処理への接続は6A-3-2、Controller/API/UIは後続。6A-2 SQLのローカルDB適用・起動成功はユーザー報告であり、CodexはDB操作をしていない。
 
-確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回は変更なし。
+確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回はロードマップに残る6A-2未着手の旧記述のみ、完了の事実へ更新。
 
 ## Implementation Essentials
 
@@ -109,6 +109,16 @@ Updated: 2026-09-17
 - DB必須9クラスは未実行、全テストソースはコンパイル済み。通常全件・E2Eは未実行。実DBのrollback・並行実行は未検証。DB接続・SQL変更/適用なし。Spec更新とGuitar生成の既知raceは持ち越し、新規lockなし。
 - processCode、Domain/DB、plan導出、個別/bulk統合まで実装済み。ロードマップには過去の「設計中・未着手」記述が残るため、正式な6A-2完了・6A-3移行はChatGPT確認後とする（今回はロードマップ未変更）。
 
+### 6A-3-1 実装・検証（2026-09-17、Codex）
+
+- generic process.workへProcessWorkItemService / ProcessWorkCompletionValidatorを追加。Item ID単位でcheck / uncheckをtransactionalに保存する。実際の変更時だけcompletedAt / updatedAtを同じ操作時刻で更新し、再操作は時刻保持・saveなし。終了済みHistoryでは冪等な再操作も拒否する。
+- Itemから親History IDだけをscalar queryで取得 → 既存findForUpdateでHistoryをPESSIMISTIC_WRITE → History再読込・終了確認 → Item取得・再読込 → 状態変更・保存。ロック待機前のPersistence Context内の古い値をrefreshで排除する。Item / Work / Guitarを先にロックしない。
+- 同じHistoryのItem操作と既存endは親Historyロックで直列化する。単独Item操作はHistoryロック1件のみ取得し、終了処理のHistory → Guitar順を逆転させない。6A-3-2の終了Validator呼出しもHistoryロック取得後・同一transaction内とする。実DB並行テストは未実施。
+- Validatorは受け取ったHistoryを再取得・再ロックしない。Workなしは許可、Workありなら全Item COMPLETEDが必要。0件・未完了・null statusは拒否。状態を変更しない。今回はendへ未接続。
+- targeted 4クラス32件成功後、DB不要48クラス452件成功（失敗・エラー・skip 0）。新規Item Service16件・Validator6件。既存個別/bulk開始・generator・分類・Product/Spec・Domainも再実行。ログ: `/tmp/guitar-mes-6a31-targeted.log`、`/tmp/guitar-mes-6a31-regression.log`。選択一覧: `/tmp/guitar-mes-6a31-test-selection.txt`。
+- 親History ID問い合わせのRepository Testを1件追加し、全テストソースをコンパイル。DB必須9クラスは未実行。DB操作・SQL/schema・ProcessService・Controller/API/UI変更なし。通常全件・E2Eは未実行。
+- 6A-3-2は個別/bulk終了へ共通Validatorを同時接続する。Workなし互換、全件検証後更新、History lock維持を確認する。既知のSpec更新race・直接currentProcess APIの迂回対策は持ち越し。
+
 ## Phase 6A-2 Domain Design / Next Gate
 
 正式方針・候補・未確定事項の詳細は[設計方針 第3〜8節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md)を参照する。
@@ -117,20 +127,20 @@ Updated: 2026-09-17
 - 対象の個別・bulk工程開始時にHistoryと同一transactionで14仕様snapshotとItemを生成する（6A-2-4A/B）。WorkはcreatedAtのみでstatus / updatedAt / productId snapshot / Spec FKなし。開始後にマスタ変更で再生成しない。
 - Work snapshotは12項目NOT NULL、bridgeModel / stringMakerのみ任意。pickupLayoutはString / varchar(255)を採用（Productの実DB長はrepositoryから確認不能）。
 - ItemはitemKey varchar(64)、itemOrderは正数・1始まり想定、status varchar(32)はNOT_STARTED / COMPLETED。Java初期値NOT_STARTED、DB DEFAULTなし。3 UNIQUE、Enum / 正数 / status-completedAt整合CHECKをSQLへ定義。
-- Work createdAtは未設定時のみ初期化。Item作成時は未指定ならcreatedAtとupdatedAtを同時刻へ設定し、明示時刻は保持。更新時は既存のpersistedUpdatedAt比較方式を再利用。終了前の解除・終了後read-onlyの業務制御、既存Guitarロックとの統合は後続Service。
+- Work createdAtは未設定時のみ初期化。Item作成時は未指定ならcreatedAtとupdatedAtを同時刻へ設定し、明示時刻は保持。更新時は既存のpersistedUpdatedAt比較方式を再利用。終了前のcheck/uncheck・終了後read-onlyは6A-3-1 Serviceへ実装済み。Item操作では親Historyをロックする。
 - SQLは260916_04_create_process_work / 05_verify_process_work / 06_rollback_process_work.sql。新テーブル2件、既存データ補完なし。ユーザー側でローカルDB適用済み（ユーザー報告）。
 - bulkは全台の検証・導出後に保存するall-or-nothing。個別・bulkとも対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkは全件validate/plan後に保存する。
 - processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別・bulk startのWork対象判定へ使用し、他の工程判定は変更なし。
 - process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別・bulk startとも接続済み。既存ProcessWorkController名は再利用しない。
 - 終了validationの個別/bulk共通利用は主に6A-3。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
 
-残論点はItem操作・終了統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点は終了Validator統合、pickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
-恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-2-4B bulk start統合と関連targeted test・文書更新のみ。DB接続・適用、commit / push / mergeは行わない。
+恒久的な責任分担はAGENTS.mdに従う。今回の対象は6A-3-1 Service / Validator・関連テスト・文書更新。DB接続・適用・mergeは禁止。仕様未決事項や重大問題がなければcommit / pushを行う（今回の明示指示）。
 
-**今回の変更をChatGPTでレビューしてから次のタスクを決める。6A-3（Item操作・end・UI）へ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
+**commit / push後、GitHub差分をChatGPTでレビューしてから次のタスクを決める。6A-3-2終了統合・UIへ続けて進まない。** レビュー後も具体的な作業はユーザーの指示に従う。
 
 ## New Chat Startup
 

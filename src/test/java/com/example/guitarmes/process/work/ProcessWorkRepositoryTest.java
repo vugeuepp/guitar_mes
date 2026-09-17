@@ -78,6 +78,17 @@ class ProcessWorkRepositoryTest {
     }
 
     @Test
+    void resolvesHistoryIdWithoutLoadingItem() {
+        ProcessWork work = work();
+        Long historyId = work.getProcessHistory().getId();
+        ProcessWorkItem saved = items.saveAndFlush(item(work, ProcessWorkItemKey.STRING_INSTALL, 1));
+        Long itemId = saved.getId();
+        em.clear();
+        assertEquals(historyId, items.findHistoryIdByItemId(itemId).orElseThrow());
+        assertTrue(items.findHistoryIdByItemId(-1L).isEmpty());
+    }
+
+    @Test
     void reloadsAllSnapshotValuesByHistoryWithoutMasterReference() {
         ProcessWork original = work();
         Long historyId = original.getProcessHistory().getId();
