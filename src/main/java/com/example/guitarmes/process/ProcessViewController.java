@@ -2,6 +2,7 @@ package com.example.guitarmes.process;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.stereotype.Controller;
@@ -36,10 +37,17 @@ public class ProcessViewController {
 	}
 
 	private Set<Long> findWorkHistoryIds(List<Long> historyIds) {
-		if (historyIds == null || historyIds.isEmpty()) {
+		if (historyIds == null) {
 			return Set.of();
 		}
-		return new HashSet<>(workRepository.findProcessHistoryIdsIn(historyIds));
+		List<Long> normalizedIds = historyIds.stream()
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+		if (normalizedIds.isEmpty()) {
+			return Set.of();
+		}
+		return new HashSet<>(workRepository.findProcessHistoryIdsIn(normalizedIds));
 	}
 	
 	@GetMapping("/processes/start/view")

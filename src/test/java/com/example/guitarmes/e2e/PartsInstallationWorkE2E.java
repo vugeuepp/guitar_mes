@@ -38,7 +38,7 @@ class PartsInstallationWorkE2E extends PlaywrightTestBase {
     @Autowired PlatformTransactionManager manager;
     @Value("${local.server.port}") int port;
     private TransactionTemplate tx;
-    private Long processId, guitarId, historyId, workId;
+    private Long processId, noWorkProcessId, guitarId, historyId, noWorkHistoryId, workId;
     private final List<Long> itemIds = new ArrayList<>();
     private String base;
 
@@ -52,10 +52,14 @@ class PartsInstallationWorkE2E extends PlaywrightTestBase {
             String prefix = "PW" + UUID.randomUUID().toString().substring(0, 8);
             var process = new ManufacturingProcess("GUITAR", prefix, 99999);
             em.persist(process); em.flush(); processId = process.getId();
+            var noWorkProcess = new ManufacturingProcess("GUITAR", prefix + "-NO-WORK", 100000);
+            em.persist(noWorkProcess); em.flush(); noWorkProcessId = noWorkProcess.getId();
             var guitar = new Guitar(prefix, prefix);
             em.persist(guitar); em.flush(); guitarId = guitar.getId();
             var history = new ProcessHistory(guitarId, processId, prefix, LocalDateTime.now());
             em.persist(history); em.flush(); historyId = history.getId();
+            var noWorkHistory = new ProcessHistory(guitarId, noWorkProcessId, prefix + "-NO-WORK", LocalDateTime.now());
+            em.persist(noWorkHistory); em.flush(); noWorkHistoryId = noWorkHistory.getId();
             var work = new ProcessWork(); work.setProcessHistory(history);
             work.setBridgeType(BridgeType.SIX_POINT); work.setRequiresStudHoleExpansion(false);
             work.setTunerModel("Snapshot Tuner"); work.setTunerMountingType(TunerMountingType.PRESS_BUSHING);
@@ -80,8 +84,10 @@ class PartsInstallationWorkE2E extends PlaywrightTestBase {
             for (Long id : itemIds) delete("t_process_work_item", id);
             delete("t_process_work", workId);
             delete("t_process_history", historyId);
+            delete("t_process_history", noWorkHistoryId);
             delete("t_guitar", guitarId);
             delete("m_process", processId);
+            delete("m_process", noWorkProcessId);
         });
     }
 
@@ -124,6 +130,15 @@ class PartsInstallationWorkE2E extends PlaywrightTestBase {
         page.unroute(endpoint);
         first.locator("input").check();
         assertThat(page.locator("#completed-count")).hasText("1");
+
+        String workLink = "/processes/" + historyId + "/work";
+        page.navigate(base + "/guitars/" + guitarId + "/view");
+        assertThat(page.locator("a[href='" + workLink + "']")).hasCount(1);
+        assertThat(page.locator("a[href='/processes/" + noWorkHistoryId + "/work']")).hasCount(0);
+        page.locator("a[href='" + workLink + "']").click();
+        assertEquals(base + workLink, page.url());
+        page.getByText("ギター詳細へ戻る").click();
+        assertEquals(base + "/guitars/" + guitarId + "/view", page.url());
     }
 
     @Test void endLinksReadOnlyApiRejectionAndInconsistentWork() {
@@ -150,10 +165,21 @@ class PartsInstallationWorkE2E extends PlaywrightTestBase {
         assertEquals(409, page.request().delete(base + "/api/process-work-items/" + itemIds.get(0) + "/complete").status());
         assertEquals(409, page.request().put(base + "/api/process-work-items/" + itemIds.get(0) + "/complete").status());
 
+        String workLink = "/processes/" + historyId + "/work";
+        page.navigate(base + "/guitars/" + guitarId + "/history");
+        assertThat(page.locator("a[href='" + workLink + "']")).hasCount(1);
+        assertThat(page.locator("a[href='/processes/" + noWorkHistoryId + "/work']")).hasCount(0);
+        page.locator("a[href='" + workLink + "']").click();
+        assertEquals(base + workLink, page.url());
+        assertThat(page.locator(".work-checkbox:disabled")).hasCount(3);
+        page.getByText("ギター詳細へ戻る").click();
+        assertEquals(base + "/guitars/" + guitarId + "/view", page.url());
+
         tx.executeWithoutResult(s -> {
             for (Long id : itemIds) delete("t_process_work_item", id);
             em.find(ProcessHistory.class, historyId).setEndTime(null);
         });
+        page.navigate(url());
         page.reload();
         assertThat(page.getByText("作業項目が存在しない不整合データです。工程終了可能な状態ではありません。")).isVisible();
         assertThat(page.locator(".work-checkbox")).hasCount(0);
