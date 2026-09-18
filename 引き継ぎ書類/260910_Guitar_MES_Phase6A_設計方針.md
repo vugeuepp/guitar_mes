@@ -369,10 +369,9 @@ Historyロック取得から検証・終了更新まで既存の同一transactio
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。
 - processCodeの全工程展開時期、Body / Neckの名前依存解消。
-- currentProcess直接更新APIの具体的な改修方法。
 - Work専用UI・Controller名。
 - pickupLayoutの実DB長の照合。Work側255文字は今回採用済み。
 
 既存design debtとして、Spec初回補完の対象・期限、同時初回作成のエラー扱い、Spec更新と製造開始のrace、既存開始済み履歴との互換性、製品重複判定とパーツ差異の整合性も保持する。Guitarロック方針を決めたことだけでSpec側を含む競合が解消済みとはしない。
 
-6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。6A-2のChatGPT完了判定済み（ユーザー報告）。6A-3-2まで実装し、commit / push後のChatGPTレビューを待つ。6A-3-3 Work UIへ自動的に進まない。
+6A-1は完了済み。6A-2はprocessCode、Work/Item Domain・DB、plan導出、個別・bulk開始統合まで実装済み。6A-2のChatGPT完了判定済み（ユーザー報告）。6A-3-5まで実装・検証済み。6A-3より先のPhaseは未着手。
