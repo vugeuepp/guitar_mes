@@ -356,7 +356,7 @@ Historyロック取得から検証・終了更新まで既存の同一transactio
 - POST /api/process/end
 - POST /api/process/bulk/end
 
-**迂回経路候補**: PUT /api/guitars/{id}はcurrentProcessを直接変更し、History終了・Work完了検証を経由しない。6A-2では改修せずdesign debtとして残す。将来は専用画面・上記4入口・直接更新APIのいずれからも未完了状態を不正に抜けられない設計を検討する。
+**迂回経路対策（6A-3-5完了）**: 旧PUT /api/guitars/{id}、GuitarService#updateGuitar、GuitarUpdateRequestを削除した。Guitar.currentProcessの外部/APIからの直接更新経路はなく、工程変更はProcessServiceの正式なstart/end入口を使用する。Guitar#setCurrentProcessは生成・正式遷移・fixtureのため維持する。
 
 再実施時に新History→新Workを持てるDomainとするが、現行履歴表示・進捗は同一工程原則1回を前提とする。再実施の業務フローは6A-2で実装しない。
 
@@ -364,7 +364,7 @@ Historyロック取得から検証・終了更新まで既存の同一transactio
 
 以下は今回の決定事項へ混ぜず、未確定として残す。
 
-- Work専用画面、直接currentProcess更新の迂回対策は後続。Item check/uncheckと共通Validator単体は6A-3-1、個別/bulk終了統合は6A-3-2で実装済み。
+- Work専用画面、直接currentProcess更新の迂回対策は6A-3-3〜5で実装済み。Item check/uncheckと共通Validator単体は6A-3-1、個別/bulk終了統合は6A-3-2で実装済み。
 - NG、RETEST_REQUIRED、comment、測定値、Item単位の作業者。
 - 同じitemKeyの複数回実施モデル、再実施工程そのものの業務フロー。
 - 詳細な弦巻き標準、Electronicsの将来的なposition単位検査。

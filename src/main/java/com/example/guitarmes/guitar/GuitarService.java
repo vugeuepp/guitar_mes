@@ -142,24 +142,6 @@ public class GuitarService {
     }
 
     /**
-     * Guitarの現在工程を更新する。
-     */
-    @Transactional
-    public Guitar updateGuitar(
-            Long id,
-            String currentProcess) {
-
-        Guitar guitar =
-                findGuitarOrThrow(id);
-
-        guitar.setCurrentProcess(
-                currentProcess);
-
-        return guitarRepository.save(
-                guitar);
-    }
-
-    /**
      * Guitarを取得する。
      */
     private Guitar findGuitarOrThrow(

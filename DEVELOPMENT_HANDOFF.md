@@ -1,12 +1,12 @@
 # Guitar MES Development Handoff
 
-Updated: 2026-09-17
+Updated: 2026-09-18
 
 ## Repository State
 
 - Repository: `vugeuepp/guitar_mes`
 - Current branch: `feature/phase6a-process-work`
-- 作業開始HEAD: `d78cbed23e7ed00ce5fd95c172775405e61aad43`（6A-3-3、Copilot成果物適用）
+- 作業開始HEAD: `33ba8e8f36396631004677768d56c74917e397a8`（6A-3-5開始時、6A-3-4完了）
 - 保存済みupstream: `origin/feature/phase6a-process-work`。作業開始時は保存済みupstreamとHEADが一致。6A-3-3仕上げのcommit / push結果はGit履歴と最新リモート照会で確認する。
 - 作業開始時のworking treeはクリーン。6A-3-3 Copilot成果物は上記HEADでcommit済み、保存済みupstreamと一致。ChatGPT承認・push済みはユーザー報告。今回から、問題なく実装・検証できた場合のCodexによるcommit / pushをユーザーが許可。
 
@@ -21,7 +21,7 @@ Updated: 2026-09-17
 | 6A-1-2B | 共通Spec入力からvariationごとに独立保存、登録・編集UI、transaction、JUnit・E2E追加 |
 | 6A-1-3 | Product詳細に電子仕様書カード、表示値変換、詳細テンプレートテスト |
 
-**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。6A-3-1はChatGPT承認済み（ユーザー報告）、6A-3-2で共通完了Validatorを個別/bulk終了へ接続済み。** 6A-3-3のWork表示・Item操作API/UIも実装済み。今回Copilot成果物をrepo文脈でレビューし、テストと最小修正を追加。6A-2 SQLのローカルDB適用・起動成功はユーザー報告。今回Codexは専用E2E DBでテストを実行したが、SQL/schemaの変更・適用は行っていない。
+**Phase 6A-2はChatGPTレビュー・完了判定済み（ユーザー報告）。Phase 6A-3-1〜3-4を実装・検証済み。** 6A-3-3のWork表示・Item操作API/UI、6A-3-4のWork導線・batch lookupを維持したまま、6A-3-5で直接currentProcess更新経路を廃止した。6A-2 SQLのローカルDB適用・起動成功はユーザー報告。今回Codexは専用E2E DBでテストを実行したが、SQL/schemaの変更・適用は行っていない。
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回はロードマップに残る6A-2未着手の旧記述のみ、完了の事実へ更新。
 
@@ -32,7 +32,22 @@ Updated: 2026-09-17
 - 変更対象: `ProcessHistoryResponse.historyId`、`ProcessService#convertToResponse()`、`GuitarViewController`、`ProcessViewController`、`history-list.html`、`guitar-detail.html`、`ProcessWorkRepository`、`PartsInstallationWorkE2E`。
 - 設計方針: 既存の工程開始/終了ロジックとWork snapshot仕様は変更せず、`historyId`ベースのリンク表示のみを追加。`ProcessViewController`/`GuitarViewController`で生成した`workHistoryIds`集合で条件分岐し、`process-end-form`の一覧表示でもN+1が発生しないようにした。
 - batch lookup入力はnull除外・重複除去・空集合guardを行い、DB query結果はSet化する。WorkなしのHistory IDは集合に含まれず、リンクを生成しない。
-- 残課題: 6A-3-5の内容には進まず、次の指示を待つ。
+- 残課題: Phase 6A-3より先には進まず、次の指示を待つ。
+
+## 6A-3-5 実装・最終回帰記録
+
+- `PUT /api/guitars/{id}`、`GuitarService#updateGuitar`、`GuitarUpdateRequest`を削除し、GuitarのcurrentProcess変更を外部APIから直接行えない構造にした。`Guitar#setCurrentProcess`とProcessServiceの正式なstart/end経路は維持した。
+- repository全体を調査し、旧PUT経路のproduction利用はGuitarControllerからの呼出しのみで、JavaScript・template・test・API文書の利用契約はなかった。
+- `GuitarControllerTest`で旧PUTが405となり、currentProcessの直接更新手段として存在しないことをMockMvcで明示した。
+- 6A-3-1〜3-4のWork生成、snapshot、WorkItem、完了Validator、read-only、導線、persisted Work batch lookupの業務コードは変更していない。
+- 残存design debtはProductPartsSpec更新とGuitar生成のrace、再実施等。6A-3より先のPhaseは未着手。
+
+### 6A-3-5 検証（2026-09-18、Codex）
+
+- Targeted tests: `GuitarControllerTest` / `GuitarCategoryTest` / `GuitarViewControllerTest` / `ProcessViewControllerTest`、計9件成功。
+- Full Maven test: `./mvnw -Dstyle.color=always test` 成功。
+- Playwright E2E: `PartsInstallationWorkE2E` 2件成功。Work表示、即時保存・reload・解除・失敗復元、process-end-form、Guitar詳細、工程履歴、Work→Guitar詳細、Workなしリンク非表示、工程終了、終了後read-only・mutation拒否・0件不整合をassert。
+- `git diff --check`: 成功。
 
 ## Verification Record
 
@@ -171,9 +186,9 @@ Updated: 2026-09-17
 - bulkは全台の検証・導出後に保存するall-or-nothing。個別・bulkとも対象StratのSpec不備・分類不能は開始拒否、明確な対象外は従来処理。bulkは全件validate/plan後に保存する。
 - processCodeはString / VARCHAR(64)、NULL許可・全体UNIQUE。Entity、findByProcessCode、ProcessCodeConstants.GUITAR_PARTS_INSTALLATION、sql/260916_01〜03の適用・確認・rollback SQLを追加済み。対象GUITAR＋ギターパーツ取付が0件・複数件なら例外で移行STOP。ユーザー側でローカルDB適用済み（ユーザー報告）。API JSONへnullableのprocessCodeを追加。個別・bulk startのWork対象判定へ使用し、他の工程判定は変更なし。
 - process.workへDomainを配置済み。process.partsinstallationに保存前planの作業導出を実装済み。個別・bulk startとも接続済み。既存ProcessWorkController名は再利用しない。
-- 終了validationの個別/bulk共通利用は6A-3-2で実装済み。PUT /api/guitars/{id}のcurrentProcess直接更新は迂回経路候補として残す。
+- 終了validationの個別/bulk共通利用は6A-3-2で実装済み。6A-3-5でPUT /api/guitars/{id}のcurrentProcess直接更新経路を廃止した。
 
-残論点はpickupLayout実DB長、NG等の拡張、再実施、専用UI、名前依存解消・直接更新API改修。Spec初回補完と製造開始競合等の既存design debtも継続。詳細は設計書へ集約した。
+残論点はpickupLayout実DB長、NG等の拡張、再実施、名前依存解消。Spec初回補完と製造開始競合等の既存design debtも継続する。詳細は設計書へ集約した。
 
 ## AI Responsibilities / Temporary Constraints
 
