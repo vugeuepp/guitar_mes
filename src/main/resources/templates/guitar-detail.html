@@ -263,6 +263,12 @@
 
                         <td class="table-action-cell">
 
+                            <a th:if="${processStatus.status == '実施中' and #sets.contains(workHistoryIds, processStatus.historyId)}"
+                               class="btn btn-detail"
+                               th:href="@{/processes/{id}/work(id=${processStatus.historyId})}">
+                                作業票
+                            </a>
+
                             <form th:if="${processStatus.status == '実施中'}"
                                   th:action="@{/processes/end}"
                                   method="post">

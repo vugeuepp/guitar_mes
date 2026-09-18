@@ -1,5 +1,9 @@
 package com.example.guitarmes.process;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,8 +11,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import com.example.guitarmes.exception.BusinessException;
 
+import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.guitar.GuitarService;
 import com.example.guitarmes.process.common.ProcessTargetConstants;
 
@@ -21,15 +25,21 @@ public class ProcessViewController {
 	private final com.example.guitarmes.process.work.ProcessWorkRepository workRepository;
 	
 	public ProcessViewController(
-			ProcessService processService, 
+			ProcessService processService,
 			GuitarService guitarService,
 			ManufacturingProcessRepository processRepository,
 			com.example.guitarmes.process.work.ProcessWorkRepository workRepository) {
-		
 		this.processService = processService;
 		this.guitarService = guitarService;
 		this.processRepository = processRepository;
 		this.workRepository = workRepository;
+	}
+
+	private Set<Long> findWorkHistoryIds(List<Long> historyIds) {
+		if (historyIds == null || historyIds.isEmpty()) {
+			return Set.of();
+		}
+		return new HashSet<>(workRepository.findProcessHistoryIdsIn(historyIds));
 	}
 	
 	@GetMapping("/processes/start/view")
@@ -73,15 +83,15 @@ public class ProcessViewController {
 	        ProcessRunningResponse runningHistory = processService.getRunningProcessResponseByGuitarId(guitarId);
 
 	        model.addAttribute("runningHistory", runningHistory);
-	        model.addAttribute("workHistoryIds", runningHistory == null ? java.util.Set.of() :
-	                (workRepository.findByProcessHistoryId(runningHistory.historyId()).isPresent() ? java.util.Set.of(runningHistory.historyId()) : java.util.Set.of()));
+	        model.addAttribute("workHistoryIds",
+	                runningHistory == null ? Set.of() : findWorkHistoryIds(List.of(runningHistory.historyId())));
 
 	    } else {
 	    	
 	        java.util.List<ProcessRunningResponse> histories = processService.getRunningProcessResponses();
 	        model.addAttribute("histories", histories);
-	        model.addAttribute("workHistoryIds", histories.stream().map(ProcessRunningResponse::historyId)
-	                .filter(id -> workRepository.findByProcessHistoryId(id).isPresent()).collect(java.util.stream.Collectors.toSet()));
+	        model.addAttribute("workHistoryIds",
+	                findWorkHistoryIds(histories.stream().map(ProcessRunningResponse::historyId).toList()));
             model.addAttribute("processes", processService.getAvailableGuitarProcesses());
 	    }
 
@@ -96,7 +106,10 @@ public class ProcessViewController {
 	
 	@GetMapping("/guitars/{id}/history")
 	public String guitarHistory(@PathVariable Long id, Model model) {
-		model.addAttribute("histories", processService.getHistory(id));
+		List<ProcessHistoryResponse> histories = processService.getHistory(id);
+		model.addAttribute("histories", histories);
+		model.addAttribute("workHistoryIds",
+				findWorkHistoryIds(histories.stream().map(ProcessHistoryResponse::getHistoryId).toList()));
 		model.addAttribute("guitarId", id);
 		return "history-list";
 	}

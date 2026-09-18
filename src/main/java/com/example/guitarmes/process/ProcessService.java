@@ -395,6 +395,8 @@ public class ProcessService {
         ProcessHistoryResponse response =
                 new ProcessHistoryResponse();
 
+        response.setHistoryId(history.getId());
+
         response.setProcessName(
                 process.getProcessName());
 

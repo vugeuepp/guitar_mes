@@ -25,6 +25,22 @@ Updated: 2026-09-17
 
 確定仕様は[Phase 6A設計方針 第2節](引き継ぎ書類/260910_Guitar_MES_Phase6A_設計方針.md#2-開発単位と6a-1の確定仕様)に集約する。ロードマップは前回の文書更新で設計書参照へ整合済み。今回はロードマップに残る6A-2未着手の旧記述のみ、完了の事実へ更新。
 
+## 6A-3-4 実装記録
+
+- 実施内容: Guitar詳細/工程履歴/工程終了フォームにおける「作業票」導線を追加し、Work存在確認は`ProcessWorkRepository#findProcessHistoryIdsIn()`で一括取得へ整理した。
+- 変更対象: `ProcessHistoryResponse.historyId`、`ProcessService#convertToResponse()`、`GuitarViewController`、`ProcessViewController`、`history-list.html`、`guitar-detail.html`、`ProcessWorkRepository`。
+- 設計方針: 既存の工程開始/終了ロジックとWork snapshot仕様は変更せず、`historyId`ベースのリンク表示のみを追加。`ProcessViewController`/`GuitarViewController`で生成した`workHistoryIds`集合で条件分岐し、`process-end-form`の一覧表示でもN+1が発生しないようにした。
+- 残課題: 6A-3-5での最終的な導線整理と、必要に応じてE2Eの拡張確認。今回は既存WorkE2Eを保ちつつnavigation条件の確認を行った。
+
+## Verification Record
+
+### 6A-3-4 実施時の検証（この作業）
+
+- Targeted tests: `GuitarViewControllerTest` / `GuitarCategoryTest` / `ProcessViewControllerTest` 成功。
+- Maven full test: `./mvnw -Dstyle.color=always test` 成功（終了コード0）。
+- Playwright E2E: `./mvnw -Dstyle.color=always -Dplaywright.headless=true -Dtest='com.example.guitarmes.e2e.PartsInstallationWorkE2E' test` 成功（終了コード0）。
+- `git diff --check`: success.
+
 ## Implementation Essentials
 
 - Product 1 : 0..1 ProductPartsSpec。Spec所有の片方向one-to-one、LAZY、cascade / orphanRemovalなし。Product逆関連なし。DBのproduct_idはNOT NULL / FK / UNIQUE。

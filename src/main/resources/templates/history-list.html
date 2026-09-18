@@ -61,6 +61,10 @@
                     <th>
                         作業時間(分)
                     </th>
+
+                    <th>
+                        作業票
+                    </th>
                 </tr>
             </thead>
 
@@ -81,6 +85,15 @@
                     </td>
 
                     <td th:text="${history.workMinutesText}">
+                    </td>
+
+                    <td class="table-action-cell">
+                        <a th:if="${#sets.contains(workHistoryIds, history.historyId)}"
+                           class="btn btn-detail"
+                           th:href="@{/processes/{id}/work(id=${history.historyId})}">
+                            作業票
+                        </a>
+                        <span th:unless="${#sets.contains(workHistoryIds, history.historyId)}">-</span>
                     </td>
 
                 </tr>

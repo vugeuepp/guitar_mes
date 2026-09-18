@@ -3,6 +3,7 @@ package com.example.guitarmes.process;
 import java.time.LocalDateTime;
 
 public class ProcessHistoryResponse {
+	private Long historyId;
 	private String processName;
 	private String workerName;
 	private LocalDateTime startTime;
@@ -12,6 +13,12 @@ public class ProcessHistoryResponse {
 	private String endTimeText;
 	private String workMinutesText;
 	
+	public Long getHistoryId() {
+		return historyId;
+	}
+	public void setHistoryId(Long historyId) {
+		this.historyId = historyId;
+	}
 	public String getProcessName() {
 		return processName;
 	}
