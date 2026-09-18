@@ -2,6 +2,11 @@
 
 package com.example.guitarmes.guitar;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +18,8 @@ import com.example.guitarmes.assembly.AssemblyService;
 import com.example.guitarmes.exception.BusinessException;
 import com.example.guitarmes.process.ManufacturingProcess;
 import com.example.guitarmes.process.ProcessService;
+import com.example.guitarmes.process.ProcessStatusResponse;
+import com.example.guitarmes.process.work.ProcessWorkRepository;
 
 
 @Controller
@@ -20,12 +27,28 @@ public class GuitarViewController {
 	private final GuitarService guitarService;
 	private final ProcessService processService;
 	private final AssemblyService assemblyService;
+	private final ProcessWorkRepository workRepository;
 
 	public GuitarViewController(GuitarService guitarService, ProcessService processService,
-			AssemblyService assemblyService) {
+			AssemblyService assemblyService, ProcessWorkRepository workRepository) {
 		this.guitarService = guitarService;
 		this.processService = processService;
 		this.assemblyService = assemblyService;
+		this.workRepository = workRepository;
+	}
+
+	private Set<Long> findWorkHistoryIds(List<Long> historyIds) {
+		if (historyIds == null) {
+			return Set.of();
+		}
+		List<Long> normalizedIds = historyIds.stream()
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+		if (normalizedIds.isEmpty()) {
+			return Set.of();
+		}
+		return new HashSet<>(workRepository.findProcessHistoryIdsIn(normalizedIds));
 	}
 
 	@GetMapping("/guitars/view")
@@ -70,9 +93,12 @@ public class GuitarViewController {
 	@GetMapping("/guitars/{id}/view")
 	public String guitarDetail(@PathVariable Long id, Model model) {
 		AssemblyResponse assembly = assemblyService.getAssemblyByGuitarId(id);
+		List<ProcessStatusResponse> processStatuses = processService.getProcessStatuses(id);
 
 		model.addAttribute("guitar", guitarService.getGuitarById(id));
-		model.addAttribute("processStatuses", processService.getProcessStatuses(id));
+		model.addAttribute("processStatuses", processStatuses);
+		model.addAttribute("workHistoryIds",
+				findWorkHistoryIds(processStatuses.stream().map(ProcessStatusResponse::getHistoryId).toList()));
 		model.addAttribute("assembly", assembly);
 
 		ManufacturingProcess nextProcess = null;

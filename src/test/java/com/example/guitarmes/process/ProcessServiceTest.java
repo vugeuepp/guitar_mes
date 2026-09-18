@@ -24,6 +24,9 @@ import com.example.guitarmes.guitar.Guitar;
 import com.example.guitarmes.guitar.GuitarRepository;
 import com.example.guitarmes.process.common.GuitarProcessConstants;
 import com.example.guitarmes.process.common.ProcessTargetConstants;
+import com.example.guitarmes.process.work.ProcessWorkCompletionValidator;
+import com.example.guitarmes.process.work.ProcessWorkRepository;
+import com.example.guitarmes.process.work.ProcessWorkItemRepository;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 
@@ -51,7 +54,9 @@ class ProcessServiceTest {
                 historyRepository,
                 guitarRepository,
                 processRepository,
-                orderRepository);
+                orderRepository, null, null, new ProcessWorkCompletionValidator(
+                        org.mockito.Mockito.mock(ProcessWorkRepository.class),
+                        org.mockito.Mockito.mock(ProcessWorkItemRepository.class)));
         org.springframework.test.util.ReflectionTestUtils.setField(service, "entityManager", entityManager);
         org.mockito.Mockito.lenient().when(guitarRepository.findById(any())).thenAnswer(i -> guitarRepository.findForUpdate(i.getArgument(0)));
     }

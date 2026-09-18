@@ -19,8 +19,13 @@ import com.example.guitarmes.guitar.Guitar;
 import com.example.guitarmes.guitar.GuitarRepository;
 import com.example.guitarmes.process.analysis.ProcessAverageTimeResponse;
 import com.example.guitarmes.process.common.GuitarProcessConstants;
+import com.example.guitarmes.process.common.ProcessCodeConstants;
 import com.example.guitarmes.process.common.ProcessStatusConstants;
 import com.example.guitarmes.process.common.ProcessTargetConstants;
+import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkPlan;
+import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkPlanGenerator;
+import com.example.guitarmes.process.partsinstallation.PartsInstallationWorkWriter;
+import com.example.guitarmes.process.work.ProcessWorkCompletionValidator;
 import com.example.guitarmes.productionorder.ProductionOrder;
 import com.example.guitarmes.productionorder.ProductionOrderRepository;
 import com.example.guitarmes.productionorder.ProductionOrderStatusConstants;
@@ -36,11 +41,22 @@ public class ProcessService {
     private final ManufacturingProcessRepository processRepository;
     private final ProductionOrderRepository productionOrderRepository;
 
+    private final PartsInstallationWorkPlanGenerator workPlanGenerator;
+    private final PartsInstallationWorkWriter workWriter;
+    private final ProcessWorkCompletionValidator workCompletionValidator;
+
     public ProcessService(
             ProcessHistoryRepository historyRepository,
             GuitarRepository guitarRepository,
             ManufacturingProcessRepository processRepository,
-            ProductionOrderRepository productionOrderRepository) {
+            ProductionOrderRepository productionOrderRepository,
+            PartsInstallationWorkPlanGenerator workPlanGenerator,
+            PartsInstallationWorkWriter workWriter,
+            ProcessWorkCompletionValidator workCompletionValidator) {
+
+        this.workPlanGenerator = workPlanGenerator;
+        this.workWriter = workWriter;
+        this.workCompletionValidator = workCompletionValidator;
 
         this.historyRepository =
                 historyRepository;
@@ -113,12 +129,27 @@ public class ProcessService {
                     + "」です。");
         }
 
+        PartsInstallationWorkPlan workPlan = null;
+        if (ProcessCodeConstants.GUITAR_PARTS_INSTALLATION.equals(selectedProcess.getProcessCode())) {
+            var result = workPlanGenerator.generate(guitar.getProduct());
+            if (result.target() == PartsInstallationWorkPlanGenerator.Target.UNCLASSIFIABLE) {
+                throw new BusinessException(
+                        "製品分類を判定できないため、ギターパーツ取付工程を開始できません。");
+            }
+            workPlan = result.plan().orElse(null);
+        }
+
         ProcessHistory history =
                 new ProcessHistory(
                         guitarId,
                         processId,
                         workerName.trim(),
                         LocalDateTime.now());
+
+        ProcessHistory savedHistory = historyRepository.save(history);
+        if (workPlan != null) {
+            workWriter.save(savedHistory, workPlan);
+        }
 
         guitar.setCurrentProcess(
                 selectedProcess.getProcessName());
@@ -127,7 +158,7 @@ public class ProcessService {
 
         guitarRepository.save(guitar);
 
-        return historyRepository.save(history);
+        return savedHistory;
     }
 
     /**
@@ -155,6 +186,8 @@ public class ProcessService {
 
         validateGuitarProcess(
                 endedProcess);
+
+        workCompletionValidator.validateCompletable(history);
 
         Guitar guitar =
                 findGuitarForUpdate(
@@ -361,6 +394,8 @@ public class ProcessService {
 
         ProcessHistoryResponse response =
                 new ProcessHistoryResponse();
+
+        response.setHistoryId(history.getId());
 
         response.setProcessName(
                 process.getProcessName());
@@ -914,16 +949,38 @@ public class ProcessService {
         for (Guitar guitar : guitars) {
             validateStartable(guitar, selectedProcess);
         }
+        // 全台の検証・導出が終わるまで開始データを保存しない。
+        Map<Long, PartsInstallationWorkPlan> plansByGuitarId = new HashMap<>();
+        if (ProcessCodeConstants.GUITAR_PARTS_INSTALLATION.equals(selectedProcess.getProcessCode())) {
+            for (Guitar guitar : guitars) {
+                var result = workPlanGenerator.generate(guitar.getProduct());
+                if (result.target() == PartsInstallationWorkPlanGenerator.Target.UNCLASSIFIABLE) {
+                    throw new BusinessException(
+                            "製品分類を判定できないため、ギターパーツ取付工程を開始できません。ID: "
+                            + guitar.getId());
+                }
+                result.plan().ifPresent(plan -> plansByGuitarId.put(guitar.getId(), plan));
+            }
+        }
         LocalDateTime now = LocalDateTime.now();
         List<ProcessHistory> histories = new ArrayList<>();
         for (Guitar guitar : guitars) {
-            guitar.setCurrentProcess(selectedProcess.getProcessName());
-            guitar.setUpdatedAt(now);
             histories.add(new ProcessHistory(
                     guitar.getId(), processId, workerName.trim(), now));
         }
+        List<ProcessHistory> savedHistories = historyRepository.saveAll(histories);
+        for (ProcessHistory history : savedHistories) {
+            PartsInstallationWorkPlan plan = plansByGuitarId.get(history.getGuitarId());
+            if (plan != null) {
+                workWriter.save(history, plan);
+            }
+        }
+        for (Guitar guitar : guitars) {
+            guitar.setCurrentProcess(selectedProcess.getProcessName());
+            guitar.setUpdatedAt(now);
+        }
         guitarRepository.saveAll(guitars);
-        return historyRepository.saveAll(histories);
+        return savedHistories;
     }
 
     @Transactional
@@ -955,6 +1012,9 @@ public class ProcessService {
         Long firstProcessId = histories.get(0).getProcessId();
         if (histories.stream().anyMatch(h -> !firstProcessId.equals(h.getProcessId()))) {
             throw new BusinessException("異なる工程をまとめて終了することはできません。");
+        }
+        for (ProcessHistory history : histories) {
+            workCompletionValidator.validateCompletable(history);
         }
         lockProductionOrders(guitars);
         LocalDateTime now = LocalDateTime.now();

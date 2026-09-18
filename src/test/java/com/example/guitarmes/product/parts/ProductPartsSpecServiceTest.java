@@ -43,8 +43,8 @@ class ProductPartsSpecServiceTest {
     @BeforeEach
     void setUp() {
         ProductService productService = new ProductService(
-                products, null, null, guitars, orders, null, null, null);
-        service = new ProductPartsSpecService(productService, specs);
+                products, null, null, guitars, orders, null, null, null, null);
+        service = new ProductPartsSpecService(productService, specs, new ProductPartsSpecValidator());
         product = new Product();
         product.setId(10L);
         lenient().when(products.findById(10L)).thenReturn(Optional.of(product));

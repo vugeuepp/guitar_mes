@@ -684,7 +684,7 @@ Phase 6AはStratocaster系の「ギターパーツ取付工程」を最初の対
 - 製品仕様はDBへ保存する。工程固有のチェック・検査列をProcessHistoryに直接追加しない。
 - Phase 6Aでは作業項目定義そのものを直ちにDBマスタ化せず、仕様から必要作業を決めるルールはService側に持たせる方向で検討する。
 - 作業開始時点で必要項目を確定して保存し、後の製品マスタ変更が開始済み個体の作業内容を勝手に変えない構造とする。
-- 旧候補ProcessTaskDefinition / ProcessTaskHistoryは採用確定ではない。ProcessWork / ProcessWorkItemも名称候補で、物理モデルは6A-2で確定する。
+- 旧候補ProcessTaskDefinition / ProcessTaskHistoryは採用しない。6A-2はProcessWork / ProcessWorkItem基盤・Work導出・個別/bulk開始統合まで実装済みで、ChatGPT完了判定済み（ユーザー報告）。6A-3-1のItem操作Service・共通完了Validatorを実装し、終了統合・UIは後続。詳細はPhase 6A設計方針第3〜8節を参照する。
 
 ### 11.4 対象作業と完了判定
 

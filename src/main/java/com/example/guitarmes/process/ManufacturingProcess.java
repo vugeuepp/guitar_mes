@@ -17,6 +17,10 @@ public class ManufacturingProcess {
 	private Long id;
 	
 	private String processName;
+
+	// 表示名とは独立した安定業務コード。未導入の工程はnull。
+	@Column(name = "process_code", length = 64, unique = true)
+	private String processCode;
 	
 	private Integer processOrder;
 	
@@ -60,6 +64,14 @@ public class ManufacturingProcess {
 
 	public void setProcessName(String processName) {
 		this.processName = processName;
+	}
+
+	public String getProcessCode() {
+		return processCode;
+	}
+
+	public void setProcessCode(String processCode) {
+		this.processCode = processCode;
 	}
 
 	public Integer getProcessOrder() {

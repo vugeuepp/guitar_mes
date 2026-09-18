@@ -38,6 +38,7 @@ class GuitarCategoryTest {
         GuitarService pagedService = spy(new GuitarService(repository));
         ProcessService process = mock(ProcessService.class);
         AssemblyService assembly = mock(AssemblyService.class);
+        var workRepository = mock(com.example.guitarmes.process.work.ProcessWorkRepository.class);
         when(repository.search(any(), any())).thenAnswer(invocation -> {
             var criteria = (GuitarSearchCriteria) invocation.getArgument(0);
             var pageable = (org.springframework.data.domain.Pageable) invocation.getArgument(1);
@@ -53,7 +54,7 @@ class GuitarCategoryTest {
         when(process.getPageProgress(anyList())).thenReturn(java.util.Map.of(
                 3L, new ProcessService.PageProgress(100, false, false)));
         when(process.getAvailableGuitarProcesses()).thenReturn(List.of());
-        var mvc = MockMvcBuilders.standaloneSetup(new GuitarViewController(pagedService, process, assembly)).build();
+        var mvc = MockMvcBuilders.standaloneSetup(new GuitarViewController(pagedService, process, assembly, workRepository)).build();
         mvc.perform(get("/guitars/view"))
                 .andExpect(model().attribute("category", "active"))
                 .andExpect(model().attribute("currentPage", 0))

@@ -117,7 +117,8 @@ class ProductServiceTest {
                         productionOrderRepository,
                         new InternalModelCodeService(),
                         productSeriesMasterService,
-                        instrumentTypeMasterService);
+                        instrumentTypeMasterService,
+                        new ProductClassificationService(productSeriesMasterService, instrumentTypeMasterService));
     }
 
     @Test
